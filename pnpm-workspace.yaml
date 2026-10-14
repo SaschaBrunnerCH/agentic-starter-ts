@@ -1,0 +1,44 @@
+# pnpm settings. See engineering/agents/dependency-automation.md.
+
+# Refuse to install on a Node.js version outside `engines` in package.json.
+engineStrict: true
+
+# A package version is installed only once it is seven days old (in minutes):
+# most malicious releases are found and removed sooner.
+minimumReleaseAge: 10080
+
+# Versions installed before this rule existed, accepted as they are. Remove an entry
+# once it is seven days old (all are by 2026-10-20); never add one to skip the wait.
+minimumReleaseAgeExclude:
+  - "knip@6.41.0"
+  - "oxlint@1.88.0"
+  - "@oxlint/binding-android-arm64@1.88.0"
+  - "@oxlint/binding-android-arm-eabi@1.88.0"
+  - "@oxlint/binding-darwin-arm64@1.88.0"
+  - "@oxlint/binding-darwin-x64@1.88.0"
+  - "@oxlint/binding-freebsd-x64@1.88.0"
+  - "@oxlint/binding-linux-arm64-gnu@1.88.0"
+  - "@oxlint/binding-linux-arm64-musl@1.88.0"
+  - "@oxlint/binding-linux-arm-gnueabihf@1.88.0"
+  - "@oxlint/binding-linux-arm-musleabihf@1.88.0"
+  - "@oxlint/binding-linux-ppc64-gnu@1.88.0"
+  - "@oxlint/binding-linux-riscv64-gnu@1.88.0"
+  - "@oxlint/binding-linux-riscv64-musl@1.88.0"
+  - "@oxlint/binding-linux-s390x-gnu@1.88.0"
+  - "@oxlint/binding-linux-x64-gnu@1.88.0"
+  - "@oxlint/binding-linux-x64-musl@1.88.0"
+  - "@oxlint/binding-openharmony-arm64@1.88.0"
+  - "@oxlint/binding-win32-arm64-msvc@1.88.0"
+  - "@oxlint/binding-win32-ia32-msvc@1.88.0"
+  - "@oxlint/binding-win32-x64-msvc@1.88.0"
+  - "playwright@1.64.0"
+  - "playwright-core@1.64.0"
+  - "@playwright/test@1.64.0"
+  - "prettier@3.9.10"
+  - "tinybench@6.2.2"
+  - "@types/node@24.19.2"
+  - "vite@8.3.4"
+  - "vitest@5.0.4"
+  - "@vitest/coverage-v8@5.0.4"
+  - "@vitest/mocker@5.0.4"
+  - "@vitest/spy@5.0.4"

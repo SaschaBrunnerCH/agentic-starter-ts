@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 916 880" width="916" height="880" font-family="Helvetica, Arial, sans-serif" role="img" aria-label="The workflow from issue to merged change: owner, agent and repository">
+<title>The workflow from issue to merged change: owner, agent and repository</title>
+<defs><marker id="head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#1e1e1e"/></marker><marker id="head-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2f9e44"/></marker></defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<rect x="30" y="70" width="256" height="66" rx="10" fill="#ffe8cc" stroke="#e8590c" stroke-width="2"/>
+<text x="158" y="93" font-size="16" text-anchor="middle" dominant-baseline="central" fill="#1e1e1e"><tspan x="158" dy="0">Write an issue,</tspan><tspan x="158" dy="20">set its priority</tspan></text>
+<rect x="330" y="170" width="256" height="66" rx="10" fill="#d0ebff" stroke="#1971c2" stroke-width="2"/>
+<text x="458" y="193" font-size="16" text-anchor="middle" dominant-baseline="central" fill="#1e1e1e"><tspan x="458" dy="0">task start: claim the issue,</tspan><tspan x="458" dy="20">new worktree and branch</tspan></text>
+<rect x="330" y="270" width="256" height="66" rx="10" fill="#d0ebff" stroke="#1971c2" stroke-width="2"/>
+<text x="458" y="293" font-size="16" text-anchor="middle" dominant-baseline="central" fill="#1e1e1e"><tspan x="458" dy="0">Do the work,</tspan><tspan x="458" dy="20">with tests</tspan></text>
+<rect x="630" y="270" width="256" height="66" rx="10" fill="#d3f9d8" stroke="#2f9e44" stroke-width="2"/>
+<text x="758" y="293" font-size="16" text-anchor="middle" dominant-baseline="central" fill="#1e1e1e"><tspan x="758" dy="0">Commit hooks: format,</tspan><tspan x="758" dy="20">secrets, no AI attribution</tspan></text>
+<rect x="330" y="370" width="256" height="66" rx="10" fill="#d0ebff" stroke="#1971c2" stroke-width="2"/>
+<text x="458" y="393" font-size="16" text-anchor="middle" dominant-baseline="central" fill="#1e1e1e"><tspan x="458" dy="0">check:push:</tspan><tspan x="458" dy="20">the whole gate</tspan></text>
+<rect x="630" y="370" width="256" height="66" rx="10" fill="#d3f9d8" stroke="#2f9e44" stroke-width="2"/>
+<text x="758" y="393" font-size="16" text-anchor="middle" dominant-baseline="central" fill="#1e1e1e"><tspan x="758" dy="0">Pre-push hook runs</tspan><tspan x="758" dy="20">the same gate</tspan></text>
+<rect x="330" y="470" width="256" height="66" rx="10" fill="#d0ebff" stroke="#1971c2" stroke-width="2"/>
+<text x="458" y="493" font-size="16" text-anchor="middle" dominant-baseline="central" fill="#1e1e1e"><tspan x="458" dy="0">Open a pull request,</tspan><tspan x="458" dy="20">task ready</tspan></text>
+<rect x="630" y="470" width="256" height="66" rx="10" fill="#d3f9d8" stroke="#2f9e44" stroke-width="2"/>
+<text x="758" y="493" font-size="16" text-anchor="middle" dominant-baseline="central" fill="#1e1e1e"><tspan x="758" dy="0">PR build: the gate</tspan><tspan x="758" dy="20">again in CI</tspan></text>
+<rect x="30" y="570" width="256" height="66" rx="10" fill="#ffe8cc" stroke="#e8590c" stroke-width="2"/>
+<text x="158" y="593" font-size="16" text-anchor="middle" dominant-baseline="central" fill="#1e1e1e"><tspan x="158" dy="0">Check the result,</tspan><tspan x="158" dy="20">say yes or no</tspan></text>
+<rect x="330" y="670" width="256" height="66" rx="10" fill="#d0ebff" stroke="#1971c2" stroke-width="2"/>
+<text x="458" y="693" font-size="16" text-anchor="middle" dominant-baseline="central" fill="#1e1e1e"><tspan x="458" dy="0">task merge: record the yes,</tspan><tspan x="458" dy="20">merge that commit</tspan></text>
+<rect x="630" y="670" width="256" height="66" rx="10" fill="#d3f9d8" stroke="#2f9e44" stroke-width="2"/>
+<text x="758" y="693" font-size="16" text-anchor="middle" dominant-baseline="central" fill="#1e1e1e"><tspan x="758" dy="0">Rulesets: green build, current</tspan><tspan x="758" dy="20">branch, the owner's account</tspan></text>
+<rect x="330" y="770" width="256" height="66" rx="10" fill="#d0ebff" stroke="#1971c2" stroke-width="2"/>
+<text x="458" y="793" font-size="16" text-anchor="middle" dominant-baseline="central" fill="#1e1e1e"><tspan x="458" dy="0">task cleanup: remove</tspan><tspan x="458" dy="20">worktree and branch</tspan></text>
+<rect x="630" y="770" width="256" height="66" rx="10" fill="#d3f9d8" stroke="#2f9e44" stroke-width="2"/>
+<text x="758" y="793" font-size="16" text-anchor="middle" dominant-baseline="central" fill="#1e1e1e"><tspan x="758" dy="0">main updated,</tspan><tspan x="758" dy="20">issue Done</tspan></text>
+<text x="158" y="36" font-size="20" text-anchor="middle" dominant-baseline="central" fill="#e8590c" font-weight="700"><tspan x="158" dy="0">Owner</tspan></text>
+<text x="458" y="36" font-size="20" text-anchor="middle" dominant-baseline="central" fill="#1971c2" font-weight="700"><tspan x="458" dy="0">Agent</tspan></text>
+<text x="758" y="36" font-size="20" text-anchor="middle" dominant-baseline="central" fill="#2f9e44" font-weight="700"><tspan x="758" dy="0">Repository</tspan></text>
+<line x1="161.7" y1="137.5" x2="326.3" y2="201.5" stroke="#1e1e1e" stroke-width="2" marker-end="url(#head)"/>
+<line x1="458.0" y1="240.0" x2="458.0" y2="266.0" stroke="#1e1e1e" stroke-width="2" marker-end="url(#head)"/>
+<line x1="458.0" y1="340.0" x2="458.0" y2="366.0" stroke="#1e1e1e" stroke-width="2" marker-end="url(#head)"/>
+<line x1="458.0" y1="440.0" x2="458.0" y2="466.0" stroke="#1e1e1e" stroke-width="2" marker-end="url(#head)"/>
+<line x1="326.3" y1="504.5" x2="161.7" y2="568.5" stroke="#1e1e1e" stroke-width="2" marker-end="url(#head)"/>
+<text x="218" y="520.5" font-size="13" text-anchor="middle" dominant-baseline="central" fill="#495057"><tspan x="218" dy="0">asks</tspan></text>
+<line x1="161.7" y1="637.5" x2="326.3" y2="701.5" stroke="#1e1e1e" stroke-width="2" marker-end="url(#head)"/>
+<text x="270" y="653.5" font-size="13" text-anchor="middle" dominant-baseline="central" fill="#495057"><tspan x="270" dy="0">yes</tspan></text>
+<line x1="458.0" y1="740.0" x2="458.0" y2="766.0" stroke="#1e1e1e" stroke-width="2" marker-end="url(#head)"/>
+<line x1="590.0" y1="303.0" x2="626.0" y2="303.0" stroke="#2f9e44" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#head-green)"/>
+<line x1="590.0" y1="403.0" x2="626.0" y2="403.0" stroke="#2f9e44" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#head-green)"/>
+<line x1="590.0" y1="503.0" x2="626.0" y2="503.0" stroke="#2f9e44" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#head-green)"/>
+<line x1="590.0" y1="703.0" x2="626.0" y2="703.0" stroke="#2f9e44" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#head-green)"/>
+<line x1="758.0" y1="740.0" x2="758.0" y2="766.0" stroke="#2f9e44" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#head-green)"/>
+</svg>

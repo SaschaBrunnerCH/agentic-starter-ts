@@ -1,0 +1,6 @@
+{
+  "description": "Gzip bytes the production build may ship, summed by file type. Raise a limit only with a reason in the pull request.",
+  "javascript": 102400,
+  "css": 20480,
+  "html": 10240
+}

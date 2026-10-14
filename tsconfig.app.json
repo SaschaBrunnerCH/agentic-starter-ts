@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
+    "jsx": "react-jsx"
+  },
+  "include": ["src"],
+  // Unit tests may read files with Node.js; they are checked by tsconfig.test.json.
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+}

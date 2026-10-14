@@ -1,0 +1,17 @@
+node_modules
+dist/
+coverage/
+.artifacts/
+.claude/settings.local.json
+
+# Scratch space for logs, screenshots and drafts of a task; never committed.
+.local/
+
+# Local environment files hold credentials; commit the placeholders as env.example,
+# without the leading dot, since Claude Code is denied every .env and .env.* file.
+.env
+.env.*
+
+# Browser test output: traces, screenshots and the HTML report.
+test-results/
+playwright-report/

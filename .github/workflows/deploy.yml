@@ -1,0 +1,147 @@
+name: Deploy
+
+# Deploys main to GitHub Pages after every merge, then tests the deployed site.
+# A manual run deploys an earlier commit or tag of main: the rollback. See
+# engineering/operations/deployment.md.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit or tag of main to deploy; empty deploys the head of main"
+        required: false
+        default: ""
+
+permissions: {}
+
+# One deploy at a time, in order; a running deploy is never cancelled halfway.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      commit: ${{ steps.commit.outputs.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # The whole history and the tags, so a short commit or a tag resolves and the
+          # commit can be checked against main.
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Only what passed the PR build and was merged may be deployed.
+      - name: Select the commit and refuse one outside main
+        id: commit
+        env:
+          REF: ${{ inputs.ref }}
+        run: |
+          if [ -n "$REF" ]; then
+            if ! commit="$(git rev-parse --verify --quiet --end-of-options "$REF^{commit}")"; then
+              echo "::error::$REF is neither a commit nor a tag of this repository."
+              exit 1
+            fi
+            git checkout --quiet --detach "$commit"
+          fi
+          commit="$(git rev-parse HEAD)"
+          if ! git merge-base --is-ancestor "$commit" origin/main; then
+            echo "::error::$commit is not a commit of main; only commits of main are deployed."
+            exit 1
+          fi
+          echo "sha=$commit" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .node-version
+          # Published builds install from the registry, never from a cache.
+          package-manager-cache: false
+
+      # The pnpm version that package.json pins in packageManager.
+      - name: Install pnpm
+        run: npm install --global "$(node -p 'require("./package.json").packageManager')"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Upload the site
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: dist
+          retention-days: 7
+
+  # The only job that can publish; it runs no repository code.
+  deploy:
+    name: Deploy to Pages
+    needs: [build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+
+  smoke:
+    name: Test the deployed site
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.build.outputs.commit }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .node-version
+          # Published builds install from the registry, never from a cache.
+          package-manager-cache: false
+
+      # The pnpm version that package.json pins in packageManager.
+      - name: Install pnpm
+        run: npm install --global "$(node -p 'require("./package.json").packageManager')"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install the browser
+        run: pnpm test:browser:install
+
+      - name: Test the deployed site
+        env:
+          BROWSER_TEST_BASE_URL: ${{ needs.deploy.outputs.url }}
+        run: pnpm test:browser
+
+      - name: Keep traces of a failure
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: deploy-test-results-${{ needs.build.outputs.commit }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results
+          if-no-files-found: ignore
+          retention-days: 7

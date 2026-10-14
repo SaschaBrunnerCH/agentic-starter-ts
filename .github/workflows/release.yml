@@ -1,0 +1,82 @@
+name: Release
+
+# Builds and publishes the release of a version tag on a commit of main. The tag
+# comes from `pnpm release`. See engineering/operations/releases.md.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions: {}
+
+jobs:
+  release:
+    name: Build and publish the release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      # Build provenance; used only in public repositories, see the step.
+      id-token: write
+      attestations: write
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Refuse a tag that is not a version or not on main
+        run: |
+          if ! printf '%s' "$TAG" | grep -Eq '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::$TAG is not a version tag such as v1.2.0 or v1.2.0-rc.1."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::$TAG points to a commit outside main; only commits of main are released."
+            exit 1
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .node-version
+          # Published builds install from the registry, never from a cache.
+          package-manager-cache: false
+
+      # The pnpm version that package.json pins in packageManager.
+      - name: Install pnpm
+        run: npm install --global "$(node -p 'require("./package.json").packageManager')"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Package the build, its SBOM and checksums
+        run: |
+          mkdir release
+          tar --create --gzip --file "release/site-$TAG.tar.gz" --directory dist .
+          # The dependencies the build ships, from the lockfile, as CycloneDX.
+          pnpm sbom --prod --lockfile-only --sbom-format cyclonedx > "release/sbom-$TAG.cdx.json"
+          (cd release && sha256sum -- * > SHA256SUMS)
+          cat release/SHA256SUMS
+
+      # GitHub records provenance for public repositories on every plan; a private
+      # repository needs GitHub Enterprise Cloud, so the step is skipped there.
+      - name: Attest build provenance
+        if: github.event.repository.visibility == 'public'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: release/site-*.tar.gz
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          flags=()
+          case "$TAG" in *-*) flags+=(--prerelease);; esac
+          gh release create "$TAG" release/* --verify-tag --generate-notes --title "$TAG" "${flags[@]}"

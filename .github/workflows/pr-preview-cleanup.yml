@@ -1,0 +1,65 @@
+name: PR preview cleanup
+
+# Removes the preview of a closed pull request, and weekly every preview whose
+# pull request is no longer open. Runs no code from any pull request.
+
+# pull_request_target is safe here: the job checks out nothing and reads only the
+# pull request number.
+on: # zizmor: ignore[dangerous-triggers]
+  pull_request_target:
+    types: [closed]
+  schedule:
+    - cron: "23 4 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  cleanup:
+    name: Remove previews of closed pull requests
+    if: vars.PREVIEWS_REPOSITORY != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pull-requests: read
+    # The key is a secret of this environment, which only main may use.
+    environment: previews
+    concurrency:
+      group: previews-cleanup
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PREVIEWS_REPOSITORY: ${{ vars.PREVIEWS_REPOSITORY }}
+      DEPLOY_KEY: ${{ secrets.PREVIEWS_DEPLOY_KEY }}
+      CLOSED: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Remove the previews
+        run: |
+          mkdir -p ~/.ssh
+          gh api meta --jq '.ssh_keys[] | "github.com " + .' > ~/.ssh/known_hosts
+          install -m 600 /dev/null ~/.ssh/previews
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/previews
+          export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/previews -o IdentitiesOnly=yes"
+          git clone --quiet --depth 1 --branch gh-pages "git@github.com:$PREVIEWS_REPOSITORY.git" previews
+          cd previews
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for directory in pr-*; do
+            [ -d "$directory" ] || continue
+            number="${directory#pr-}"
+            case "$number" in ''|*[!0-9]*) continue;; esac
+            if [ "$number" != "$CLOSED" ]; then
+              # A failed lookup stops the job instead of reading as "not open".
+              state="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$number" --jq .state)"
+              [ "$state" = open ] && continue
+            fi
+            git rm -r --quiet "$directory"
+            echo "Removed the preview of #$number"
+          done
+          if git diff --cached --quiet; then exit 0; fi
+          git commit --quiet -m "Remove previews of closed pull requests"
+          for _ in 1 2 3 4 5; do
+            git push --quiet origin gh-pages && exit 0
+            git pull --quiet --rebase origin gh-pages
+          done
+          exit 1

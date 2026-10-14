@@ -1,0 +1,14 @@
+# Sections of the generated release notes, by pull-request label. `pnpm task ready`
+# copies these labels from the issue a pull request closes.
+changelog:
+  categories:
+    - title: Changes
+      labels: [enhancement]
+    - title: Fixes
+      labels: [bug]
+    - title: Documentation
+      labels: [documentation]
+    - title: Dependencies
+      labels: [dependencies]
+    - title: Other
+      labels: ["*"]

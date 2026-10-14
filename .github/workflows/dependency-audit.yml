@@ -1,0 +1,39 @@
+name: Dependency audit
+
+on:
+  schedule:
+    - cron: "47 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Audit dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .node-version
+
+      # The audit only reads the dependency graph; no package's install script needs to run.
+      # The pnpm version that package.json pins in packageManager.
+      - name: Install pnpm
+        run: npm install --global "$(node -p 'require("./package.json").packageManager')"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Report development dependencies (advisory)
+        run: pnpm audit || true
+
+      - name: Gate production dependencies
+        run: pnpm check:audit

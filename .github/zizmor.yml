@@ -1,0 +1,6 @@
+# Configuration for zizmor, which scripts/check-workflows.ts runs over every workflow.
+rules:
+  # Every workflow installs pnpm with npm at the exact version package.json pins
+  # in packageManager; pnpm then installs everything else from the lockfile.
+  adhoc-packages:
+    disable: true

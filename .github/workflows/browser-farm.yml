@@ -1,0 +1,86 @@
+name: Browser tests on a testing farm
+
+# Runs the browser tests on the devices of a testing farm, against a deployed
+# application or a preview. Optional and started by hand: farm minutes cost money.
+# The endpoints are a secret of the environment browser-farm, which only main may
+# use, so the tests that receive them are main's. See
+# engineering/agents/browser-testing.md.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "URL of the application to test; the farm's browsers must be able to reach it"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  farm:
+    name: Farm devices
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: browser-farm
+    steps:
+      - name: Require the endpoints
+        env:
+          BROWSER_FARM_ENDPOINTS: ${{ secrets.BROWSER_FARM_ENDPOINTS }}
+        run: |
+          if [ -z "$BROWSER_FARM_ENDPOINTS" ]; then
+            echo "::error::The secret BROWSER_FARM_ENDPOINTS of the environment browser-farm is not set."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+
+      # The pnpm version that package.json pins in packageManager.
+      - name: Install pnpm
+        run: npm install --global "$(node -p 'require("./package.json").packageManager')"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # One line per device: "<name> <project> <endpoint>", with a project from
+      # playwright.config.ts that matches the endpoint's browser. The endpoints carry
+      # the provider's credentials: only this step receives them, and only names print.
+      - name: Test on every device
+        env:
+          BROWSER_TEST_BASE_URL: ${{ inputs.base_url }}
+          BROWSER_FARM_ENDPOINTS: ${{ secrets.BROWSER_FARM_ENDPOINTS }}
+        run: |
+          failed=""
+          while read -r name project endpoint; do
+            case "$name" in ''|'#'*) continue;; esac
+            echo "::group::$name ($project)"
+            if REMOTE_BROWSER_WS_ENDPOINT="$endpoint" \
+              pnpm exec playwright test --project "$project" --output "test-results/$name" < /dev/null; then
+              echo "PASS · $name ($project)" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "FAIL · $name ($project)" >> "$GITHUB_STEP_SUMMARY"
+              failed="$failed $name"
+            fi
+            echo "::endgroup::"
+          done <<< "$BROWSER_FARM_ENDPOINTS"
+          if [ -n "$failed" ]; then
+            echo "::error::Failed on:$failed"
+            exit 1
+          fi
+
+      - name: Keep traces of a failure
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: farm-test-results-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results
+          if-no-files-found: ignore
+          retention-days: 7

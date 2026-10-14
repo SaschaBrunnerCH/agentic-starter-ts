@@ -1,0 +1,112 @@
+name: PR preview
+
+# Publishes the build of a green PR build as a preview of its pull request. It runs
+# from main's definition on workflow_run, never from the pull request: the build
+# came from the PR build, which had no secrets, and the job that holds the key to
+# the previews repository runs no repository code. See
+# engineering/operations/deployment.md.
+
+# workflow_run is safe here for the reasons above.
+on: # zizmor: ignore[dangerous-triggers]
+  workflow_run:
+    workflows: ["PR build"]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  publish:
+    name: Publish the preview
+    # Only pull requests from this repository: a fork's build is not published.
+    if: >-
+      vars.PREVIEWS_REPOSITORY != '' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      pull-requests: write
+    # The key is a secret of this environment, which only main may use.
+    environment: previews
+    # One publish per pull request at a time; a newer build replaces a waiting one.
+    # Publishes of other pull requests push to the same branch in parallel and
+    # rebase on each other, since each writes only its own directory.
+    concurrency:
+      group: previews-${{ github.event.workflow_run.head_branch }}
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PREVIEWS_REPOSITORY: ${{ vars.PREVIEWS_REPOSITORY }}
+      PREVIEWS_URL: ${{ vars.PREVIEWS_URL }}
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - name: Find the pull request
+        id: pull
+        env:
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          found="$(gh api "repos/$GITHUB_REPOSITORY/pulls?state=open&head=${GITHUB_REPOSITORY_OWNER}:${HEAD_BRANCH}" \
+            --jq '.[0] | select(. != null) | "\(.number) \(.head.sha)"')"
+          number="${found%% *}"
+          head="${found#* }"
+          case "$number" in ''|*[!0-9]*) echo "::notice::No open pull request for this build."; exit 0;; esac
+          if [ "$head" != "$HEAD_SHA" ]; then
+            echo "::notice::#$number has moved on from ${HEAD_SHA:0:8}; its newer build publishes the preview."
+            exit 0
+          fi
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+
+      - name: Download the build
+        if: steps.pull.outputs.number != ''
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: site
+          path: site
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Replace the preview
+        if: steps.pull.outputs.number != ''
+        env:
+          PULL_REQUEST: ${{ steps.pull.outputs.number }}
+          DEPLOY_KEY: ${{ secrets.PREVIEWS_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          gh api meta --jq '.ssh_keys[] | "github.com " + .' > ~/.ssh/known_hosts
+          install -m 600 /dev/null ~/.ssh/previews
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/previews
+          export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/previews -o IdentitiesOnly=yes"
+          git clone --quiet --depth 1 --branch gh-pages "git@github.com:$PREVIEWS_REPOSITORY.git" previews
+          cd previews
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -rf "pr-$PULL_REQUEST"
+          cp -R ../site "pr-$PULL_REQUEST"
+          git add -A
+          if git diff --cached --quiet; then exit 0; fi
+          git commit --quiet -m "Preview #$PULL_REQUEST at ${HEAD_SHA:0:8}"
+          for _ in 1 2 3 4 5; do
+            git push --quiet origin gh-pages && exit 0
+            git pull --quiet --rebase origin gh-pages
+          done
+          exit 1
+
+      - name: Link the preview on the pull request
+        if: steps.pull.outputs.number != ''
+        env:
+          PULL_REQUEST: ${{ steps.pull.outputs.number }}
+        run: |
+          url="${PREVIEWS_URL%/}/pr-$PULL_REQUEST/"
+          body="<!-- preview -->
+          Preview of ${HEAD_SHA:0:8}: $url
+          GitHub Pages may take a minute to serve a new commit."
+          comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/$PULL_REQUEST/comments" --paginate \
+            --jq '[.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- preview -->")))][0].id // empty')"
+          if [ -n "$comment" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$comment" -f body="$body" > /dev/null
+          else
+            gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PULL_REQUEST/comments" -f body="$body" > /dev/null
+          fi
+          echo "Preview: $url" >> "$GITHUB_STEP_SUMMARY"
