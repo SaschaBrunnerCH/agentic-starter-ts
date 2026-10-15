@@ -8,6 +8,7 @@ import {
   gpuLaunchArgs,
   gpuSetting,
   lockDecision,
+  rendererFailure,
   rendererNote,
   systemBrowser,
   tryVirtualDisplayNext,
@@ -175,5 +176,19 @@ describe("rendererNote", () => {
     expect(
       rendererNote({ WSL_DISTRO_NAME: "Ubuntu" }, "llvmpipe (LLVM 19.1.7, 256 bits)"),
     ).toBeUndefined();
+  });
+});
+
+describe("rendererFailure", () => {
+  it("names the renderer and the saved report", () => {
+    expect(rendererFailure("SwiftShader", ["test-results/gpu-report.txt"])).toBe(
+      "BROWSER_GPU=required, but the browser draws with SwiftShader. The browser's GPU report is in test-results/gpu-report.txt; read it first. See the GPU section of engineering/agents/browser-testing.md, or run with BROWSER_GPU=off.",
+    );
+  });
+
+  it("says no WebGL, and leaves the report out when none was saved", () => {
+    expect(rendererFailure(null, [])).toMatch(
+      /^BROWSER_GPU=required, but the browser draws with no WebGL\. See/u,
+    );
   });
 });

@@ -17,6 +17,7 @@ import {
   freeDisplayNumber,
   gpuSetting,
   lockDecision,
+  rendererFailure,
   rendererNote,
   tryVirtualDisplayNext,
   virtualDisplayEnvironment,
@@ -132,6 +133,58 @@ function x11Names(): string[] {
   return [...list("/tmp/.X11-unix"), ...list("/tmp").filter((name) => name.startsWith(".X"))];
 }
 
+// The text of the browser's own GPU report. chrome://gpu renders it inside nested shadow
+// roots, which innerText does not enter: the walk does, one line per row or heading.
+const GPU_REPORT_SCRIPT = `(() => {
+  const out = [];
+  const walk = (node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent.trim();
+      if (text !== "") out.push(text, " ");
+      return;
+    }
+    if (node.shadowRoot) walk(node.shadowRoot);
+    for (const child of node.childNodes) walk(child);
+    if (node.nodeType === Node.ELEMENT_NODE && /^(tr|h[1-6]|li|p|div|info-view-table-row)$/i.test(node.tagName)) out.push("\\n");
+  };
+  walk(document.body);
+  return out.join("").replace(/ *\\n[\\s]*/g, "\\n").trim();
+})()`;
+
+// Where a failed check leaves the browser's GPU report, next to the test results.
+const reportDirectory = join(import.meta.dirname, "..", "test-results");
+const reportBase = join(reportDirectory, "gpu-report");
+
+/**
+ * Saves chrome://gpu as the browser that failed the check sees it: as text, and as a PDF
+ * where the browser can print one (headless only). Returns the files written.
+ */
+async function saveGpuReport(options: LaunchOptions | undefined): Promise<string[]> {
+  const files: string[] = [];
+  try {
+    mkdirSync(reportDirectory, { recursive: true });
+    const browser = await chromium.launch(options);
+    try {
+      const page = await browser.newPage();
+      await page.goto("chrome://gpu");
+      await page.waitForTimeout(1000);
+      writeFileSync(`${reportBase}.txt`, await page.evaluate<string>(GPU_REPORT_SCRIPT));
+      files.push(`${reportBase}.txt`);
+      if (options?.headless !== false) {
+        await page.pdf({ path: `${reportBase}.pdf` });
+        files.push(`${reportBase}.pdf`);
+      }
+    } finally {
+      await browser.close();
+    }
+  } catch (error) {
+    console.log(
+      `Could not save the GPU report: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  return files;
+}
+
 async function rendererOf(options: LaunchOptions | undefined): Promise<string | null> {
   const browser = await chromium.launch(options);
   try {
@@ -160,6 +213,7 @@ export default async function globalSetup(config: FullConfig): Promise<() => voi
   try {
     const options = config.projects.find((project) => project.name === "chromium")?.use
       .launchOptions;
+    let lastOptions: LaunchOptions | undefined = options;
     let renderer = await rendererOf(options);
     let kind = classifyRenderer(renderer);
     console.log(`GPU check, headless: ${renderer ?? "no WebGL"} (${kind})`);
@@ -168,11 +222,12 @@ export default async function globalSetup(config: FullConfig): Promise<() => voi
     if (tryVirtualDisplayNext(process.platform, kind, hasXvfb)) {
       const started = await startVirtualDisplay();
       display = started.server;
-      renderer = await rendererOf({
+      lastOptions = {
         ...options,
         headless: false,
         env: virtualDisplayEnvironment(process.env, started.display),
-      });
+      };
+      renderer = await rendererOf(lastOptions);
       kind = classifyRenderer(renderer);
       reached = `virtual display ${started.display}`;
       console.log(
@@ -187,11 +242,10 @@ export default async function globalSetup(config: FullConfig): Promise<() => voi
     const note = rendererNote(process.env, renderer);
     if (note !== undefined) console.log(`Note: ${note}.`);
     if (kind !== "hardware") {
-      throw new Error(
-        `BROWSER_GPU=required, but the browser draws with ${renderer ?? "no WebGL"}. ` +
-          "See the GPU section of engineering/agents/browser-testing.md, or run with BROWSER_GPU=off.",
-      );
+      throw new Error(rendererFailure(renderer, await saveGpuReport(lastOptions)));
     }
+    // A report from an earlier failed run would describe another browser state.
+    for (const extension of ["txt", "pdf"]) rmSync(`${reportBase}.${extension}`, { force: true });
   } catch (error) {
     stop();
     throw error;

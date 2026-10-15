@@ -173,3 +173,15 @@ export function rendererNote(
   }
   return undefined;
 }
+
+/** Why the run stops when the GPU check fails, and where the browser's own GPU report is. */
+export function rendererFailure(renderer: string | null, reportFiles: readonly string[]): string {
+  const report =
+    reportFiles.length > 0
+      ? ` The browser's GPU report is in ${reportFiles.join(" and ")}; read it first.`
+      : "";
+  return (
+    `BROWSER_GPU=required, but the browser draws with ${renderer ?? "no WebGL"}.${report} ` +
+    "See the GPU section of engineering/agents/browser-testing.md, or run with BROWSER_GPU=off."
+  );
+}
