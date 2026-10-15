@@ -1,0 +1,3 @@
+# Codex runs this skill only when it is named with $plan.
+policy:
+  allow_implicit_invocation: false

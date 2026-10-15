@@ -17,12 +17,13 @@ Each works with the access of the account it runs under and with the data rules 
 
 ## Skills
 
-A skill is a saved procedure an agent follows when a person names it. The repository has two:
+A skill is a saved procedure an agent follows when a person names it. The repository has three:
 
-| Skill    | Does                                                                                                                             | Claude Code     | Codex           |
-| -------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------- | --------------- |
-| `review` | A read-only [review by a second agent](review.md) of a pull request or commit, with confirmed findings and what could be simpler | `/review [pr]`  | `$review [pr]`  |
-| `issue`  | Turns a rough goal into complete epic or task issues, shown as drafts and created only after the owner's yes                     | `/issue <goal>` | `$issue <goal>` |
+| Skill    | Does                                                                                                                                                                 | Claude Code     | Codex           |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- | --------------- |
+| `review` | A read-only [review by a second agent](review.md) of a pull request or commit, with confirmed findings and what could be simpler                                     | `/review [pr]`  | `$review [pr]`  |
+| `issue`  | Turns a rough goal into complete epic or task issues, shown as drafts and created only after the owner's yes                                                         | `/issue <goal>` | `$issue <goal>` |
+| `plan`   | Breaks an existing epic into child issues of one pull request each, with blockers and the files each touches, shown as a plan and created only after the owner's yes | `/plan <epic>`  | `$plan <epic>`  |
 
 Each skill lives once, in `.agents/skills/<name>/`, where Codex reads it; Claude Code reads it through the link `.claude/skills/<name>`. Other agents follow the file when told to: "follow `.agents/skills/review/SKILL.md` for pull request 12".
 
