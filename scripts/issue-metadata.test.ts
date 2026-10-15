@@ -161,6 +161,11 @@ describe("bodyProblems", () => {
     expect(bodyProblems(body, task)).toHaveLength(1);
   });
 
+  it("counts criteria around comments, and none after an unclosed one", () => {
+    expect(bodyProblems("## Done when\n\n<!-- a -->- [ ] a test <!-- b -->\n", task)).toEqual([]);
+    expect(bodyProblems("## Done when\n\n<!-- hidden\n- [ ] a test\n", task)).toHaveLength(1);
+  });
+
   it("does not count items of a later section", () => {
     const body = "## Done when\n\nSoon.\n\n## Notes\n\n- [ ] Something else.\n";
     expect(bodyProblems(body, task)).toHaveLength(1);

@@ -81,7 +81,20 @@ const sectionStart = /^(?:>\s*)?(?:#{1,6}\s+|\*\*[^*]+\*\*\s*$)/u;
 // A checklist item with text; HTML comments, such as the template's placeholders, are removed
 // from the body first, also when they span several lines.
 const checklistItem = /^(?:>\s*)?\s*[-*+]\s+\[[ xX]\]\s+\S/u;
-const htmlComment = /<!--[\s\S]*?-->/gu;
+
+// The text GitHub shows: without HTML comments, and without everything after an unclosed one.
+function withoutComments(body: string): string {
+  let shown = "";
+  let rest = body;
+  for (;;) {
+    const start = rest.indexOf("<!--");
+    if (start === -1) return shown + rest;
+    shown += rest.slice(0, start);
+    const end = rest.indexOf("-->", start + 4);
+    if (end === -1) return shown;
+    rest = rest.slice(end + 3);
+  }
+}
 
 /**
  * What an issue body lacks for engineering/agents/issue-tracker.md: a "Done when" section
@@ -90,7 +103,7 @@ const htmlComment = /<!--[\s\S]*?-->/gu;
  */
 export function bodyProblems(body: string, labels: readonly string[]): string[] {
   if (labels.includes("epic")) return [];
-  const lines = body.replace(htmlComment, "").split(/\r?\n/u);
+  const lines = withoutComments(body).split(/\r?\n/u);
   const start = lines.findIndex((line) => doneWhenStart.test(line.trim()));
   if (start === -1) return ['no "Done when" section'];
   const rest = lines.slice(start + 1);
