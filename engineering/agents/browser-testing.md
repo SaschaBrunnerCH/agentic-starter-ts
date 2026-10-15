@@ -193,17 +193,7 @@ Most farms show video and logs on their side; the trace is the provider-independ
 
 ### What a farm's browsers draw with
 
-A farm's desktop browsers usually run in virtual machines, so a farm is evidence for function, not for GPU speed. Read the renderer before reading any timing. Measured in October 2026 on one provider, through its Playwright endpoint and its WebDriver hub:
-
-| Machine                                         | Renderer                                                           | What it means                    |
-| ----------------------------------------------- | ------------------------------------------------------------------ | -------------------------------- |
-| Windows 11: Chrome, Edge                        | SwiftShader                                                        | Software                         |
-| Windows 11: Firefox                             | Microsoft Basic Render Driver                                      | Software                         |
-| macOS: Chrome                                   | "Apple Paravirtual device" (Metal)                                 | A virtual machine's GPU          |
-| macOS: Safari, Firefox                          | "Apple GPU", "Apple M1, or similar" (names hidden by the browsers) | Most likely the same virtual GPU |
-| Real iPhone (Safari) and Android phone (Chrome) | "Apple GPU"; "ANGLE (ARM, Mali-G715, OpenGL ES 3.2)"               | The phone's own GPU              |
-
-Real phones are the farm's only GPU evidence. They are driven through WebDriver (Appium), not through the Playwright tests in `e2e/`, so a check on them is a script of its own or a check by hand; record the device, its operating system, the browser and the renderer.
+What a farm's machines draw with depends on the provider, the plan and the machine: some desktop browsers run in virtual machines without a GPU and draw in software, others on a virtual or a real GPU, and real phones on their own. Do not assume it from the provider's description or from another provider. Before reading any timing from a farm, read the renderer on each device used (the WebGL renderer string, as the local GPU check prints it) and record it with the result; a software or virtual renderer makes the run evidence for function only. Real phones are driven through WebDriver (Appium) on most providers, not through the Playwright tests in `e2e/`, so a check on them is a script of its own or a check by hand: record the device, its operating system, the browser and the renderer.
 
 ## Rules
 
