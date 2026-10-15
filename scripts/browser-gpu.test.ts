@@ -63,12 +63,13 @@ describe("classifyRenderer", () => {
 });
 
 describe("gpuLaunchArgs", () => {
-  it("asks for ANGLE on Vulkan on Linux", () => {
+  it("asks for ANGLE on Vulkan without a window surface on Linux", () => {
     expect(gpuLaunchArgs("linux")).toEqual([
       "--ignore-gpu-blocklist",
       "--enable-gpu",
       "--use-angle=vulkan",
       "--enable-features=Vulkan,VulkanFromANGLE",
+      "--disable-vulkan-surface",
     ]);
   });
 
