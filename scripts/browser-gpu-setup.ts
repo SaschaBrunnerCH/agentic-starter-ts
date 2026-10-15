@@ -8,7 +8,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { chromium, type FullConfig, type LaunchOptions } from "@playwright/test";
+import { chromium, type Browser, type FullConfig, type LaunchOptions } from "@playwright/test";
 import * as json from "./json-shape.ts";
 import {
   classifyRenderer,
@@ -17,10 +17,12 @@ import {
   freeDisplayNumber,
   gpuSetting,
   lockDecision,
+  rendererFailure,
   rendererNote,
   tryVirtualDisplayNext,
   virtualDisplayEnvironment,
   type LockOwner,
+  type RendererKind,
 } from "./browser-gpu.ts";
 
 // In the user's own directory, not the shared temporary one, where another user could
@@ -132,12 +134,73 @@ function x11Names(): string[] {
   return [...list("/tmp/.X11-unix"), ...list("/tmp").filter((name) => name.startsWith(".X"))];
 }
 
-async function rendererOf(options: LaunchOptions | undefined): Promise<string | null> {
+// The text of the browser's own GPU report. chrome://gpu renders it inside nested shadow
+// roots, which innerText does not enter: the walk does, one line per row or heading.
+const GPU_REPORT_SCRIPT = `(() => {
+  const out = [];
+  const walk = (node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent.trim();
+      if (text !== "") out.push(text, " ");
+      return;
+    }
+    if (node.shadowRoot) walk(node.shadowRoot);
+    for (const child of node.childNodes) walk(child);
+    if (node.nodeType === Node.ELEMENT_NODE && /^(tr|h[1-6]|li|p|div|info-view-table-row)$/i.test(node.tagName)) out.push("\\n");
+  };
+  walk(document.body);
+  return out.join("").replace(/ *\\n[\\s]*/g, "\\n").trim();
+})()`;
+
+// Where a failed check leaves the browser's GPU report, next to the test results.
+const reportDirectory = join(import.meta.dirname, "..", "test-results");
+const reportBase = join(reportDirectory, "gpu-report");
+
+function removeGpuReport(): void {
+  for (const extension of ["txt", "pdf"]) rmSync(`${reportBase}.${extension}`, { force: true });
+}
+
+/**
+ * Saves chrome://gpu of the browser that just failed the check, before it closes, so the
+ * report keeps that browser's failure state: as text, and as a PDF where the browser can print
+ * one (headless only). Returns the files written.
+ */
+async function saveGpuReport(browser: Browser, headless: boolean): Promise<string[]> {
+  const files: string[] = [];
+  try {
+    // A report of an earlier attempt would describe another browser.
+    removeGpuReport();
+    mkdirSync(reportDirectory, { recursive: true });
+    const page = await browser.newPage();
+    await page.goto("chrome://gpu");
+    await page.waitForTimeout(1000);
+    writeFileSync(`${reportBase}.txt`, await page.evaluate<string>(GPU_REPORT_SCRIPT));
+    files.push(`${reportBase}.txt`);
+    if (headless) {
+      await page.pdf({ path: `${reportBase}.pdf` });
+      files.push(`${reportBase}.pdf`);
+    }
+  } catch (error) {
+    console.log(
+      `Could not save the GPU report: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  return files;
+}
+
+type RendererCheck = { renderer: string | null; kind: RendererKind; report: string[] };
+
+/** The renderer a browser started with these options finds; its GPU report when no GPU. */
+async function checkRenderer(options: LaunchOptions | undefined): Promise<RendererCheck> {
   const browser = await chromium.launch(options);
   try {
     const page = await browser.newPage();
     // A string, because this file is compiled without the DOM library.
-    return await page.evaluate<string | null>(RENDERER_SCRIPT);
+    const renderer = await page.evaluate<string | null>(RENDERER_SCRIPT);
+    const kind = classifyRenderer(renderer);
+    const report =
+      kind === "hardware" ? [] : await saveGpuReport(browser, options?.headless !== false);
+    return { renderer, kind, report };
   } finally {
     await browser.close();
   }
@@ -160,38 +223,33 @@ export default async function globalSetup(config: FullConfig): Promise<() => voi
   try {
     const options = config.projects.find((project) => project.name === "chromium")?.use
       .launchOptions;
-    let renderer = await rendererOf(options);
-    let kind = classifyRenderer(renderer);
-    console.log(`GPU check, headless: ${renderer ?? "no WebGL"} (${kind})`);
+    let check = await checkRenderer(options);
+    console.log(`GPU check, headless: ${check.renderer ?? "no WebGL"} (${check.kind})`);
     let reached = "headless";
     const hasXvfb = findOnPath(["Xvfb"], process.env, existsSync) !== undefined;
-    if (tryVirtualDisplayNext(process.platform, kind, hasXvfb)) {
+    if (tryVirtualDisplayNext(process.platform, check.kind, hasXvfb)) {
       const started = await startVirtualDisplay();
       display = started.server;
-      renderer = await rendererOf({
+      check = await checkRenderer({
         ...options,
         headless: false,
         env: virtualDisplayEnvironment(process.env, started.display),
       });
-      kind = classifyRenderer(renderer);
       reached = `virtual display ${started.display}`;
       console.log(
-        `GPU check, virtual display ${started.display}: ${renderer ?? "no WebGL"} (${kind})`,
+        `GPU check, virtual display ${started.display}: ${check.renderer ?? "no WebGL"} (${check.kind})`,
       );
       // The workers start after this setup and read it in playwright.config.ts.
-      if (kind === "hardware") process.env.BROWSER_GPU_DISPLAY = started.display;
+      if (check.kind === "hardware") process.env.BROWSER_GPU_DISPLAY = started.display;
     }
-    if (renderer !== null) process.env.BROWSER_GPU_RENDERER = renderer;
-    process.env.BROWSER_GPU_KIND = kind;
+    if (check.renderer !== null) process.env.BROWSER_GPU_RENDERER = check.renderer;
+    process.env.BROWSER_GPU_KIND = check.kind;
     process.env.BROWSER_GPU_REACHED = reached;
-    const note = rendererNote(process.env, renderer);
+    const note = rendererNote(process.env, check.renderer);
     if (note !== undefined) console.log(`Note: ${note}.`);
-    if (kind !== "hardware") {
-      throw new Error(
-        `BROWSER_GPU=required, but the browser draws with ${renderer ?? "no WebGL"}. ` +
-          "See the GPU section of engineering/agents/browser-testing.md, or run with BROWSER_GPU=off.",
-      );
-    }
+    if (check.kind !== "hardware") throw new Error(rendererFailure(check.renderer, check.report));
+    // A report from an earlier failed run or attempt would describe another browser state.
+    removeGpuReport();
   } catch (error) {
     stop();
     throw error;
