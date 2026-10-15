@@ -36,12 +36,19 @@ export function classifyRenderer(renderer: string | null | undefined): RendererK
 
 /**
  * Chromium flags that keep hardware acceleration in headless mode. ANGLE's Vulkan
- * backend on Linux; Metal and Direct3D are Chromium's defaults on macOS and Windows.
+ * backend on Linux, presenting frames without a window surface (`--disable-vulkan-surface`):
+ * without one, headless Chromium on Linux often finds no WebGL, because Vulkan's window
+ * surface needs a display. Metal and Direct3D are Chromium's defaults on macOS and Windows.
  */
 export function gpuLaunchArgs(platform: NodeJS.Platform): string[] {
   const common = ["--ignore-gpu-blocklist", "--enable-gpu"];
   if (platform === "linux") {
-    return [...common, "--use-angle=vulkan", "--enable-features=Vulkan,VulkanFromANGLE"];
+    return [
+      ...common,
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan,VulkanFromANGLE",
+      "--disable-vulkan-surface",
+    ];
   }
   return common;
 }
