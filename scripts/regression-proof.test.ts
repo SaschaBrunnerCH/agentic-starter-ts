@@ -56,6 +56,35 @@ describe("readBaseRun", () => {
       notLoaded: ["/x/src/new.test.ts"],
     });
   });
+
+  it("counts a test that fails only on importing what the fix adds as not loaded", () => {
+    const report = JSON.stringify({
+      testResults: [
+        {
+          name: "/x/src/sum.test.ts",
+          status: "failed",
+          assertionResults: [
+            {
+              fullName: "sum imports the helper",
+              status: "failed",
+              failureMessages: [
+                "Error: Cannot find module './helper.ts' imported from sum.test.ts",
+              ],
+            },
+            {
+              fullName: "sum adds",
+              status: "failed",
+              failureMessages: ["AssertionError: expected 3 to be 4"],
+            },
+          ],
+        },
+      ],
+    });
+    expect(readBaseRun(report)).toEqual({
+      failed: ["sum adds"],
+      notLoaded: ["sum imports the helper"],
+    });
+  });
 });
 
 describe("judge", () => {
@@ -88,6 +117,13 @@ describe("judge", () => {
     });
     expect(judge([], ["e2e/a.spec.ts"], undefined, false).kind).toBe("missing");
     expect(namesControl("**Regression control:** with the old code the test fails.")).toBe(true);
+    expect(namesControl("- Regression control: reverted src/a.ts, the test failed")).toBe(true);
+  });
+
+  it("does not take a mention or an empty line for a control run", () => {
+    expect(namesControl("No regression control was run.")).toBe(false);
+    expect(namesControl("Regression control:\n\n## Next")).toBe(false);
+    expect(namesControl("**Regression control:**")).toBe(false);
   });
 });
 

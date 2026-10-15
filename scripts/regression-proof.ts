@@ -24,24 +24,43 @@ const reportShape = json.object({
       name: json.string,
       status: json.string,
       message: json.optional(json.string),
-      assertionResults: json.array(json.object({ fullName: json.string, status: json.string })),
+      assertionResults: json.array(
+        json.object({
+          fullName: json.string,
+          status: json.string,
+          failureMessages: json.optional(json.array(json.string)),
+        }),
+      ),
     }),
   ),
 });
 
 export type BaseRun = { failed: string[]; notLoaded: string[] };
 
+// What a module that only the fix adds produces when a test imports it inside its body.
+const loadError =
+  /Cannot find module|Failed to (?:load|resolve) (?:url|import)|ERR_MODULE_NOT_FOUND|does not provide an export named/u;
+const onlyLoadErrors = (messages: readonly string[] = []) =>
+  messages.length > 0 && messages.every((message) => loadError.test(message));
+
 /** What Vitest's JSON report of the run on the base revision says. */
 export function readBaseRun(text: string): BaseRun {
   const report = json.parseJson(text, reportShape, "the Vitest report");
+  const failed = report.testResults.flatMap((file) =>
+    file.assertionResults.filter((test) => test.status === "failed"),
+  );
   return {
-    failed: report.testResults.flatMap((file) =>
-      file.assertionResults.filter((test) => test.status === "failed").map((test) => test.fullName),
-    ),
-    // A file that fails without running a test usually imports what only the fix adds.
-    notLoaded: report.testResults
-      .filter((file) => file.status === "failed" && file.assertionResults.length === 0)
-      .map((file) => file.name),
+    failed: failed
+      .filter((test) => !onlyLoadErrors(test.failureMessages))
+      .map((test) => test.fullName),
+    // A file that fails without running a test usually imports what only the fix adds; so does
+    // a test whose only failure is a module that cannot be loaded.
+    notLoaded: [
+      ...report.testResults
+        .filter((file) => file.status === "failed" && file.assertionResults.length === 0)
+        .map((file) => file.name),
+      ...failed.filter((test) => onlyLoadErrors(test.failureMessages)).map((test) => test.fullName),
+    ],
   };
 }
 
@@ -87,7 +106,9 @@ export function judge(
 
 /** Whether the pull request text names a control run, as engineering/agents/task-lifecycle.md asks. */
 export function namesControl(body: string): boolean {
-  return /regression control/iu.test(body);
+  // A line starting "Regression control", in a list, quote or bold or not, with text after it.
+  const line = /^\s*(?:[>*+-]\s*)*(?:\*\*)?Regression control\b[\s:*]*(\S.*)?$/imu;
+  return body.split(/\r?\n/u).some((text) => line.exec(text)?.[1] !== undefined);
 }
 
 // Git sets GIT_DIR and related variables inside hooks; passed on, they would point the
