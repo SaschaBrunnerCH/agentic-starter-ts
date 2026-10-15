@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
+import { hookProblems } from "./git-hooks.ts";
 
 // The hooks are tracked files under .githooks. Git's hook path is stored once
 // in the repository's shared configuration, so every worktree uses them
@@ -22,8 +23,19 @@ if (git(["rev-parse", "--is-inside-work-tree"]).status !== 0) {
       `Git hooks are not active (core.hooksPath is "${configured}"). Run \`pnpm install --frozen-lockfile\` or \`pnpm prepare\`.`,
     );
     process.exitCode = 1;
+  } else if (process.env.CI === "true") {
+    console.log("PASS · Git hooks not required in CI");
   } else {
-    console.log(`PASS · Git hooks ${process.env.CI === "true" ? "not required in CI" : "active"}`);
+    // The hooks as Git finds them from this worktree: a task worktree runs the ones tracked
+    // in its own checkout.
+    const directory = resolve(root, git(["rev-parse", "--git-path", "hooks"]).stdout.trim());
+    const problems = hookProblems(directory);
+    if (problems.length > 0) {
+      console.error(`Git hooks would not run: ${problems.join("; ")}.`);
+      process.exitCode = 1;
+    } else {
+      console.log(`PASS · Git hooks active in ${directory}`);
+    }
   }
 } else {
   const result = git(["config", "core.hooksPath", hooksPath]);
