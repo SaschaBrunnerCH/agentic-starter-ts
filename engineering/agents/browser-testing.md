@@ -191,6 +191,20 @@ Locally, the same tests reach one farm device with `REMOTE_BROWSER_WS_ENDPOINT` 
 
 Most farms show video and logs on their side; the trace is the provider-independent evidence.
 
+### What a farm's browsers draw with
+
+A farm's desktop browsers usually run in virtual machines, so a farm is evidence for function, not for GPU speed. Read the renderer before reading any timing. Measured in October 2026 on one provider, through its Playwright endpoint and its WebDriver hub:
+
+| Machine                                         | Renderer                                                           | What it means                    |
+| ----------------------------------------------- | ------------------------------------------------------------------ | -------------------------------- |
+| Windows 11: Chrome, Edge                        | SwiftShader                                                        | Software                         |
+| Windows 11: Firefox                             | Microsoft Basic Render Driver                                      | Software                         |
+| macOS: Chrome                                   | "Apple Paravirtual device" (Metal)                                 | A virtual machine's GPU          |
+| macOS: Safari, Firefox                          | "Apple GPU", "Apple M1, or similar" (names hidden by the browsers) | Most likely the same virtual GPU |
+| Real iPhone (Safari) and Android phone (Chrome) | "Apple GPU"; "ANGLE (ARM, Mali-G715, OpenGL ES 3.2)"               | The phone's own GPU              |
+
+Real phones are the farm's only GPU evidence. They are driven through WebDriver (Appium), not through the Playwright tests in `e2e/`, so a check on them is a script of its own or a check by hand; record the device, its operating system, the browser and the renderer.
+
 ## Rules
 
 - **When a browser test is required.** A change to what the user sees or does needs a browser test, or an update to one, in the same pull request. Logic that can be tested without a browser stays in unit tests: they are faster and fail more precisely.

@@ -149,15 +149,20 @@ export function virtualDisplayEnvironment(
 
 /**
  * A note on what a hardware result means here. Inside WSL, Linux browsers draw through
- * Mesa's D3D12 driver, which translates to the Windows GPU: the GPU works, but timings are
- * not those of a browser running on Windows.
+ * Mesa's D3D12 driver, which translates to the Windows GPU; in a virtual machine, a
+ * paravirtual GPU passes the work to the host's. Either way the GPU works, but timings
+ * are not those of a browser on the device itself.
  */
 export function rendererNote(
   environment: Readonly<Record<string, string | undefined>>,
   renderer: string | null,
 ): string | undefined {
-  const inWsl = environment.WSL_DISTRO_NAME !== undefined || /\bD3D12\b/u.test(renderer ?? "");
-  return inWsl && classifyRenderer(renderer) === "hardware"
-    ? "inside WSL, through the D3D12 translation to the Windows GPU: functions are tested, timings are not those of a native browser; measure on the Windows side"
-    : undefined;
+  if (classifyRenderer(renderer) !== "hardware") return undefined;
+  if (environment.WSL_DISTRO_NAME !== undefined || /\bD3D12\b/u.test(renderer ?? "")) {
+    return "inside WSL, through the D3D12 translation to the Windows GPU: functions are tested, timings are not those of a native browser; measure on the Windows side";
+  }
+  if (/paravirtual|virtio|vmware|virtualbox|parallels/iu.test(renderer ?? "")) {
+    return "a virtual machine's GPU: functions are tested, timings are not those of a device";
+  }
+  return undefined;
 }

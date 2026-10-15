@@ -157,6 +157,16 @@ describe("rendererNote", () => {
     expect(rendererNote({}, wslRenderer)).toMatch(/^inside WSL/u);
   });
 
+  it("marks a virtual machine's GPU", () => {
+    expect(
+      rendererNote(
+        {},
+        "ANGLE (Apple, ANGLE Metal Renderer: Apple Paravirtual device, Unspecified Version)",
+      ),
+    ).toMatch(/^a virtual machine/u);
+    expect(rendererNote({}, "virgl (VirtIO-GPU)")).toMatch(/^a virtual machine/u);
+  });
+
   it("says nothing for a native GPU or a software renderer", () => {
     expect(
       rendererNote({}, "ANGLE (Intel, Vulkan 1.4.318 (Intel(R) UHD Graphics 630))"),
