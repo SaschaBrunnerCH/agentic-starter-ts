@@ -21,7 +21,7 @@
     "test:browser": "playwright test --project chromium",
     "test:browser:install": "playwright install --with-deps chromium",
     "test:devices": "node scripts/test-devices.ts",
-    "check:unused": "knip",
+    "check:unused": "node scripts/check-unused.ts",
     "check:secrets": "node scripts/check-secrets.ts",
     "check:workflows": "node scripts/check-workflows.ts",
     "check:agents": "node scripts/check-agent-entry-points.ts",
