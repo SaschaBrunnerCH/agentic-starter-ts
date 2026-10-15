@@ -6,12 +6,12 @@ GitHub-hosted runners cost minutes on a private repository, and a plan includes 
 
 GitHub rounds every job up to a whole minute. Measured on this starter, with Linux runners:
 
-| Workflow       | When                               | Jobs, with their time                                                                     | Billed     |
-| -------------- | ---------------------------------- | ----------------------------------------------------------------------------------------- | ---------- |
-| `PR build`     | Every push to a pull request       | One job: the checks; with `BROWSER_TESTS_IN_CI`, the browser tests too, about 70 s in all | 1–2 min    |
-| `Deploy`       | Every merge                        | Build about 14 s, deploy about 11 s, the test of the deployed site about 45 s             | 3 min      |
-| `PR preview`   | After a green `PR build`           | One job of about 12 s                                                                     | 1 min      |
-| Cleanup, audit | When a pull request closes; weekly | One short job each                                                                        | 1 min each |
+| Workflow       | When                               | Jobs, with their time                                                                                 | Billed     |
+| -------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------- | ---------- |
+| `PR build`     | Every push to a pull request       | One job: the checks, about 30 s; with `BROWSER_TESTS_IN_CI`, the browser tests too, about 65 s in all | 1–2 min    |
+| `Deploy`       | Every merge                        | Build about 14 s, deploy about 11 s, the test of the deployed site about 45 s                         | 3 min      |
+| `PR preview`   | After a green `PR build`           | One job of about 12 s                                                                                 | 1 min      |
+| Cleanup, audit | When a pull request closes; weekly | One short job each                                                                                    | 1 min each |
 
 A merged pull request with one push costs about seven minutes. Every further push adds another `PR build`. In a real project the checks and browser tests grow with the code; the rest stays nearly the same. Browser tests of an application that draws in 3D can grow a `PR build` past ten minutes, since the runner draws in software: one more reason they run on the machine by default.
 
