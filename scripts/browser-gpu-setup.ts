@@ -1,18 +1,25 @@
 // Playwright's global setup. For local runs with BROWSER_GPU=required (the default) it
-// takes the lock of GPU runs, starts the configured browser once, prints the renderer
-// that draws its WebGL and stops the run when that is a software one. Otherwise nothing.
+// takes the lock of GPU runs and starts the configured browser headless to read the
+// renderer that draws its WebGL. When that is not a GPU, on Linux with Xvfb installed, it
+// tries again on a private virtual display and, when that works, keeps it for the run.
+// It stops the run when neither reaches the GPU. With BROWSER_GPU off it does nothing.
 
 import { spawn, type ChildProcess } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { chromium, type FullConfig } from "@playwright/test";
+import { chromium, type FullConfig, type LaunchOptions } from "@playwright/test";
 import * as json from "./json-shape.ts";
 import {
   classifyRenderer,
   describeOwner,
+  findOnPath,
+  freeDisplayNumber,
   gpuSetting,
   lockDecision,
+  rendererNote,
+  tryVirtualDisplayNext,
+  virtualDisplayEnvironment,
   type LockOwner,
 } from "./browser-gpu.ts";
 
@@ -87,19 +94,16 @@ function releaseLock(): void {
   if (readOwner()?.pid === process.pid) rmSync(lockFile, { force: true });
 }
 
-// The private virtual display the GPU browser draws on (Linux). playwright.config.ts chose
-// its number; when a server elsewhere holds it, the next numbers are tried, and the
-// workers, started after this setup, inherit the one that started.
-async function startVirtualDisplay(first: string): Promise<ChildProcess> {
-  const firstNumber = Number(first.slice(1));
-  for (let number = firstNumber; number < firstNumber + 10; number += 1) {
+// A private virtual display (Xvfb) for the fallback on Linux, on the first number no
+// server announces; a server in another namespace may announce none, so on failure the
+// next numbers are tried.
+async function startVirtualDisplay(): Promise<{ server: ChildProcess; display: string }> {
+  const first = freeDisplayNumber(x11Names());
+  for (let number = first; number < first + 10; number += 1) {
     const server = await tryVirtualDisplay(`:${number}`);
-    if (server !== undefined) {
-      process.env.BROWSER_GPU_DISPLAY = `:${number}`;
-      return server;
-    }
+    if (server !== undefined) return { server, display: `:${number}` };
   }
-  throw new Error(`No virtual display from ${first} on could be started (Xvfb).`);
+  throw new Error(`No virtual display from :${first} on could be started (Xvfb).`);
 }
 
 async function tryVirtualDisplay(display: string): Promise<ChildProcess | undefined> {
@@ -116,6 +120,29 @@ async function tryVirtualDisplay(display: string): Promise<ChildProcess | undefi
   return undefined;
 }
 
+function list(directory: string): string[] {
+  try {
+    return readdirSync(directory);
+  } catch {
+    return [];
+  }
+}
+
+function x11Names(): string[] {
+  return [...list("/tmp/.X11-unix"), ...list("/tmp").filter((name) => name.startsWith(".X"))];
+}
+
+async function rendererOf(options: LaunchOptions | undefined): Promise<string | null> {
+  const browser = await chromium.launch(options);
+  try {
+    const page = await browser.newPage();
+    // A string, because this file is compiled without the DOM library.
+    return await page.evaluate<string | null>(RENDERER_SCRIPT);
+  } finally {
+    await browser.close();
+  }
+}
+
 export default async function globalSetup(config: FullConfig): Promise<() => void> {
   if (gpuSetting(process.env) === "off") return () => {};
   acquireLock();
@@ -126,35 +153,34 @@ export default async function globalSetup(config: FullConfig): Promise<() => voi
   };
   process.once("exit", stop);
   try {
-    const chosen = process.env.BROWSER_GPU_DISPLAY;
-    if (chosen !== undefined) display = await startVirtualDisplay(chosen);
-    const displayName = process.env.BROWSER_GPU_DISPLAY;
-    const launchOptions = config.projects.find((project) => project.name === "chromium")?.use
+    const options = config.projects.find((project) => project.name === "chromium")?.use
       .launchOptions;
-    // The configured options, pointed at the display that started.
-    const browser = await chromium.launch({
-      ...launchOptions,
-      ...(displayName === undefined || launchOptions?.env === undefined
-        ? {}
-        : { env: { ...launchOptions.env, DISPLAY: displayName } }),
-    });
-    try {
-      const page = await browser.newPage();
-      // A string, because this file is compiled without the DOM library.
-      const renderer = await page.evaluate<string | null>(RENDERER_SCRIPT);
-      const kind = classifyRenderer(renderer);
-      const where = displayName === undefined ? "headless" : `virtual display ${displayName}`;
+    let renderer = await rendererOf(options);
+    let kind = classifyRenderer(renderer);
+    console.log(`GPU check, headless: ${renderer ?? "no WebGL"} (${kind})`);
+    const hasXvfb = findOnPath(["Xvfb"], process.env, existsSync) !== undefined;
+    if (tryVirtualDisplayNext(process.platform, kind, hasXvfb)) {
+      const started = await startVirtualDisplay();
+      display = started.server;
+      renderer = await rendererOf({
+        ...options,
+        headless: false,
+        env: virtualDisplayEnvironment(process.env, started.display),
+      });
+      kind = classifyRenderer(renderer);
       console.log(
-        `Browser ${browser.version()}, ${where}, renderer: ${renderer ?? "no WebGL"} (${kind})`,
+        `GPU check, virtual display ${started.display}: ${renderer ?? "no WebGL"} (${kind})`,
       );
-      if (kind !== "hardware") {
-        throw new Error(
-          `BROWSER_GPU=required, but the browser draws with ${renderer ?? "no WebGL"}. ` +
-            "See the GPU section of engineering/agents/browser-testing.md, or run with BROWSER_GPU=off.",
-        );
-      }
-    } finally {
-      await browser.close();
+      // The workers start after this setup and read it in playwright.config.ts.
+      if (kind === "hardware") process.env.BROWSER_GPU_DISPLAY = started.display;
+    }
+    const note = rendererNote(process.env, renderer);
+    if (note !== undefined) console.log(`Note: ${note}.`);
+    if (kind !== "hardware") {
+      throw new Error(
+        `BROWSER_GPU=required, but the browser draws with ${renderer ?? "no WebGL"}. ` +
+          "See the GPU section of engineering/agents/browser-testing.md, or run with BROWSER_GPU=off.",
+      );
     }
   } catch (error) {
     stop();

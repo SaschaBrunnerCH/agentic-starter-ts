@@ -32,9 +32,11 @@ The local server uses a port derived from the worktree's directory, so two workt
 Applications that draw with WebGL or WebGPU behave differently on a GPU than in software: a scene that settles in a second on a GPU can take a minute on a CPU, and timings from a software renderer say nothing about real devices. With `BROWSER_GPU=required`, the default, `pnpm test:browser` therefore:
 
 - runs the `chromium` project in the system's Chromium or Chrome, not Playwright's bundled one, because the system browser uses the machine's graphics drivers (`BROWSER_GPU_EXECUTABLE` chooses another);
-- draws headless where the platform allows it; on Linux, where headless Chromium finds the GPU but cannot create a WebGL context on it, on a private virtual display (`Xvfb`) that the run starts and stops, so nothing appears on the desktop;
+- draws headless first; on Linux, when headless does not reach the GPU and `Xvfb` is installed, it tries again on a private virtual display that the run starts and stops, so nothing appears on the desktop. Some Linux drivers find the GPU headless but cannot create a WebGL context there; on a virtual display the same browser draws on the GPU. Install `Xvfb` from the distribution: `xvfb` on Debian and Ubuntu, `xorg-x11-server-Xvfb` on Fedora, `xorg.xvfb` on Nix;
 - runs one page at a time, and takes a lock (`~/.cache/browser-gpu-tests/lock`), so two sessions of the same user never share the GPU; a second run fails at once and names the owner of the lock;
-- prints the browser and the renderer that draws its WebGL, and stops before the first test when that is a software renderer (SwiftShader, llvmpipe and the like) or none.
+- prints each attempt with the renderer that draws its WebGL, and stops before the first test when no attempt reaches the GPU: a software renderer (SwiftShader, llvmpipe and the like) or none.
+
+On Windows and macOS the run uses the installed Chrome, through Direct3D or Metal; install Chrome, or name another Chromium-based browser in `BROWSER_GPU_EXECUTABLE`. Inside WSL, Linux browsers reach the Windows GPU through a D3D12 translation layer: the run prints a note, the tests check function, and timings are measured on the Windows side.
 
 `BROWSER_GPU=off` runs the bundled browser in software, as CI does, for a machine without a usable GPU. CI and a remote browser (`REMOTE_BROWSER_WS_ENDPOINT`) always run with `off`. The other projects (`firefox`, `webkit`, the phone emulations) always use Playwright's browsers.
 
@@ -44,10 +46,10 @@ An agent works through these steps in order and records what it tried in the pul
 
 1. **Read the printed renderer.** "SwiftShader", "llvmpipe" or "no WebGL" is the symptom, not the cause.
 2. **Remove the desktop session's variables.** In a terminal inside a Wayland session, `WAYLAND_DISPLAY` and `XDG_SESSION_TYPE` make Chromium use Wayland, where it falls back to software. Run with `env -u WAYLAND_DISPLAY -u XDG_SESSION_TYPE`; the virtual display already does this for the browser itself.
-3. **Check the browser's own view.** Launch the same executable with the same flags, open `chrome://gpu` and read "WebGL" and "Vulkan" (the page's text is inside its `info-view` element's shadow root). "Hardware accelerated" there, but no context in a page, points to the display: on Linux install `Xvfb` instead of running headless.
+3. **Check the browser's own view.** Launch the same executable with the same flags, open `chrome://gpu` and read "WebGL" and "Vulkan" (the page's text is inside its `info-view` element's shadow root). "Hardware accelerated" there, but no context in a page, points to the display: on Linux install `Xvfb`, so the run can fall back to a virtual display.
 4. **Linux drivers.** The Vulkan loader must find the GPU's driver. With several GPUs, or a distribution that installs drivers outside the standard paths, point `VK_ICD_FILENAMES` at the right file in the driver's `icd.d` directory, for example Mesa's `intel_icd.x86_64.json`. `vulkaninfo --summary` lists what the loader sees.
 5. **Machines with two GPUs.** Laptops choose between an integrated and a discrete GPU. On Windows the per-application graphics preference (Settings, Display, Graphics) decides; elsewhere the driver's own switch does. The renderer string names the one that drew; record it.
-6. **WSL.** A Linux browser inside WSL may name the Windows GPU but does not draw on it as a native browser does. Run the GPU tests from a clone on the Windows side, with Chrome or Edge (`channel: "chrome"` or `"msedge"`), or report `BROWSER_GPU=off` and say so.
+6. **WSL.** A Linux browser inside WSL reaches the Windows GPU only through Mesa's D3D12 translation (renderer "D3D12 (…)"); the run accepts it with a note. It is not a native browser's GPU path, so its timings do not stand for Windows. Run the GPU tests from a clone on the Windows side, with Chrome or Edge (`channel: "chrome"` or `"msedge"`), or report `BROWSER_GPU=off` and say so.
 7. **macOS and Windows.** Headless Chrome uses Metal or Direct3D by default; a software renderer there usually means a virtual machine, a remote desktop session or a blocklisted driver (`--ignore-gpu-blocklist` is already set).
 8. **Firefox.** Headless Firefox may expose WebGPU without an adapter; treat that as no GPU, not as a pass. Firefox GPU checks run headed, by a person.
 

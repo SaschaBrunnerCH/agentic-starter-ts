@@ -5,11 +5,12 @@ import {
   describeOwner,
   findOnPath,
   freeDisplayNumber,
-  gpuDisplayMode,
   gpuLaunchArgs,
   gpuSetting,
   lockDecision,
+  rendererNote,
   systemBrowser,
+  tryVirtualDisplayNext,
   virtualDisplayEnvironment,
 } from "./browser-gpu.ts";
 
@@ -115,10 +116,13 @@ describe("lockDecision", () => {
 });
 
 describe("the virtual display", () => {
-  it("is used on Linux when Xvfb is there, headless otherwise", () => {
-    expect(gpuDisplayMode("linux", true)).toBe("virtual-display");
-    expect(gpuDisplayMode("linux", false)).toBe("headless");
-    expect(gpuDisplayMode("darwin", true)).toBe("headless");
+  it("is tried only on Linux with Xvfb, after headless did not reach the GPU", () => {
+    expect(tryVirtualDisplayNext("linux", "software", true)).toBe(true);
+    expect(tryVirtualDisplayNext("linux", "unknown", true)).toBe(true);
+    expect(tryVirtualDisplayNext("linux", "hardware", true)).toBe(false);
+    expect(tryVirtualDisplayNext("linux", "unknown", false)).toBe(false);
+    expect(tryVirtualDisplayNext("darwin", "unknown", true)).toBe(false);
+    expect(tryVirtualDisplayNext("win32", "software", true)).toBe(false);
   });
 
   it("takes the first number from 90 that no socket or lock file announces", () => {
@@ -140,5 +144,25 @@ describe("the virtual display", () => {
         ":90",
       ),
     ).toEqual({ PATH: "/usr/bin", DISPLAY: ":90" });
+  });
+});
+
+describe("rendererNote", () => {
+  const wslRenderer = "D3D12 (NVIDIA GeForce RTX 3060 Laptop GPU)";
+
+  it("marks a GPU reached through WSL", () => {
+    expect(
+      rendererNote({ WSL_DISTRO_NAME: "Ubuntu" }, "ANGLE (Microsoft, D3D12 (NVIDIA))"),
+    ).toMatch(/^inside WSL/u);
+    expect(rendererNote({}, wslRenderer)).toMatch(/^inside WSL/u);
+  });
+
+  it("says nothing for a native GPU or a software renderer", () => {
+    expect(
+      rendererNote({}, "ANGLE (Intel, Vulkan 1.4.318 (Intel(R) UHD Graphics 630))"),
+    ).toBeUndefined();
+    expect(
+      rendererNote({ WSL_DISTRO_NAME: "Ubuntu" }, "llvmpipe (LLVM 19.1.7, 256 bits)"),
+    ).toBeUndefined();
   });
 });

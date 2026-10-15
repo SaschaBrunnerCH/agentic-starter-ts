@@ -1,10 +1,7 @@
 import { createHash } from "node:crypto";
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
 import {
-  findOnPath,
-  freeDisplayNumber,
-  gpuDisplayMode,
   gpuLaunchArgs,
   gpuSetting,
   systemBrowser,
@@ -20,9 +17,10 @@ import {
 // BROWSER_TEST_PORT           The port of the local server. Unset: a port derived
 //                             from this directory, so sibling worktrees do not collide.
 // BROWSER_GPU                 "required" (the default): the chromium project runs the
-//                             system's browser on the GPU, headless, one page at a time,
-//                             under a lock per user, and stops on a software
-//                             renderer. "off": the bundled browser, in software. CI and
+//                             system's browser on the GPU, headless (on Linux a private
+//                             virtual display when headless does not reach the GPU), one
+//                             page at a time, under a lock per user, and stops on a
+//                             software renderer. "off": the bundled browser, in software. CI and
 //                             remote browsers always run with "off".
 // BROWSER_GPU_EXECUTABLE      The browser for GPU runs. Unset: the first Chromium or
 //                             Chrome on PATH, else the installed Chrome.
@@ -31,12 +29,8 @@ const baseURL = process.env.BROWSER_TEST_BASE_URL?.replace(/\/?$/u, "/");
 const remoteEndpoint = process.env.REMOTE_BROWSER_WS_ENDPOINT;
 const gpu = gpuSetting(process.env) === "required";
 const gpuExecutable = gpu ? systemBrowser(process.env, existsSync) : undefined;
-// On Linux the GPU browser draws on a private virtual display; the number is chosen once
-// and passed to the workers through the environment. browser-gpu-setup.ts starts it.
-const hasXvfb = findOnPath(["Xvfb"], process.env, existsSync) !== undefined;
-if (gpu && gpuDisplayMode(process.platform, hasXvfb) === "virtual-display") {
-  process.env.BROWSER_GPU_DISPLAY ??= `:${freeDisplayNumber(x11Sockets())}`;
-}
+// A virtual display that browser-gpu-setup.ts started because headless did not reach the
+// GPU; the workers inherit it through the environment. Unset: headless.
 const gpuDisplay = gpu ? process.env.BROWSER_GPU_DISPLAY : undefined;
 const gpuLaunchOptions = {
   args: gpuLaunchArgs(process.platform),
@@ -51,18 +45,6 @@ const chromiumUse = {
   ...devices["Desktop Chrome"],
   ...(gpu ? { launchOptions: gpuLaunchOptions } : {}),
 };
-
-function list(directory: string): string[] {
-  try {
-    return readdirSync(directory);
-  } catch {
-    return [];
-  }
-}
-
-function x11Sockets(): string[] {
-  return [...list("/tmp/.X11-unix"), ...list("/tmp").filter((name) => name.startsWith(".X"))];
-}
 const localPort =
   process.env.BROWSER_TEST_PORT === undefined
     ? 41000 +
