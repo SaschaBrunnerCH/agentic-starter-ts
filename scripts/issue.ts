@@ -1,5 +1,8 @@
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { gh, ghJson, graphql, mutation, quote } from "./github.ts";
+import { basename } from "node:path";
+import { gh, ghJson, graphql, mutation, prBuild, quote, root } from "./github.ts";
+import { standupReport, type StandupIssue, type StandupPullRequest } from "./standup.ts";
 import { scriptArguments } from "./script-arguments.ts";
 import * as json from "./json-shape.ts";
 import { overlaps, touchesOf } from "./issue-touches.ts";
@@ -26,6 +29,7 @@ const usage = `Usage: pnpm issue <command>
                                        --check only reports whether it may be started
   wip                                  List the issues In progress against the limit
   ready                                List the Ready issues, highest Priority first
+  standup                              In progress, In review with pull requests, blocked, next Ready
 
 Statuses: Backlog, Ready, "In progress", "In review", Blocked, Done. Priorities: P0, P1, P2.`;
 
@@ -299,6 +303,115 @@ function ready(): number {
   return 0;
 }
 
+// The task worktrees on this machine, by issue number: `pnpm task start` names them
+// <repository>-<number>-<slug>.
+function worktreesByIssue(): Map<number, string> {
+  const listed = spawnSync("git", ["worktree", "list", "--porcelain"], {
+    cwd: root,
+    encoding: "utf8",
+  });
+  const found = new Map<number, string>();
+  for (const line of listed.stdout.split("\n")) {
+    if (!line.startsWith("worktree ")) continue;
+    const path = line.slice("worktree ".length);
+    const match = new RegExp(`^${repository().name}-(\\d+)-`, "u").exec(basename(path));
+    if (match?.[1] !== undefined) found.set(Number(match[1]), path);
+  }
+  return found;
+}
+
+const pullRequestsShape = json.array(
+  json.object({
+    number: json.number,
+    isDraft: json.boolean,
+    headRefOid: json.string,
+    baseRefName: json.string,
+    closingIssuesReferences: json.array(json.object({ number: json.number })),
+  }),
+);
+
+/** Where the work stands, from the Project, the pull requests and this machine's worktrees. */
+function standup(): number {
+  const board = project();
+  const own = items(board).filter(
+    (item) => item.content.number !== undefined && itemReference(item).startsWith("#"),
+  );
+  const nameWithOwner = `${repository().owner.login}/${repository().name}`;
+  const worktrees = worktreesByIssue();
+  const pullRequests = ghJson(
+    [
+      "pr",
+      "list",
+      "--state",
+      "open",
+      "--limit",
+      "100",
+      "--json",
+      "number,isDraft,headRefOid,baseRefName,closingIssuesReferences",
+    ],
+    pullRequestsShape,
+  );
+  const describe = (item: (typeof own)[number]): StandupIssue => {
+    const number = item.content.number ?? 0;
+    const status = item.status ?? "";
+    // Blockers are read only for open work, one query per issue.
+    const blockers = ["In progress", "In review", "Ready", "Blocked"].includes(status)
+      ? issue(String(number))
+          .blockedBy.nodes.filter((blocker) => blocker.state === "OPEN")
+          .map((blocker) => `${blocker.repository.nameWithOwner}#${blocker.number}`)
+      : [];
+    return {
+      reference: itemReference(item),
+      title: item.title,
+      ...(item.priority === undefined ? {} : { priority: item.priority }),
+      ...(worktrees.has(number) ? { worktree: worktrees.get(number) } : {}),
+      blockers,
+    };
+  };
+  const pullRequestsOf = (number: number): StandupPullRequest[] =>
+    pullRequests
+      .filter((pr) => pr.closingIssuesReferences.some((closed) => closed.number === number))
+      .map((pr) => ({
+        number: pr.number,
+        build: prBuild(nameWithOwner, pr.headRefOid),
+        behindBy: Number(
+          gh([
+            "api",
+            `repos/${nameWithOwner}/compare/${pr.baseRefName}...${pr.headRefOid}`,
+            "--jq",
+            ".behind_by",
+          ]).trim(),
+        ),
+        draft: pr.isDraft,
+      }));
+  const withStatus = (status: string) => own.filter((item) => item.status === status);
+  const described = new Map(
+    own
+      .filter((item) => item.status !== "Done" && item.status !== "Backlog")
+      .map((item) => [item.content.number ?? 0, describe(item)] as const),
+  );
+  const of = (item: (typeof own)[number]) =>
+    described.get(item.content.number ?? 0) ?? describe(item);
+  const report = standupReport({
+    limit: inProgressLimit,
+    inProgress: withStatus("In progress").map(of),
+    inReview: withStatus("In review").map((item) => ({
+      ...of(item),
+      pullRequests: pullRequestsOf(item.content.number ?? 0),
+    })),
+    blocked: [...described.values()].filter((entry) => entry.blockers.length > 0),
+    ready: withStatus("Ready")
+      .toSorted(
+        (a, b) =>
+          (a.priority ?? "P9").localeCompare(b.priority ?? "P9") ||
+          (a.content.number ?? 0) - (b.content.number ?? 0),
+      )
+      .map(of),
+  });
+  for (const line of report) console.log(line);
+  return 0;
+}
+
 function wip(): number {
   const active = inProgress(project());
   console.log(`In progress: ${active.length} of ${inProgressLimit}`);
@@ -485,6 +598,7 @@ try {
   } else if (command === "claim" && first) process.exitCode = claim(first, second === "--check");
   else if (command === "wip") process.exitCode = wip();
   else if (command === "ready") process.exitCode = ready();
+  else if (command === "standup") process.exitCode = standup();
   else {
     console.log(usage);
     process.exitCode = command === undefined || command === "help" ? 0 : 2;
