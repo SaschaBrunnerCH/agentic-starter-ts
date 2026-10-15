@@ -41,10 +41,13 @@ describe("hookProblems", () => {
 
 // Inside a Git hook, as when the pre-push hook runs the gate, Git sets GIT_DIR and related
 // variables. Passed on, they would point every command below at this repository instead of
-// the scratch one: they are left out.
-const scratchEnvironment = Object.fromEntries(
-  Object.entries(process.env).filter(([name]) => !name.startsWith("GIT_")),
-);
+// the scratch one: they are left out. The global and system configuration are left out too,
+// so a contributor's commit signing or own hooks path cannot change the result.
+const scratchEnvironment = {
+  ...Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith("GIT_"))),
+  GIT_CONFIG_GLOBAL: "/dev/null",
+  GIT_CONFIG_NOSYSTEM: "1",
+};
 const git = (cwd: string, ...args: string[]) =>
   spawnSync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.com", ...args], {
     cwd,
