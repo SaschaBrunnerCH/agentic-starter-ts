@@ -1,7 +1,9 @@
+import { readFileSync } from "node:fs";
 import { gh, ghJson, graphql, mutation, quote } from "./github.ts";
 import { scriptArguments } from "./script-arguments.ts";
 import * as json from "./json-shape.ts";
 import {
+  bodyProblems,
   inProgressLimit,
   metadataProblems,
   startBlockers,
@@ -381,6 +383,9 @@ function create(args: readonly string[]): number {
   const parent = one("--parent");
   if (title === undefined) throw new Error("create needs --title");
 
+  const bodyFile = one("--body-file");
+  const bodyText = bodyFile === undefined ? (one("--body") ?? "") : readFileSync(bodyFile, "utf8");
+
   // Check the metadata before anything is created, so no half-described issue is left behind.
   const problems = metadataProblems({
     labels,
@@ -393,7 +398,7 @@ function create(args: readonly string[]): number {
     status: one("--status") ?? "Backlog",
     priority: one("--priority"),
     openBlockers: 0,
-  });
+  }).concat(bodyProblems(bodyText, labels));
   if (problems.length > 0) {
     console.error(`Not created: ${problems.join("; ")}.`);
     return 1;

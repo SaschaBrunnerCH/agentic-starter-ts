@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { metadataProblems, startBlockers, type IssueFacts } from "./issue-metadata.ts";
+import {
+  bodyProblems,
+  metadataProblems,
+  startBlockers,
+  type IssueFacts,
+} from "./issue-metadata.ts";
 
 const complete: IssueFacts = {
   labels: ["enhancement", "area:app", "ready-for-agent"],
@@ -118,5 +123,55 @@ describe("rules for epics and triage", () => {
         "it is not triaged",
       );
     }
+  });
+});
+
+describe("bodyProblems", () => {
+  const task = ["enhancement", "area:app"];
+
+  it("accepts a Done when section with a checklist item", () => {
+    const body = "## Problem\n\nX.\n\n## Done when\n\n- [ ] A test shows Y.\n";
+    expect(bodyProblems(body, task)).toEqual([]);
+  });
+
+  it("accepts the bold, quoted form of the getting-started example and checked items", () => {
+    const body = "> **Done when**\n>\n> - [x] `?name=Ada` shows the name.\n";
+    expect(bodyProblems(body, task)).toEqual([]);
+  });
+
+  it("refuses a body without the section", () => {
+    expect(bodyProblems("## Problem\n\nX.\n", task)).toEqual(['no "Done when" section']);
+  });
+
+  it("refuses a section without a checklist item", () => {
+    const body = "## Done when\n\nIt works.\n";
+    expect(bodyProblems(body, task)).toEqual([
+      'the "Done when" section has no checklist item ("- [ ] …")',
+    ]);
+  });
+
+  it("refuses the issue template's unfilled placeholder", () => {
+    const body =
+      "## Done when\n\n- [ ] <!-- Observable acceptance criterion, with its verification method. -->\n";
+    expect(bodyProblems(body, task)).toHaveLength(1);
+  });
+
+  it("refuses a placeholder comment over several lines", () => {
+    const body = "## Done when\n\n- [ ] <!--\n  Observable acceptance criterion\n-->\n";
+    expect(bodyProblems(body, task)).toHaveLength(1);
+  });
+
+  it("counts criteria around comments, and none after an unclosed one", () => {
+    expect(bodyProblems("## Done when\n\n<!-- a -->- [ ] a test <!-- b -->\n", task)).toEqual([]);
+    expect(bodyProblems("## Done when\n\n<!-- hidden\n- [ ] a test\n", task)).toHaveLength(1);
+  });
+
+  it("does not count items of a later section", () => {
+    const body = "## Done when\n\nSoon.\n\n## Notes\n\n- [ ] Something else.\n";
+    expect(bodyProblems(body, task)).toHaveLength(1);
+  });
+
+  it("asks nothing of an epic", () => {
+    expect(bodyProblems("An epic.", ["epic", "area:app"])).toEqual([]);
   });
 });
