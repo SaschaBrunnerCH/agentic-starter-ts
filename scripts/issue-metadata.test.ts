@@ -156,6 +156,11 @@ describe("bodyProblems", () => {
     expect(bodyProblems(body, task)).toHaveLength(1);
   });
 
+  it("refuses a placeholder comment over several lines", () => {
+    const body = "## Done when\n\n- [ ] <!--\n  Observable acceptance criterion\n-->\n";
+    expect(bodyProblems(body, task)).toHaveLength(1);
+  });
+
   it("does not count items of a later section", () => {
     const body = "## Done when\n\nSoon.\n\n## Notes\n\n- [ ] Something else.\n";
     expect(bodyProblems(body, task)).toHaveLength(1);

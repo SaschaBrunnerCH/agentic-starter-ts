@@ -78,8 +78,10 @@ export function startBlockers(issue: IssueFacts, inProgress: number): string[] {
 const doneWhenStart = /^(?:>\s*)?(?:#{1,6}\s+|\*\*)Done when\b/iu;
 // The next heading, or the next bold line opening a section, ends it.
 const sectionStart = /^(?:>\s*)?(?:#{1,6}\s+|\*\*[^*]+\*\*\s*$)/u;
-// A checklist item with text that is more than an HTML comment.
-const checklistItem = /^(?:>\s*)?\s*[-*+]\s+\[[ xX]\]\s+(?!<!--.*-->\s*$)\S/u;
+// A checklist item with text; HTML comments, such as the template's placeholders, are removed
+// from the body first, also when they span several lines.
+const checklistItem = /^(?:>\s*)?\s*[-*+]\s+\[[ xX]\]\s+\S/u;
+const htmlComment = /<!--[\s\S]*?-->/gu;
 
 /**
  * What an issue body lacks for engineering/agents/issue-tracker.md: a "Done when" section
@@ -88,7 +90,7 @@ const checklistItem = /^(?:>\s*)?\s*[-*+]\s+\[[ xX]\]\s+(?!<!--.*-->\s*$)\S/u;
  */
 export function bodyProblems(body: string, labels: readonly string[]): string[] {
   if (labels.includes("epic")) return [];
-  const lines = body.split(/\r?\n/u);
+  const lines = body.replace(htmlComment, "").split(/\r?\n/u);
   const start = lines.findIndex((line) => doneWhenStart.test(line.trim()));
   if (start === -1) return ['no "Done when" section'];
   const rest = lines.slice(start + 1);
