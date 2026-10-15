@@ -1,8 +1,15 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { gh, ghJson, prBuild, root } from "./github.ts";
 import { scriptArguments } from "./script-arguments.ts";
+import {
+  EVIDENCE_FILE,
+  evidenceFor,
+  evidenceMarker,
+  evidenceMarkdown,
+  readRuns,
+} from "./browser-evidence.ts";
 import * as json from "./json-shape.ts";
 import {
   authorizationComment,
@@ -307,6 +314,39 @@ function labelPullRequest(found: PullRequest, issues: readonly number[]): string
   }
 }
 
+// The local browser run for the head commit, as a pull-request comment once per commit; a
+// warning when there is none. Browser runs are local, so this is the only place their results
+// reach the pull request without being copied by hand.
+function postBrowserEvidence(number: number, head: string): string {
+  const file = resolve(root, EVIDENCE_FILE);
+  const verdict = evidenceFor(
+    readRuns(existsSync(file) ? readFileSync(file, "utf8") : undefined),
+    head,
+  );
+  if (verdict.kind === "none") {
+    return `No browser run is recorded in ${EVIDENCE_FILE}. If this change needs one, run pnpm test:browser and pnpm task ready again; otherwise say in the pull request why none is needed.`;
+  }
+  if (verdict.kind === "other-commit") {
+    return `The latest recorded browser run is for ${verdict.run.commit.slice(0, 7)}, not the head ${head.slice(0, 7)}. Run the browser tests again, or say in the pull request why the earlier run still holds.`;
+  }
+  if (verdict.kind === "dirty") {
+    return `The browser run on ${head.slice(0, 7)} started with uncommitted changes, so it tested something else. Commit or set them aside, run again, then pnpm task ready.`;
+  }
+  const comments = gh([
+    "pr",
+    "view",
+    String(number),
+    "--json",
+    "comments",
+    "--jq",
+    ".comments[].body",
+  ]);
+  if (comments.includes(evidenceMarker(head)))
+    return "Browser evidence for the head commit is already on the pull request.";
+  gh(["pr", "comment", String(number), "--body", evidenceMarkdown(verdict.run)]);
+  return `Posted the browser run of ${verdict.run.finishedAt} for ${head.slice(0, 7)} to the pull request.`;
+}
+
 function ready(reference: string): number {
   const found = pullRequest(reference);
   const problems = readinessProblems(found);
@@ -319,6 +359,7 @@ function ready(reference: string): number {
     }
     return 1;
   }
+  console.log(`\n${postBrowserEvidence(found.number, found.headRefOid)}`);
   const unset = setStatus(issuesOf(found).closes, "In review");
   const unlabelled = labelPullRequest(found, issuesOf(found).closes);
   console.log(

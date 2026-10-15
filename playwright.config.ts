@@ -77,7 +77,11 @@ export default defineConfig({
   globalSetup: "./scripts/browser-gpu-setup.ts",
   // On the GPU one page at a time, so the run shares the machine with what else runs.
   ...(gpu ? { workers: 1 } : {}),
-  reporter: process.env.CI === "true" ? [["github"], ["list"]] : "list",
+  // Locally, each run is also recorded for the pull request; see browser-evidence-reporter.ts.
+  reporter:
+    process.env.CI === "true"
+      ? [["github"], ["list"]]
+      : [["list"], ["./scripts/browser-evidence-reporter.ts"]],
   use: {
     baseURL: baseURL ?? `http://localhost:${localPort}/`,
     // Evidence of a failure: a trace with DOM snapshots, network and console.

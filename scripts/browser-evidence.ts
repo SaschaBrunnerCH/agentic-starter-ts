@@ -1,0 +1,113 @@
+import * as json from "./json-shape.ts";
+
+// The record of local browser runs that `pnpm task ready` puts into the pull request, so the
+// numbers there are the ones a run produced, for the commit it ran on, and not copied by hand.
+// See engineering/agents/browser-testing.md.
+
+/** Where the runs are recorded, relative to the repository root; ignored by Git. */
+export const EVIDENCE_FILE = ".local/browser-evidence.json";
+/** Runs kept in the file, newest last. */
+const KEPT_RUNS = 20;
+
+const countsShape = json.object({
+  passed: json.number,
+  failed: json.number,
+  skipped: json.number,
+  flaky: json.number,
+});
+const runShape = json.object({
+  commit: json.string,
+  /** Uncommitted changes when the run started: it then tested something else than the commit. */
+  dirty: json.boolean,
+  finishedAt: json.string,
+  /** Playwright's overall status: passed, failed, timedout or interrupted. */
+  status: json.string,
+  /** "required" or "off", as BROWSER_GPU was. */
+  gpu: json.string,
+  /** The WebGL renderer the GPU check found; null when it did not run. */
+  renderer: json.nullable(json.string),
+  /** hardware or software, as the GPU check classified it; null when it did not run. */
+  rendererKind: json.nullable(json.string),
+  /** How the GPU was reached: headless, or a virtual display; null without the GPU check. */
+  display: json.nullable(json.string),
+  /** A remote browser (a testing farm) instead of a local one. */
+  remote: json.boolean,
+  platform: json.string,
+  projects: json.record(countsShape),
+});
+const evidenceShape = json.object({ runs: json.array(runShape) });
+
+export type Counts = json.ShapeOf<typeof countsShape>;
+export type BrowserRun = json.ShapeOf<typeof runShape>;
+
+/** The runs in the file's text; none for a missing or empty file. */
+export function readRuns(text: string | undefined): BrowserRun[] {
+  if (text === undefined || text.trim() === "") return [];
+  return json.parseJson(text, evidenceShape, EVIDENCE_FILE).runs;
+}
+
+/** The file's text with this run added, keeping the newest runs. */
+export function withRun(runs: readonly BrowserRun[], run: BrowserRun): string {
+  return `${JSON.stringify({ runs: [...runs, run].slice(-KEPT_RUNS) }, null, 2)}\n`;
+}
+
+/** The outcome of one test, as Playwright reports it, added to a project's counts. */
+export function count(
+  counts: Readonly<Record<string, Counts>>,
+  project: string,
+  outcome: "expected" | "unexpected" | "flaky" | "skipped",
+): Record<string, Counts> {
+  const current = counts[project] ?? { passed: 0, failed: 0, skipped: 0, flaky: 0 };
+  const key = (
+    { expected: "passed", unexpected: "failed", flaky: "flaky", skipped: "skipped" } as const
+  )[outcome];
+  return { ...counts, [project]: { ...current, [key]: current[key] + 1 } };
+}
+
+export type EvidenceVerdict =
+  | { kind: "found"; run: BrowserRun }
+  | { kind: "none" }
+  | { kind: "other-commit"; run: BrowserRun }
+  | { kind: "dirty"; run: BrowserRun };
+
+/**
+ * What the record says about the head commit: the newest run on it with a clean tree, or why
+ * there is none. A run on the head with uncommitted changes tested something else.
+ */
+export function evidenceFor(runs: readonly BrowserRun[], head: string): EvidenceVerdict {
+  const onHead = runs.filter((run) => run.commit === head);
+  const clean = onHead.filter((run) => !run.dirty).at(-1);
+  if (clean !== undefined) return { kind: "found", run: clean };
+  const dirty = onHead.at(-1);
+  if (dirty !== undefined) return { kind: "dirty", run: dirty };
+  const latest = runs.at(-1);
+  return latest === undefined ? { kind: "none" } : { kind: "other-commit", run: latest };
+}
+
+/** The marker that identifies the evidence comment for one commit. */
+export function evidenceMarker(commit: string): string {
+  return `<!-- browser-evidence ${commit} -->`;
+}
+
+/** The pull-request comment for a run. */
+export function evidenceMarkdown(run: BrowserRun): string {
+  const renderer =
+    run.renderer === null
+      ? `not checked (BROWSER_GPU=${run.gpu}${run.remote ? ", remote browser" : ""})`
+      : `${run.renderer} (${run.rendererKind ?? "unknown"}${run.display === null ? "" : `, ${run.display}`})`;
+  const rows = Object.entries(run.projects).map(
+    ([project, c]) => `| ${project} | ${c.passed} | ${c.failed} | ${c.skipped} | ${c.flaky} |`,
+  );
+  return [
+    evidenceMarker(run.commit),
+    `**Browser tests** on \`${run.commit.slice(0, 7)}\`, ${run.platform}, finished ${run.finishedAt}: ${run.status}.`,
+    "",
+    `Renderer: ${renderer}.`,
+    "",
+    "| Project | Passed | Failed | Skipped | Flaky |",
+    "| --- | --- | --- | --- | --- |",
+    ...rows,
+    "",
+    "Recorded by the local run in `.local/browser-evidence.json` and posted by `pnpm task ready`.",
+  ].join("\n");
+}

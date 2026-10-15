@@ -144,6 +144,11 @@ async function rendererOf(options: LaunchOptions | undefined): Promise<string | 
 }
 
 export default async function globalSetup(config: FullConfig): Promise<() => void> {
+  // What the run used, for the record of browser-evidence-reporter.ts.
+  process.env.BROWSER_GPU_SETTING = gpuSetting(process.env);
+  delete process.env.BROWSER_GPU_RENDERER;
+  delete process.env.BROWSER_GPU_KIND;
+  delete process.env.BROWSER_GPU_REACHED;
   if (gpuSetting(process.env) === "off") return () => {};
   acquireLock();
   let display: ChildProcess | undefined;
@@ -158,6 +163,7 @@ export default async function globalSetup(config: FullConfig): Promise<() => voi
     let renderer = await rendererOf(options);
     let kind = classifyRenderer(renderer);
     console.log(`GPU check, headless: ${renderer ?? "no WebGL"} (${kind})`);
+    let reached = "headless";
     const hasXvfb = findOnPath(["Xvfb"], process.env, existsSync) !== undefined;
     if (tryVirtualDisplayNext(process.platform, kind, hasXvfb)) {
       const started = await startVirtualDisplay();
@@ -168,12 +174,16 @@ export default async function globalSetup(config: FullConfig): Promise<() => voi
         env: virtualDisplayEnvironment(process.env, started.display),
       });
       kind = classifyRenderer(renderer);
+      reached = `virtual display ${started.display}`;
       console.log(
         `GPU check, virtual display ${started.display}: ${renderer ?? "no WebGL"} (${kind})`,
       );
       // The workers start after this setup and read it in playwright.config.ts.
       if (kind === "hardware") process.env.BROWSER_GPU_DISPLAY = started.display;
     }
+    if (renderer !== null) process.env.BROWSER_GPU_RENDERER = renderer;
+    process.env.BROWSER_GPU_KIND = kind;
+    process.env.BROWSER_GPU_REACHED = reached;
     const note = rendererNote(process.env, renderer);
     if (note !== undefined) console.log(`Note: ${note}.`);
     if (kind !== "hardware") {
