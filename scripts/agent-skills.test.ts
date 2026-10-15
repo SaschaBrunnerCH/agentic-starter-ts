@@ -11,7 +11,7 @@ const skill = (fields: string) => `---\n${fields}\n---\n\nDo it.\n`;
 describe("the skills of this repository", () => {
   it("run only when a person names them", () => {
     const names = readdirSync(directory);
-    expect(names).toEqual(["issue", "review"]);
+    expect(names).toEqual(["issue", "plan", "review"]);
     for (const name of names) {
       expect(
         skillProblems(name, read(`${name}/SKILL.md`), read(`${name}/agents/openai.yaml`)),
