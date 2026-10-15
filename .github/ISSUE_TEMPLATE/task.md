@@ -16,6 +16,12 @@ assignees: ""
 
 <!-- The observable result. Name exclusions, dependencies and the ADR or design note that constrains it. -->
 
+## Touches
+
+<!-- Optional: the files or folders this work will change, one glob pattern per line, for example `src/routes/**`. `pnpm issue claim` warns when an issue In progress or In review touches the same. -->
+
+- <!-- src/example/** -->
+
 ## Done when
 
 <!-- Required: `pnpm issue create` refuses a task without at least one item here. The pull request is checked against these items. -->

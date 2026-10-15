@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { gh, ghJson, graphql, mutation, quote } from "./github.ts";
 import { scriptArguments } from "./script-arguments.ts";
 import * as json from "./json-shape.ts";
+import { overlaps, touchesOf } from "./issue-touches.ts";
 import {
   bodyProblems,
   inProgressLimit,
@@ -44,6 +45,7 @@ const issueShape = json.object({
   id: json.string,
   number: json.number,
   title: json.string,
+  body: json.string,
   state: json.string,
   labels: labelsShape,
   assignees: json.object({ nodes: json.array(json.object({ login: json.string })) }),
@@ -123,7 +125,7 @@ function issue(reference: string): Issue {
   if (match === null) throw new Error(`Not an issue reference: ${reference}`);
   const [, owner = repository().owner.login, name = repository().name, number = ""] = match;
   const found = graphql(
-    `query($owner:String!,$name:String!){repository(owner:$owner,name:$name){issue(number:${number}){id number title state labels(first:30){nodes{name}} assignees(first:10){nodes{login}} parent{${ancestorFields} parent{${ancestorFields} parent{${ancestorFields} parent{${ancestorFields}}}}} blockedBy(first:30){nodes{number state repository{nameWithOwner}}} projectItems(first:10){nodes{id project{id} status:fieldValueByName(name:"Status"){... on ProjectV2ItemFieldSingleSelectValue{name}} priority:fieldValueByName(name:"Priority"){... on ProjectV2ItemFieldSingleSelectValue{name}}}}}}}`,
+    `query($owner:String!,$name:String!){repository(owner:$owner,name:$name){issue(number:${number}){id number title body state labels(first:30){nodes{name}} assignees(first:10){nodes{login}} parent{${ancestorFields} parent{${ancestorFields} parent{${ancestorFields} parent{${ancestorFields}}}}} blockedBy(first:30){nodes{number state repository{nameWithOwner}}} projectItems(first:10){nodes{id project{id} status:fieldValueByName(name:"Status"){... on ProjectV2ItemFieldSingleSelectValue{name}} priority:fieldValueByName(name:"Priority"){... on ProjectV2ItemFieldSingleSelectValue{name}}}}}}}`,
     json.object({ repository: json.object({ issue: json.nullable(issueShape) }) }),
     { owner, name },
   ).repository.issue;
@@ -172,6 +174,7 @@ function show(reference: string): number {
         .join(", ") || "none"
     }`,
   );
+  console.log(`Touches:   ${touchesOf(found.body).join(", ") || "not stated"}`);
   const problems = found.state === "OPEN" ? metadataProblems(facts(found, board)) : [];
   console.log(problems.length === 0 ? "Metadata:  complete" : `Metadata:  ${problems.join("; ")}`);
   return problems.length;
@@ -234,6 +237,8 @@ const itemShape = json.object({
   title: json.string,
   labels: json.optional(json.array(json.string)),
   content: json.object({
+    /** Issue, PullRequest or DraftIssue. */
+    type: json.optional(json.string),
     number: json.optional(json.number),
     repository: json.optional(json.string),
   }),
@@ -301,9 +306,35 @@ function wip(): number {
   return active.length > inProgressLimit ? 1 : 0;
 }
 
+// Other issues In progress or In review whose "Touches" overlap this one's: a warning, since
+// only the owner can say whether the work may run side by side.
+function overlapWarnings(found: Issue, board: Project): string[] {
+  const mine = touchesOf(found.body);
+  if (mine.length === 0) return [];
+  return items(board)
+    .filter(
+      (item) =>
+        (item.status === "In progress" || item.status === "In review") &&
+        // A pull request on the Project has a number too, but no issue body to read.
+        item.content.type === "Issue" &&
+        item.content.number !== undefined &&
+        item.content.number !== found.number &&
+        itemReference(item).startsWith("#"),
+    )
+    .flatMap((item) => {
+      const shared = overlaps(mine, touchesOf(issue(String(item.content.number)).body));
+      return shared.length === 0
+        ? []
+        : [
+            `${itemReference(item)} ${item.title} (${item.status}) also touches ${shared.join(", ")}`,
+          ];
+    });
+}
+
 function claim(reference: string, checkOnly: boolean): number {
   const board = project();
   const found = issue(reference);
+  for (const warning of overlapWarnings(found, board)) console.log(`Warning: ${warning}.`);
   const before = facts(found, board).status;
   // Incomplete metadata stops the claim before anything is written.
   const blockers = [
