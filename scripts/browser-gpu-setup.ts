@@ -1,6 +1,6 @@
-// Playwright's global setup for local runs with BROWSER_GPU=required (the default):
+// Playwright's global setup. For local runs with BROWSER_GPU=required (the default) it
 // takes the machine-wide lock, starts the configured browser once, prints the renderer
-// that draws its WebGL and stops the run when that is a software one.
+// that draws its WebGL and stops the run when that is a software one. Otherwise nothing.
 
 import { spawn, type ChildProcess } from "node:child_process";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -8,7 +8,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { chromium, type FullConfig } from "@playwright/test";
 import * as json from "./json-shape.ts";
-import { classifyRenderer, describeOwner, lockDecision, type LockOwner } from "./browser-gpu.ts";
+import {
+  classifyRenderer,
+  describeOwner,
+  gpuSetting,
+  lockDecision,
+  type LockOwner,
+} from "./browser-gpu.ts";
 
 const lockFile = join(tmpdir(), "browser-gpu-tests.lock");
 const ownerShape = json.object({
@@ -107,6 +113,7 @@ async function tryVirtualDisplay(display: string): Promise<ChildProcess | undefi
 }
 
 export default async function globalSetup(config: FullConfig): Promise<() => void> {
+  if (gpuSetting(process.env) === "off") return () => {};
   acquireLock();
   let display: ChildProcess | undefined;
   const stop = (): void => {

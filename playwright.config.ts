@@ -91,8 +91,10 @@ export default defineConfig({
   forbidOnly: process.env.CI === "true",
   // No retries: a test that passes on the second attempt is a bug to report, not a pass.
   retries: 0,
+  // The setup checks the renderer and takes the lock; with BROWSER_GPU off it does nothing.
+  globalSetup: "./scripts/browser-gpu-setup.ts",
   // On the GPU one page at a time, so the run shares the machine with what else runs.
-  ...(gpu ? { workers: 1, globalSetup: "./scripts/browser-gpu-setup.ts" } : {}),
+  ...(gpu ? { workers: 1 } : {}),
   reporter: process.env.CI === "true" ? [["github"], ["list"]] : "list",
   use: {
     baseURL: baseURL ?? `http://localhost:${localPort}/`,
