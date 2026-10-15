@@ -16,8 +16,17 @@ the rules, and this skill only orders the steps.
    `gh issue list --state all --search "<words>"`, and `engineering/adr/`. Reuse or extend an
    existing issue instead of duplicating it, and name any decision that already constrains the goal.
    Given an epic number, read it with `gh issue view <epic> --comments`, its design note or ADR,
-   and its children (`pnpm issue show <epic>`, then each child); extend a child that already
-   covers part of it instead of planning that part again.
+   and its children, open and closed; extend a child that already covers part of it instead of
+   planning that part again. `pnpm issue show` does not list children; this does, 100 at a time
+   (with more, page on with `after:` and `pageInfo { endCursor }`):
+
+   ```sh
+   gh api graphql -F owner=<owner> -F name=<repository> -F number=<epic> -f query='
+     query($owner: String!, $name: String!, $number: Int!) {
+       repository(owner: $owner, name: $name) { issue(number: $number) {
+         subIssues(first: 100) { totalCount nodes { number title state } } } } }'
+   ```
+
 2. **Decide the shape.** One task when one pull request can deliver it. An epic with tasks when
    it is one outcome in several steps. A goal with an open design question gets
    `decision-needed` on the task that waits for the answer, or a design note first; in an epic,
