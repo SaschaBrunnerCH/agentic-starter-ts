@@ -10,6 +10,14 @@ import {
   evidenceMarkdown,
   readRuns,
 } from "./browser-evidence.ts";
+import {
+  browserTestFiles,
+  judge,
+  namesControl,
+  runOnBase,
+  unitTestFiles,
+  type BaseRun,
+} from "./regression-proof.ts";
 import * as json from "./json-shape.ts";
 import {
   authorizationComment,
@@ -347,6 +355,50 @@ function postBrowserEvidence(number: number, head: string): string {
   return `Posted the browser run of ${verdict.run.finishedAt} for ${head.slice(0, 7)} to the pull request.`;
 }
 
+// For a bug fix: the proof that its regression test fails without the fix, or why it is
+// missing. The new or changed unit tests run against the code of the merge base.
+function regressionProof(found: PullRequest): { ok: boolean; message: string } {
+  const isBug = issuesOf(found).closes.some((issue) =>
+    ghJson(
+      ["issue", "view", String(issue), "--json", "labels"],
+      json.object({ labels: json.array(json.object({ name: json.string })) }),
+    ).labels.some((label) => label.name === "bug"),
+  );
+  if (!isBug) return { ok: true, message: "" };
+  if (mustGit(["rev-parse", "HEAD"]) !== found.headRefOid) {
+    return {
+      ok: false,
+      message: `a bug fix is proven from its head commit; check out ${found.headRefOid.slice(0, 7)} and run pnpm task ready again`,
+    };
+  }
+  mustGit(["fetch", "--quiet", "origin", found.baseRefName]);
+  const base = mustGit(["merge-base", `origin/${found.baseRefName}`, "HEAD"]);
+  const changed = mustGit(["diff", "--name-only", "--diff-filter=AMR", base, "HEAD"])
+    .split("\n")
+    .filter((file) => file !== "");
+  const units = unitTestFiles(changed);
+  const browsers = browserTestFiles(changed);
+  let baseRun: BaseRun | undefined;
+  if (units.length > 0) {
+    console.log(`\nRunning ${units.join(", ")} against the code of ${base.slice(0, 7)} …`);
+    baseRun = runOnBase(root, base, found.headRefOid, units);
+  }
+  const verdict = judge(units, browsers, baseRun, namesControl(found.body));
+  if (verdict.kind === "proven") {
+    return {
+      ok: true,
+      message: `Regression proof: without the fix, ${verdict.failing.length} test(s) fail: ${verdict.failing.join("; ")}.`,
+    };
+  }
+  if (verdict.kind === "browser-control") {
+    return {
+      ok: true,
+      message: `Regression proof: the pull request names the control run for ${verdict.files.join(", ")}.`,
+    };
+  }
+  return { ok: false, message: verdict.reason };
+}
+
 function ready(reference: string): number {
   const found = pullRequest(reference);
   const problems = readinessProblems(found);
@@ -359,6 +411,12 @@ function ready(reference: string): number {
     }
     return 1;
   }
+  const proof = regressionProof(found);
+  if (!proof.ok) {
+    console.log(`\nNot ready: ${proof.message}.`);
+    return 1;
+  }
+  if (proof.message !== "") console.log(`\n${proof.message}`);
   console.log(`\n${postBrowserEvidence(found.number, found.headRefOid)}`);
   const unset = setStatus(issuesOf(found).closes, "In review");
   const unlabelled = labelPullRequest(found, issuesOf(found).closes);

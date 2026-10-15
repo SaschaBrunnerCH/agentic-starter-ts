@@ -29,7 +29,10 @@ The task is ready for edits when its ownership, starting revision and required o
 ## Validate and complete
 
 1. Use the checks described in [local verification](local-verification.md).
-2. Match every acceptance criterion and affected existing workflow to evidence. For a bug fix, the regression test fails on the previous revision or on a deliberate violation; say in the pull request which.
+2. Match every acceptance criterion and affected existing workflow to evidence. For a bug fix, the regression test fails on the previous revision. For a pull request that closes a `bug` issue, `pnpm task ready` proves this for unit tests: it runs the new or changed unit tests, as they are on the head, against the code of the merge base in a temporary worktree, and refuses unless at least one test fails there. A test that only fails to load there (it imports what the fix adds) does not count; test the fixed behaviour through code that exists before the fix. Browser tests are too slow to run twice here: name their control run in the pull request in a line starting "Regression control", with what failed on the old code or on a deliberate violation.
+
+   For a feature, write the test first where you can: it shows the test can fail, and the first failing run is the specification. This is recommended, not checked; no check can tell in which order a test and its code were written.
+
 3. Keep incomplete requirements open. A follow-up issue does not waive them: completion requires satisfying them or recording the owner's explicit scope change. Check the parent's own outcomes as well as child-issue status before closing an epic.
 4. Report local checks and GitHub CI separately, with the tested revision and unresolved failures. Verify each delivery claim: implemented, committed, pushed, merged and deployed are distinct states.
 5. After a verified merge, perform the [post-merge cleanup](../../AGENTS.md#post-merge-cleanup) before the final response. If work remains, leave the handoff below and report the remaining criteria and next action.
