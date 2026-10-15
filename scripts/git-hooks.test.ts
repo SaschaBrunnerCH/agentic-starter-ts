@@ -39,10 +39,17 @@ describe("hookProblems", () => {
   });
 });
 
+// Inside a Git hook, as when the pre-push hook runs the gate, Git sets GIT_DIR and related
+// variables. Passed on, they would point every command below at this repository instead of
+// the scratch one: they are left out.
+const scratchEnvironment = Object.fromEntries(
+  Object.entries(process.env).filter(([name]) => !name.startsWith("GIT_")),
+);
 const git = (cwd: string, ...args: string[]) =>
   spawnSync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.com", ...args], {
     cwd,
     encoding: "utf8",
+    env: scratchEnvironment,
   });
 
 // The design this repository relies on: the relative hook path is set once, in the shared
