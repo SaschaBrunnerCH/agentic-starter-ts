@@ -24,7 +24,8 @@ export function touchesOf(body: string): string[] {
     .map((pattern) => pattern.replace(/^\.\//u, ""));
 }
 
-const globCharacter = /[*?[{]/u;
+// Wildcards, classes, braces and the extglob openers @( !( +( that matchesGlob supports.
+const globCharacter = /[*?[{]|[@!+]\(/u;
 
 // The part before the first glob character: every path a pattern matches starts with it.
 function literalPrefix(pattern: string): string {

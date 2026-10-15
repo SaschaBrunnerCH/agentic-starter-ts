@@ -46,6 +46,8 @@ describe("patternsOverlap", () => {
     ["scripts/browser-gpu*.ts", "scripts/task.ts", false],
     ["e2e/**", "src/**", false],
     ["**/*.md", "engineering/a.md", true],
+    ["@(src|scripts)/**", "scripts/**", true],
+    ["src/!(main).ts", "src/a.ts", true],
   ])("%s and %s: %s", (a, b, expected) => {
     expect(patternsOverlap(a, b)).toBe(expected);
     expect(patternsOverlap(b, a)).toBe(expected);

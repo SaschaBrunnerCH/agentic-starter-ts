@@ -237,6 +237,8 @@ const itemShape = json.object({
   title: json.string,
   labels: json.optional(json.array(json.string)),
   content: json.object({
+    /** Issue, PullRequest or DraftIssue. */
+    type: json.optional(json.string),
     number: json.optional(json.number),
     repository: json.optional(json.string),
   }),
@@ -313,6 +315,8 @@ function overlapWarnings(found: Issue, board: Project): string[] {
     .filter(
       (item) =>
         (item.status === "In progress" || item.status === "In review") &&
+        // A pull request on the Project has a number too, but no issue body to read.
+        item.content.type === "Issue" &&
         item.content.number !== undefined &&
         item.content.number !== found.number &&
         itemReference(item).startsWith("#"),
