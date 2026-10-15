@@ -13,6 +13,9 @@ import {
   systemBrowser,
   tryVirtualDisplayNext,
   virtualDisplayEnvironment,
+  judgeAdapter,
+  webgpuFailure,
+  webgpuSetting,
 } from "./browser-gpu.ts";
 
 describe("gpuSetting", () => {
@@ -190,5 +193,54 @@ describe("rendererFailure", () => {
     expect(rendererFailure(null, [])).toMatch(
       /^BROWSER_GPU=required, but the browser draws with no WebGL\. See/u,
     );
+  });
+});
+
+describe("webgpuSetting", () => {
+  it("is off unless required, and off wherever the GPU is not required", () => {
+    expect(webgpuSetting({})).toBe("off");
+    expect(webgpuSetting({ BROWSER_WEBGPU: "off" })).toBe("off");
+    expect(webgpuSetting({ BROWSER_WEBGPU: "required" })).toBe("required");
+    expect(webgpuSetting({ BROWSER_WEBGPU: "required", BROWSER_GPU: "off" })).toBe("off");
+    expect(webgpuSetting({ BROWSER_WEBGPU: "required", CI: "true" })).toBe("off");
+  });
+
+  it("refuses other values", () => {
+    expect(() => webgpuSetting({ BROWSER_WEBGPU: "yes" })).toThrow(/BROWSER_WEBGPU must be/u);
+  });
+});
+
+describe("WebGPU in the launch flags and the message", () => {
+  it("adds the WebGPU flag only when asked", () => {
+    expect(gpuLaunchArgs("linux", true)).toContain("--enable-unsafe-webgpu");
+    expect(gpuLaunchArgs("linux")).not.toContain("--enable-unsafe-webgpu");
+  });
+
+  it("says why and how to go on", () => {
+    expect(webgpuFailure("the browser offers WebGPU but no adapter")).toBe(
+      "BROWSER_WEBGPU=required, but the browser offers WebGPU but no adapter. See the GPU section of engineering/agents/browser-testing.md, or run without BROWSER_WEBGPU.",
+    );
+  });
+});
+
+describe("judgeAdapter", () => {
+  it("accepts a GPU adapter", () => {
+    expect(judgeAdapter("intel gen-9 Intel(R) UHD Graphics 630", false)).toEqual({
+      adapter: "intel gen-9 Intel(R) UHD Graphics 630",
+      reason: null,
+    });
+  });
+
+  it("refuses a fallback adapter and one that names a software renderer", () => {
+    expect(judgeAdapter("google swiftshader", false)).toEqual({
+      adapter: null,
+      reason: "the only adapter draws on the CPU (google swiftshader)",
+    });
+    expect(judgeAdapter("mesa llvmpipe", false).adapter).toBeNull();
+    expect(judgeAdapter("some vendor", true).adapter).toBeNull();
+  });
+
+  it("names an adapter without a description", () => {
+    expect(judgeAdapter("", false).adapter).toBe("an adapter without a description");
   });
 });

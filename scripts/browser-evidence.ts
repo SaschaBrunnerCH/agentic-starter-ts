@@ -30,6 +30,8 @@ const runShape = json.object({
   rendererKind: json.nullable(json.string),
   /** How the GPU was reached: headless, or a virtual display; null without the GPU check. */
   display: json.nullable(json.string),
+  /** The WebGPU adapter when BROWSER_WEBGPU=required; absent otherwise. */
+  webgpuAdapter: json.optional(json.string),
   /** A remote browser (a testing farm) instead of a local one. */
   remote: json.boolean,
   /** BROWSER_TEST_BASE_URL: a deployment, not necessarily the commit; absent for its build. */
@@ -112,6 +114,7 @@ export function evidenceMarkdown(run: BrowserRun): string {
     "",
     // The GPU check probes Chromium; other browsers' renderers are not known.
     `Renderer (Chromium's GPU check): ${renderer}.`,
+    ...(run.webgpuAdapter === undefined ? [] : ["", `WebGPU adapter: ${run.webgpuAdapter}.`]),
     "",
     "| Project | Passed | Failed | Skipped | Flaky |",
     "| --- | --- | --- | --- | --- |",

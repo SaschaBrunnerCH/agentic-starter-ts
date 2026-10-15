@@ -40,6 +40,10 @@ On Windows and macOS the run uses the installed Chrome, through Direct3D or Meta
 
 `BROWSER_GPU=off` runs the bundled browser in software, as CI does, for a machine without a usable GPU. CI and a remote browser (`REMOTE_BROWSER_WS_ENDPOINT`) always run with `off`. The other projects (`firefox`, `webkit`, the phone emulations) always use Playwright's browsers.
 
+#### WebGPU
+
+The check above covers WebGL. An application that draws with WebGPU sets `BROWSER_WEBGPU=required` for its runs: the browser is then launched with `--enable-unsafe-webgpu` (WebGPU is behind this flag in Chromium on Linux, and it lifts the adapter blocklist), and with each attempt that finds WebGL on the GPU, the setup also asks that browser for a WebGPU adapter on a local page. It prints `WebGPU check: <adapter>` and records the adapter with the run, or stops with the reason: no `navigator.gpu`, or no adapter. WebGPU exists only in a secure context, which `http://localhost` is and `about:blank` is not. On some Linux machines headless finds WebGL but no WebGPU adapter, while a display gives both; then the run moves to the virtual display, as it does when headless finds no WebGL. With `BROWSER_GPU=off`, in CI or with a remote browser, the setting does nothing.
+
 #### When the renderer check fails
 
 An agent works through these steps in order and records what it tried in the pull request or the issue. Each step either finds the cause or rules one out.

@@ -5,6 +5,7 @@
 // It stops the run when neither reaches the GPU. With BROWSER_GPU off it does nothing.
 
 import { spawn, type ChildProcess } from "node:child_process";
+import { createServer } from "node:http";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -16,9 +17,12 @@ import {
   findOnPath,
   freeDisplayNumber,
   gpuSetting,
+  judgeAdapter,
   lockDecision,
   rendererFailure,
   rendererNote,
+  webgpuFailure,
+  webgpuSetting,
   tryVirtualDisplayNext,
   virtualDisplayEnvironment,
   type LockOwner,
@@ -206,12 +210,56 @@ async function checkRenderer(options: LaunchOptions | undefined): Promise<Render
   }
 }
 
+// The WebGPU adapter the page gets: its description, or why there is none.
+const ADAPTER_SCRIPT = `(async () => {
+  if (!("gpu" in navigator)) return { adapter: null, reason: "the browser offers no WebGPU (navigator.gpu is missing)" };
+  const adapter = await navigator.gpu.requestAdapter().catch(() => null);
+  if (adapter === null) return { adapter: null, reason: "the browser offers WebGPU but no adapter" };
+  const info = adapter.info ?? {};
+  const text = [info.vendor, info.architecture, info.description].filter(Boolean).join(" ");
+  // Newer browsers say it in info, older ones on the adapter.
+  return { text, fallback: info.isFallbackAdapter === true || adapter.isFallbackAdapter === true };
+})()`;
+
+type AdapterProbe = { adapter: null; reason: string } | { text: string; fallback: boolean };
+
+/**
+ * Asks for a WebGPU adapter on a local page: WebGPU exists only in a secure context, which
+ * about:blank is not and http://localhost is.
+ */
+async function webgpuAdapterOf(
+  options: LaunchOptions | undefined,
+): Promise<{ adapter: string | null; reason: string | null }> {
+  const server = createServer((_request, response) => {
+    response.setHeader("content-type", "text/html");
+    response.end("<!doctype html><title>WebGPU check</title>");
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const port = typeof address === "object" && address !== null ? address.port : 0;
+  // The server closes also when the browser does not start or does not close.
+  try {
+    const browser = await chromium.launch(options);
+    try {
+      const page = await browser.newPage();
+      await page.goto(`http://localhost:${port}/`);
+      const probe = await page.evaluate<AdapterProbe>(ADAPTER_SCRIPT);
+      return "reason" in probe ? probe : judgeAdapter(probe.text, probe.fallback);
+    } finally {
+      await browser.close();
+    }
+  } finally {
+    server.close();
+  }
+}
+
 export default async function globalSetup(config: FullConfig): Promise<() => void> {
   // What the run used, for the record of browser-evidence-reporter.ts.
   process.env.BROWSER_GPU_SETTING = gpuSetting(process.env);
   delete process.env.BROWSER_GPU_RENDERER;
   delete process.env.BROWSER_GPU_KIND;
   delete process.env.BROWSER_GPU_REACHED;
+  delete process.env.BROWSER_WEBGPU_ADAPTER;
   if (gpuSetting(process.env) === "off") return () => {};
   acquireLock();
   let display: ChildProcess | undefined;
@@ -223,31 +271,53 @@ export default async function globalSetup(config: FullConfig): Promise<() => voi
   try {
     const options = config.projects.find((project) => project.name === "chromium")?.use
       .launchOptions;
-    let check = await checkRenderer(options);
-    console.log(`GPU check, headless: ${check.renderer ?? "no WebGL"} (${check.kind})`);
+    const needsWebgpu = webgpuSetting(process.env) === "required";
+    // One attempt: the WebGL renderer, with the browser's GPU report when it is not a GPU, and,
+    // when required and WebGL is on the GPU, the WebGPU adapter in the same setting.
+    const attempt = async (launch: LaunchOptions | undefined, where: string) => {
+      const check = await checkRenderer(launch);
+      console.log(`GPU check, ${where}: ${check.renderer ?? "no WebGL"} (${check.kind})`);
+      let webgpu: { adapter: string | null; reason: string | null } | undefined;
+      if (needsWebgpu && check.kind === "hardware") {
+        webgpu = await webgpuAdapterOf(launch);
+        console.log(`WebGPU check, ${where}: ${webgpu.adapter ?? webgpu.reason ?? "no adapter"}`);
+      }
+      // Usable: WebGL on the GPU, and the adapter where one is required.
+      const usable = check.kind === "hardware" && (!needsWebgpu || webgpu?.adapter != null);
+      return { ...check, webgpu, usable };
+    };
+    let result = await attempt(options, "headless");
     let reached = "headless";
     const hasXvfb = findOnPath(["Xvfb"], process.env, existsSync) !== undefined;
-    if (tryVirtualDisplayNext(process.platform, check.kind, hasXvfb)) {
+    // Some Linux drivers give WebGL, or WebGPU, only with a display: then a virtual one.
+    if (tryVirtualDisplayNext(process.platform, result.usable ? "hardware" : "unknown", hasXvfb)) {
       const started = await startVirtualDisplay();
       display = started.server;
-      check = await checkRenderer({
-        ...options,
-        headless: false,
-        env: virtualDisplayEnvironment(process.env, started.display),
-      });
-      reached = `virtual display ${started.display}`;
-      console.log(
-        `GPU check, virtual display ${started.display}: ${check.renderer ?? "no WebGL"} (${check.kind})`,
+      result = await attempt(
+        {
+          ...options,
+          headless: false,
+          env: virtualDisplayEnvironment(process.env, started.display),
+        },
+        `virtual display ${started.display}`,
       );
+      reached = `virtual display ${started.display}`;
       // The workers start after this setup and read it in playwright.config.ts.
-      if (check.kind === "hardware") process.env.BROWSER_GPU_DISPLAY = started.display;
+      if (result.usable) process.env.BROWSER_GPU_DISPLAY = started.display;
     }
-    if (check.renderer !== null) process.env.BROWSER_GPU_RENDERER = check.renderer;
-    process.env.BROWSER_GPU_KIND = check.kind;
+    const { renderer, kind, report, webgpu } = result;
+    if (renderer !== null) process.env.BROWSER_GPU_RENDERER = renderer;
+    process.env.BROWSER_GPU_KIND = kind;
     process.env.BROWSER_GPU_REACHED = reached;
-    const note = rendererNote(process.env, check.renderer);
+    const note = rendererNote(process.env, renderer);
     if (note !== undefined) console.log(`Note: ${note}.`);
-    if (check.kind !== "hardware") throw new Error(rendererFailure(check.renderer, check.report));
+    if (kind !== "hardware") throw new Error(rendererFailure(renderer, report));
+    if (needsWebgpu) {
+      if (webgpu?.adapter == null) {
+        throw new Error(webgpuFailure(webgpu?.reason ?? "no adapter is available"));
+      }
+      process.env.BROWSER_WEBGPU_ADAPTER = webgpu.adapter;
+    }
     // A report from an earlier failed run or attempt would describe another browser state.
     removeGpuReport();
   } catch (error) {

@@ -20,6 +20,28 @@ export function gpuSetting(environment: Readonly<Record<string, string | undefin
   throw new Error(`BROWSER_GPU must be "required" or "off", not "${value}".`);
 }
 
+/**
+ * BROWSER_WEBGPU=required also requires a WebGPU adapter, for applications that draw with
+ * WebGPU; unset or "off" (the default) checks WebGL only. It applies only where the GPU is
+ * required.
+ */
+export function webgpuSetting(
+  environment: Readonly<Record<string, string | undefined>>,
+): GpuSetting {
+  const value = environment.BROWSER_WEBGPU ?? "";
+  if (value === "" || value === "off") return "off";
+  if (value === "required") return gpuSetting(environment);
+  throw new Error(`BROWSER_WEBGPU must be "required" or "off", not "${value}".`);
+}
+
+/** Why the run stops when no WebGPU adapter is available. */
+export function webgpuFailure(reason: string): string {
+  return (
+    `BROWSER_WEBGPU=required, but ${reason}. ` +
+    "See the GPU section of engineering/agents/browser-testing.md, or run without BROWSER_WEBGPU."
+  );
+}
+
 /** What drew the browser's WebGL: a GPU, a software rasterizer, or nobody can tell. */
 export type RendererKind = "hardware" | "software" | "unknown";
 
@@ -35,13 +57,34 @@ export function classifyRenderer(renderer: string | null | undefined): RendererK
 }
 
 /**
+ * Whether a WebGPU adapter is on the GPU. WebGPU picks its adapter apart from WebGL, so a
+ * hardware WebGL renderer says nothing about it: a fallback adapter, or one whose description
+ * names a software renderer, draws on the CPU and is refused.
+ */
+export function judgeAdapter(
+  text: string,
+  fallback: boolean,
+): { adapter: string; reason: null } | { adapter: null; reason: string } {
+  const described = text.trim() === "" ? "an adapter without a description" : text.trim();
+  if (fallback || classifyRenderer(text) === "software") {
+    return { adapter: null, reason: `the only adapter draws on the CPU (${described})` };
+  }
+  return { adapter: described, reason: null };
+}
+
+/**
  * Chromium flags that keep hardware acceleration in headless mode. ANGLE's Vulkan
  * backend on Linux, presenting frames without a window surface (`--disable-vulkan-surface`):
  * without one, headless Chromium on Linux often finds no WebGL, because Vulkan's window
  * surface needs a display. Metal and Direct3D are Chromium's defaults on macOS and Windows.
  */
-export function gpuLaunchArgs(platform: NodeJS.Platform): string[] {
-  const common = ["--ignore-gpu-blocklist", "--enable-gpu"];
+export function gpuLaunchArgs(platform: NodeJS.Platform, webgpu = false): string[] {
+  // WebGPU is behind this flag in Chromium on Linux, and it lifts the adapter blocklist.
+  const common = [
+    "--ignore-gpu-blocklist",
+    "--enable-gpu",
+    ...(webgpu ? ["--enable-unsafe-webgpu"] : []),
+  ];
   if (platform === "linux") {
     return [
       ...common,
