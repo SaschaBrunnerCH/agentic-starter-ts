@@ -24,7 +24,15 @@ The gate runs these in order and reports every failure, not only the first: `for
 
 The pre-push hook first refuses a push whose checks would not describe it: a working tree with uncommitted or untracked files, or a pushed branch, or tag of a commit no remote branch has yet, that points at another commit than the checked-out one. Branches are judged by where they land, so `git push origin <commit>:topic` is refused from a checkout of another commit. "The gate passed" is then a statement about the pushed commit. `pnpm check:push` by hand has no such condition and tests the working tree as it is.
 
-The hooks are tracked files under `.githooks`. `pnpm install --frozen-lockfile` points Git at them once for the whole repository, so every worktree uses them; each worktree still needs its own `pnpm install --frozen-lockfile` for the tools the hooks call. `check:hooks` fails when the hooks are not active; it helps when the gate is run by hand, since an inactive hook cannot report itself.
+The hooks are tracked files under `.githooks`. `pnpm install --frozen-lockfile` points Git at them once for the whole repository, so every worktree uses them; each worktree still needs its own `pnpm install --frozen-lockfile` for the tools the hooks call. `check:hooks` fails when the hooks are not active, or when a hook Git would run from this worktree is missing or not executable; it helps when the gate is run by hand, since an inactive hook cannot report itself.
+
+**Hooks in task worktrees.** Task worktrees run the same Git hooks as the main checkout: Git resolves the relative `core.hooksPath` against each worktree, so the hooks tracked in its own checkout run. Agent tools have been reported to skip their own hooks (for example hooks in a tool's settings file) inside worktrees; this repository relies on Git hooks only, which are not affected. `scripts/git-hooks.test.ts` builds a repository with a worktree and proves that a commit there runs the tracked hook. A test that runs `git` must leave out the `GIT_*` environment variables: inside a hook in a worktree, Git sets `GIT_DIR` (and in the commit hooks `GIT_INDEX_FILE`), and a test the pre-push hook runs would otherwise commit into this repository instead of its scratch one. To repeat the check in a real task worktree:
+
+```sh
+pnpm check:hooks                                    # PASS · Git hooks active in <worktree>/.githooks
+git commit --allow-empty -m "x" -m "Co-Authored-By: A <noreply@anthropic.com>"   # refused by commit-msg
+touch scratch.txt && git push --dry-run origin HEAD:refs/heads/hook-check; rm scratch.txt  # refused by pre-push
+```
 
 ![The layers a change passes: commit, push, pull request and merge](../diagrams/guardrails.svg)
 
