@@ -73,3 +73,28 @@ export function startBlockers(issue: IssueFacts, inProgress: number): string[] {
   }
   return blockers;
 }
+
+// A heading or a bold line that opens the section, also inside a quote.
+const doneWhenStart = /^(?:>\s*)?(?:#{1,6}\s+|\*\*)Done when\b/iu;
+// The next heading, or the next bold line opening a section, ends it.
+const sectionStart = /^(?:>\s*)?(?:#{1,6}\s+|\*\*[^*]+\*\*\s*$)/u;
+// A checklist item with text that is more than an HTML comment.
+const checklistItem = /^(?:>\s*)?\s*[-*+]\s+\[[ xX]\]\s+(?!<!--.*-->\s*$)\S/u;
+
+/**
+ * What an issue body lacks for engineering/agents/issue-tracker.md: a "Done when" section
+ * with at least one checklist item that says something. Epics are ordered by their children
+ * and need none.
+ */
+export function bodyProblems(body: string, labels: readonly string[]): string[] {
+  if (labels.includes("epic")) return [];
+  const lines = body.split(/\r?\n/u);
+  const start = lines.findIndex((line) => doneWhenStart.test(line.trim()));
+  if (start === -1) return ['no "Done when" section'];
+  const rest = lines.slice(start + 1);
+  const end = rest.findIndex((line) => sectionStart.test(line.trim()));
+  const section = end === -1 ? rest : rest.slice(0, end);
+  return section.some((line) => checklistItem.test(line))
+    ? []
+    : ['the "Done when" section has no checklist item ("- [ ] …")'];
+}

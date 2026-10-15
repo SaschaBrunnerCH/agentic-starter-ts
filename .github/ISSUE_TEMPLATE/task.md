@@ -18,4 +18,6 @@ assignees: ""
 
 ## Done when
 
+<!-- Required: `pnpm issue create` refuses a task without at least one item here. The pull request is checked against these items. -->
+
 - [ ] <!-- Observable acceptance criterion, with its verification method. -->
