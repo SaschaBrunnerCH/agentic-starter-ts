@@ -77,7 +77,7 @@ export function systemBrowser(
   return findOnPath(SYSTEM_BROWSERS, environment, exists);
 }
 
-/** Who holds the machine-wide lock of GPU browser runs. */
+/** Who holds the lock of GPU browser runs, shared by one user's sessions. */
 export interface LockOwner {
   pid: number;
   directory: string;

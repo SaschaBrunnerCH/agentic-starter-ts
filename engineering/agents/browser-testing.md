@@ -33,7 +33,7 @@ Applications that draw with WebGL or WebGPU behave differently on a GPU than in 
 
 - runs the `chromium` project in the system's Chromium or Chrome, not Playwright's bundled one, because the system browser uses the machine's graphics drivers (`BROWSER_GPU_EXECUTABLE` chooses another);
 - draws headless where the platform allows it; on Linux, where headless Chromium finds the GPU but cannot create a WebGL context on it, on a private virtual display (`Xvfb`) that the run starts and stops, so nothing appears on the desktop;
-- runs one page at a time, and takes a machine-wide lock (`browser-gpu-tests.lock` in the temporary directory), so two sessions never share the GPU; a second run fails at once and names the owner of the lock;
+- runs one page at a time, and takes a lock (`~/.cache/browser-gpu-tests/lock`), so two sessions of the same user never share the GPU; a second run fails at once and names the owner of the lock;
 - prints the browser and the renderer that draws its WebGL, and stops before the first test when that is a software renderer (SwiftShader, llvmpipe and the like) or none.
 
 `BROWSER_GPU=off` runs the bundled browser in software, as CI does, for a machine without a usable GPU. CI and a remote browser (`REMOTE_BROWSER_WS_ENDPOINT`) always run with `off`. The other projects (`firefox`, `webkit`, the phone emulations) always use Playwright's browsers.

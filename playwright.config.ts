@@ -21,7 +21,7 @@ import {
 //                             from this directory, so sibling worktrees do not collide.
 // BROWSER_GPU                 "required" (the default): the chromium project runs the
 //                             system's browser on the GPU, headless, one page at a time,
-//                             under a machine-wide lock, and stops on a software
+//                             under a lock per user, and stops on a software
 //                             renderer. "off": the bundled browser, in software. CI and
 //                             remote browsers always run with "off".
 // BROWSER_GPU_EXECUTABLE      The browser for GPU runs. Unset: the first Chromium or

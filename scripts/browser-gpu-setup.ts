@@ -1,10 +1,10 @@
 // Playwright's global setup. For local runs with BROWSER_GPU=required (the default) it
-// takes the machine-wide lock, starts the configured browser once, prints the renderer
+// takes the lock of GPU runs, starts the configured browser once, prints the renderer
 // that draws its WebGL and stops the run when that is a software one. Otherwise nothing.
 
 import { spawn, type ChildProcess } from "node:child_process";
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import { chromium, type FullConfig } from "@playwright/test";
 import * as json from "./json-shape.ts";
@@ -16,7 +16,10 @@ import {
   type LockOwner,
 } from "./browser-gpu.ts";
 
-const lockFile = join(tmpdir(), "browser-gpu-tests.lock");
+// In the user's own directory, not the shared temporary one, where another user could
+// create or redirect a file of a known name first. Sessions of one user share it.
+const lockDirectory = join(homedir(), ".cache", "browser-gpu-tests");
+const lockFile = join(lockDirectory, "lock");
 const ownerShape = json.object({
   pid: json.number,
   directory: json.string,
@@ -54,6 +57,7 @@ function readOwner(): LockOwner | undefined {
 }
 
 function acquireLock(): void {
+  mkdirSync(lockDirectory, { recursive: true, mode: 0o700 });
   const owner: LockOwner = {
     pid: process.pid,
     directory: process.cwd(),
@@ -61,7 +65,7 @@ function acquireLock(): void {
   };
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
-      writeFileSync(lockFile, JSON.stringify(owner), { flag: "wx" });
+      writeFileSync(lockFile, JSON.stringify(owner), { flag: "wx", mode: 0o600 });
       return;
     } catch (error) {
       if (errorCode(error) !== "EEXIST") throw error;
