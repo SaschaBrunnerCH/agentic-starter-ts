@@ -14,11 +14,14 @@ describe("standupReport", () => {
           reference: "#19",
           title: "GPU report",
           blockers: [],
-          pullRequests: [{ number: 24, build: "success", behindBy: 2, draft: false }],
+          pullRequests: [{ number: 24, build: "success", base: "main", behindBy: 2, draft: false }],
         },
         { reference: "#21", title: "No PR yet", blockers: [], pullRequests: [] },
       ],
-      blocked: [{ reference: "#20", title: "WebGPU", blockers: ["#10"] }],
+      blocked: [
+        { reference: "#20", title: "WebGPU", blockers: ["#10"] },
+        { reference: "#32", title: "Waits for hardware", blockers: [] },
+      ],
       ready: [
         { reference: "#27", title: "Planning skill", priority: "P2", blockers: [] },
         { reference: "#31", title: "Waits", priority: "P1", blockers: ["#26"] },
@@ -33,8 +36,9 @@ describe("standupReport", () => {
       "- #19 GPU report · #24 (build success, 2 behind main)",
       "- #21 No PR yet · no open pull request",
       "",
-      "Blocked: 1",
+      "Blocked: 2",
       "- #20 WebGPU · by #10",
+      "- #32 Waits for hardware · Status Blocked, no blocker issue",
       "",
       "Next Ready: 1 of 2",
       "- P2 #27 Planning skill",
@@ -64,12 +68,34 @@ describe("standupReport", () => {
           reference: "#9",
           title: "X",
           blockers: [],
-          pullRequests: [{ number: 14, build: "failure", behindBy: 0, draft: true }],
+          pullRequests: [{ number: 14, build: "failure", base: "main", behindBy: 0, draft: true }],
         },
       ],
       blocked: [],
       ready: [],
     });
     expect(line).toBe("- #9 X · #14 (build failure, draft)");
+  });
+});
+
+describe("pull request lines", () => {
+  it("names the base the distance is counted against", () => {
+    const lines = standupReport({
+      limit: 4,
+      inProgress: [],
+      inReview: [
+        {
+          reference: "#20",
+          title: "WebGPU",
+          blockers: [],
+          pullRequests: [
+            { number: 28, build: "success", base: "feat/10-evidence", behindBy: 1, draft: false },
+          ],
+        },
+      ],
+      blocked: [],
+      ready: [],
+    });
+    expect(lines).toContain("- #20 WebGPU · #28 (build success, 1 behind feat/10-evidence)");
   });
 });

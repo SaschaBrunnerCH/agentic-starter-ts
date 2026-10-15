@@ -14,6 +14,8 @@ export type StandupIssue = {
 export type StandupPullRequest = {
   number: number;
   build: "success" | "failure" | "pending" | "missing";
+  /** The branch it targets, which behindBy is counted against. */
+  base: string;
   behindBy: number;
   /** Whether it is a draft. */
   draft: boolean;
@@ -23,7 +25,7 @@ export type StandupData = {
   inProgress: StandupIssue[];
   inReview: Array<StandupIssue & { pullRequests: StandupPullRequest[] }>;
   ready: StandupIssue[];
-  /** Issues of any open status other than Done that have an open blocker. */
+  /** Open issues with an open blocker, or with Status Blocked for a reason of their own. */
   blocked: StandupIssue[];
   limit: number;
 };
@@ -33,7 +35,7 @@ const NEXT_READY = 5;
 
 function pullRequestLine(pr: StandupPullRequest): string {
   const parts = [`build ${pr.build}`];
-  if (pr.behindBy > 0) parts.push(`${pr.behindBy} behind main`);
+  if (pr.behindBy > 0) parts.push(`${pr.behindBy} behind ${pr.base}`);
   if (pr.draft) parts.push("draft");
   return `#${pr.number} (${parts.join(", ")})`;
 }
@@ -57,7 +59,11 @@ export function standupReport(data: StandupData): string[] {
   }
   lines.push("", `Blocked: ${data.blocked.length}`);
   for (const issue of data.blocked) {
-    lines.push(`- ${issue.reference} ${issue.title} · by ${issue.blockers.join(", ")}`);
+    const why =
+      issue.blockers.length === 0
+        ? "Status Blocked, no blocker issue"
+        : `by ${issue.blockers.join(", ")}`;
+    lines.push(`- ${issue.reference} ${issue.title} · ${why}`);
   }
   const next = data.ready.filter((issue) => issue.blockers.length === 0).slice(0, NEXT_READY);
   lines.push("", `Next Ready: ${next.length} of ${data.ready.length}`);

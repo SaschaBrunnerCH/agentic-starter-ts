@@ -1,6 +1,5 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { basename } from "node:path";
 import { gh, ghJson, graphql, mutation, prBuild, quote, root } from "./github.ts";
 import { standupReport, type StandupIssue, type StandupPullRequest } from "./standup.ts";
 import { scriptArguments } from "./script-arguments.ts";
@@ -303,18 +302,18 @@ function ready(): number {
   return 0;
 }
 
-// The task worktrees on this machine, by issue number: `pnpm task start` names them
-// <repository>-<number>-<slug>.
+// The task worktrees on this machine, by issue number, from the branch each has checked out:
+// `pnpm task start` names it <type>/<number>-<slug>, whatever the directory is called.
 function worktreesByIssue(): Map<number, string> {
   const listed = spawnSync("git", ["worktree", "list", "--porcelain"], {
     cwd: root,
     encoding: "utf8",
   });
   const found = new Map<number, string>();
+  let path = "";
   for (const line of listed.stdout.split("\n")) {
-    if (!line.startsWith("worktree ")) continue;
-    const path = line.slice("worktree ".length);
-    const match = new RegExp(`^${repository().name}-(\\d+)-`, "u").exec(basename(path));
+    if (line.startsWith("worktree ")) path = line.slice("worktree ".length);
+    const match = /^branch refs\/heads\/[^/]+\/(\d+)-/u.exec(line);
     if (match?.[1] !== undefined) found.set(Number(match[1]), path);
   }
   return found;
@@ -333,8 +332,12 @@ const pullRequestsShape = json.array(
 /** Where the work stands, from the Project, the pull requests and this machine's worktrees. */
 function standup(): number {
   const board = project();
+  // Issues only: a pull request on the Project has a number too, but no issue to read.
   const own = items(board).filter(
-    (item) => item.content.number !== undefined && itemReference(item).startsWith("#"),
+    (item) =>
+      item.content.type === "Issue" &&
+      item.content.number !== undefined &&
+      itemReference(item).startsWith("#"),
   );
   const nameWithOwner = `${repository().owner.login}/${repository().name}`;
   const worktrees = worktreesByIssue();
@@ -374,6 +377,7 @@ function standup(): number {
       .map((pr) => ({
         number: pr.number,
         build: prBuild(nameWithOwner, pr.headRefOid),
+        base: pr.baseRefName,
         behindBy: Number(
           gh([
             "api",
@@ -385,10 +389,13 @@ function standup(): number {
         draft: pr.isDraft,
       }));
   const withStatus = (status: string) => own.filter((item) => item.status === status);
+  const open = own.filter((item) => item.status !== "Done" && item.status !== "Backlog");
   const described = new Map(
-    own
-      .filter((item) => item.status !== "Done" && item.status !== "Backlog")
-      .map((item) => [item.content.number ?? 0, describe(item)] as const),
+    open.map((item) => [item.content.number ?? 0, describe(item)] as const),
+  );
+  // Status Blocked may stand for a reason without a blocker issue, such as a missing device.
+  const blockedStatus = new Set(
+    open.filter((item) => item.status === "Blocked").map((item) => item.content.number ?? 0),
   );
   const of = (item: (typeof own)[number]) =>
     described.get(item.content.number ?? 0) ?? describe(item);
@@ -399,7 +406,9 @@ function standup(): number {
       ...of(item),
       pullRequests: pullRequestsOf(item.content.number ?? 0),
     })),
-    blocked: [...described.values()].filter((entry) => entry.blockers.length > 0),
+    blocked: [...described]
+      .filter(([number, entry]) => entry.blockers.length > 0 || blockedStatus.has(number))
+      .map(([, entry]) => entry),
     ready: withStatus("Ready")
       .toSorted(
         (a, b) =>
