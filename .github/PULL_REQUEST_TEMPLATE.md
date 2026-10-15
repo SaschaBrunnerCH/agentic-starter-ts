@@ -6,7 +6,7 @@ Issue: <!-- `Closes #<number>` when this pull request completes the issue's acce
 
 ## Verification
 
-<!-- Commands run, the tested commit and their results. Name required checks that were not run, and what was checked by hand: who, when, which commit, steps, expected and actual result. -->
+<!-- Commands run, the tested commit and their results. Browser tests: each engine and system with its result, and the renderer `pnpm test:browser` printed; name engines and systems not tested and why. Name required checks that were not run, and what was checked by hand: who, when, which commit, steps, expected and actual result. -->
 
 ## Documentation
 

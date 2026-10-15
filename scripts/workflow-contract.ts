@@ -61,3 +61,22 @@ export function requiredStatusProblems(
       : [`job ${job.id} is not a required status of the ruleset`];
   });
 }
+
+/** The condition under which the PR build runs browser tests; see browser-testing.md. */
+const BROWSER_TESTS_IN_CI_CONDITION =
+  "vars.BROWSER_TESTS_IN_CI == 'true' || inputs.browser-tests == true";
+
+/**
+ * Every step of a job that installs or runs the browser tests must carry the CI switch,
+ * so a step added later cannot spend CI minutes on browser tests that are switched off.
+ */
+export function browserStepProblems(job: WorkflowJob): string[] {
+  return steps(job).flatMap((step) => {
+    const text = step.join("\n");
+    if (!/pnpm test:browser/u.test(text)) return [];
+    const name = /- name: (.+)$/u.exec(step[0] ?? "")?.[1] ?? "unnamed step";
+    return step.includes(`        if: ${BROWSER_TESTS_IN_CI_CONDITION}`)
+      ? []
+      : [`step "${name}" of job ${job.id} runs browser tests without the CI switch`];
+  });
+}

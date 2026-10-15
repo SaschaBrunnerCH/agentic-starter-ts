@@ -16,9 +16,9 @@ export default defineConfig({
       exclude: [
         "**/*.test.{ts,tsx}", // Test bodies are evidence, not production behaviour.
         "src/main.tsx", // The browser entry point; the browser tests cover it.
-        // Commands that run git, gh or the network. Their decisions live in the
+        // Commands that run git, gh, the network or a browser. Their decisions live in the
         // rule modules beside them, which are measured.
-        "scripts/{issue,task,release,github,setup-github,setup-previews,install-hooks,pre-push,run-local-checks,test-devices}.ts",
+        "scripts/{issue,task,release,github,setup-github,setup-previews,install-hooks,pre-push,run-local-checks,test-devices,browser-gpu-setup}.ts",
         "scripts/check-*.ts",
       ],
       // A floor, not a target: raise it when coverage rises, and lower it only

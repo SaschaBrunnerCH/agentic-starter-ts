@@ -13,27 +13,27 @@ flowchart LR
   issue["Issue<br/>pnpm issue"] --> task["Worktree<br/>pnpm task start"]
   task --> commit["Commit hook<br/>format, lint, secrets"]
   commit --> push["Push gate<br/>all checks"]
-  push --> pr["PR build<br/>checks, browser tests"]
+  push --> pr["PR build<br/>checks; browser tests if switched on"]
   pr --> preview["Preview<br/>per pull request"]
   pr --> merge["Merge<br/>owner's yes"]
   merge --> deploy["Deploy<br/>Pages and smoke test"]
   deploy --> release["Release<br/>tag, notes, SBOM"]
 ```
 
-| Area          | What you get                                                                                                                                                           | Kept by                                   |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| Agent rules   | One instruction file for every agent; a guardrail table where each rule names its mechanism                                                                            | `check:agents`                            |
-| Agent safety  | Text an agent reads is data, not orders; Claude Code denied `.env` files and shell fetches                                                                             | `.claude/settings.json`, `AGENTS.md`      |
-| Planning      | Issue templates, labels, a Project with Status and Priority, at most four tasks In progress                                                                            | `pnpm issue`, `setup:github`              |
-| Task flow     | One worktree per task, handoffs for unfinished work, cleanup after the merge                                                                                           | `pnpm task`                               |
-| Checks        | Format, lint with types and security rules, types, unused code, secrets, workflow validity and security, links, dependency licences, unit tests, coverage, bundle size | Push hook and `PR build`, one shared list |
-| Browser tests | Playwright and axe against the build, also under a sub-path; Firefox, WebKit and phone emulation locally; an optional testing farm for many devices                    | `PR build`, `browser-farm.yml`            |
-| Merge         | A green `PR build` on a current base and the owner's authorization for the exact commit                                                                                | Rulesets, `pnpm task merge`               |
-| Previews      | Each pull request at its own URL; the publishing key never reaches pull-request code                                                                                   | `pr-preview.yml`, `setup:previews`        |
-| Deploy        | Every merge to GitHub Pages, tested after the deploy; rollback to any commit of `main`                                                                                 | `deploy.yml`, `github-pages` environment  |
-| Releases      | Version tags on `main` with generated notes, the build, an SBOM and checksums; immutable tags                                                                          | `pnpm release`, `release.yml`, rulesets   |
-| Dependencies  | Weekly audit, Dependabot with a one-week cooldown                                                                                                                      | `dependency-audit.yml`, `dependabot.yml`  |
-| Application   | React 19 with Vite and TypeScript: one component, its unit test and a browser test                                                                                     | Replace it with yours                     |
+| Area          | What you get                                                                                                                                                           | Kept by                                             |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Agent rules   | One instruction file for every agent; a guardrail table where each rule names its mechanism                                                                            | `check:agents`                                      |
+| Agent safety  | Text an agent reads is data, not orders; Claude Code denied `.env` files and shell fetches                                                                             | `.claude/settings.json`, `AGENTS.md`                |
+| Planning      | Issue templates, labels, a Project with Status and Priority, at most four tasks In progress                                                                            | `pnpm issue`, `setup:github`                        |
+| Task flow     | One worktree per task, handoffs for unfinished work, cleanup after the merge                                                                                           | `pnpm task`                                         |
+| Checks        | Format, lint with types and security rules, types, unused code, secrets, workflow validity and security, links, dependency licences, unit tests, coverage, bundle size | Push hook and `PR build`, one shared list           |
+| Browser tests | Playwright and axe against the build, locally on the machine's GPU, in Chromium, Firefox and WebKit; in the `PR build` when switched on; an optional testing farm      | `pnpm test:browser`, `PR build`, `browser-farm.yml` |
+| Merge         | A green `PR build` on a current base and the owner's authorization for the exact commit                                                                                | Rulesets, `pnpm task merge`                         |
+| Previews      | Each pull request at its own URL; the publishing key never reaches pull-request code                                                                                   | `pr-preview.yml`, `setup:previews`                  |
+| Deploy        | Every merge to GitHub Pages, tested after the deploy; rollback to any commit of `main`                                                                                 | `deploy.yml`, `github-pages` environment            |
+| Releases      | Version tags on `main` with generated notes, the build, an SBOM and checksums; immutable tags                                                                          | `pnpm release`, `release.yml`, rulesets             |
+| Dependencies  | Weekly audit, Dependabot with a one-week cooldown                                                                                                                      | `dependency-audit.yml`, `dependabot.yml`            |
+| Application   | React 19 with Vite and TypeScript: one component, its unit test and a browser test                                                                                     | Replace it with yours                               |
 
 In more detail:
 
@@ -46,7 +46,7 @@ In more detail:
 - **The owner as the merge gate.** A merge needs a green `PR build` on a current base and the owner's authorization, recorded against the exact commit.
 - **Shared work without collisions.** One worktree per task, a handoff for unfinished work and a cleanup procedure after each merge; see [the task lifecycle](engineering/agents/task-lifecycle.md).
 - **CI minutes kept low.** The push hook fails a push before CI does, extra browsers and devices are tested locally and reported on the pull request, and every job has a timeout; [CI minutes](engineering/operations/ci-minutes.md) lists what each run costs and the options for a growing project.
-- **Tests at two levels.** Unit tests with Vitest in the gate, and browser tests with Playwright in the pull request. The same tests run locally in Firefox, WebKit and phone emulation, and, optionally, on a testing farm's browsers and real phones from one secret; no provider is built in. See [browser testing](engineering/agents/browser-testing.md).
+- **Tests at two levels.** Unit tests with Vitest in the gate, and browser tests with Playwright on the developer's machine, on its GPU, reported in the pull request; the `PR build` runs them too when the repository variable `BROWSER_TESTS_IN_CI` is `true`. The same tests run locally in Firefox, WebKit and phone emulation, and, optionally, on a testing farm's browsers and real phones from one secret; no provider is built in. See [browser testing](engineering/agents/browser-testing.md).
 - **Deploy after every merge.** `main` deploys to GitHub Pages through an environment only `main` may use, the browser tests run against the deployed site, and a manual run rolls back to an earlier commit. Each pull request gets a preview built by its PR build; see [deployment](engineering/operations/deployment.md).
 - **Releases from `main`.** `pnpm release` tags the head of `main` with the owner's authorization; CI builds the release with notes grouped by label, the build archive, an SBOM and checksums. Release tags cannot be moved or deleted; see [releases](engineering/operations/releases.md).
 - **A minimal application.** React 19 with Vite and TypeScript: one component with a name field, a unit test that renders it without a browser, and a browser test that types into it, so every check has something real to run against. Lint includes the rules of hooks and JSX accessibility rules. A library or an application without React removes it as described in [Without React](#without-react).
@@ -91,7 +91,7 @@ The application uses React. A library such as an SDK, or an application with ano
 1. `pnpm remove react react-dom @vitejs/plugin-react @types/react @types/react-dom`
 2. Delete `src/App.tsx` and `src/App.test.tsx`, rename `src/main.tsx` to `src/main.ts` and write it without JSX; point `index.html`, `vite.config.ts` (the coverage exclusion) at the new name.
 3. Remove `react()` and its import from `vite.config.ts`, `"jsx"` from `tsconfig.app.json`, and `react`, `jsx-a11y` and the `react/*` rules from `.oxlintrc.json`.
-4. Rewrite `e2e/smoke.spec.ts` for the new page; it checks the React heading and name field, and runs in the PR build's browser tests and `pnpm test:browser`, not in the gate.
+4. Rewrite `e2e/smoke.spec.ts` for the new page; it checks the React heading and name field, and runs in `pnpm test:browser` (and in the PR build when its browser tests are switched on), not in the gate.
 5. Run `pnpm check:push` and `pnpm test:browser`; `check:unused` names anything left over.
 
 ## Working with an agent
@@ -106,20 +106,20 @@ The agent reads `AGENTS.md` on its own. [Getting started with agentic work](engi
 
 ## Commands
 
-| Command               | Use                                                                                                          |
-| --------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `pnpm dev`            | Serve the application locally                                                                                |
-| `pnpm build`          | Build for production into `dist/`                                                                            |
-| `pnpm test`           | Run unit tests with the coverage floor                                                                       |
-| `pnpm test:browser`   | Run browser tests against the production build; see [browser testing](engineering/agents/browser-testing.md) |
-| `pnpm test:devices`   | Run them on other browsers and farm devices locally; `--report <pr>` posts the results on the pull request   |
-| `pnpm check:push`     | Run the whole gate, as the pre-push hook and the PR build do                                                 |
-| `pnpm format`         | Format all files                                                                                             |
-| `pnpm issue help`     | Create, show, claim and update issues in the Project                                                         |
-| `pnpm task help`      | Start a task, check a pull request, merge with recorded authorization, clean up                              |
-| `pnpm setup:github`   | Create or repair labels, Project, merge settings and rulesets                                                |
-| `pnpm release <v>`    | Check a release of the head of `main`; tag it with `--authorized-by-owner`                                   |
-| `pnpm setup:previews` | Create the previews repository, its deploy key, environment and variables                                    |
+| Command               | Use                                                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm dev`            | Serve the application locally                                                                                            |
+| `pnpm build`          | Build for production into `dist/`                                                                                        |
+| `pnpm test`           | Run unit tests with the coverage floor                                                                                   |
+| `pnpm test:browser`   | Run browser tests against the production build, on the GPU; see [browser testing](engineering/agents/browser-testing.md) |
+| `pnpm test:devices`   | Run them on other browsers and farm devices locally; `--report <pr>` posts the results on the pull request               |
+| `pnpm check:push`     | Run the whole gate, as the pre-push hook and the PR build do                                                             |
+| `pnpm format`         | Format all files                                                                                                         |
+| `pnpm issue help`     | Create, show, claim and update issues in the Project                                                                     |
+| `pnpm task help`      | Start a task, check a pull request, merge with recorded authorization, clean up                                          |
+| `pnpm setup:github`   | Create or repair labels, Project, merge settings and rulesets                                                            |
+| `pnpm release <v>`    | Check a release of the head of `main`; tag it with `--authorized-by-owner`                                               |
+| `pnpm setup:previews` | Create the previews repository, its deploy key, environment and variables                                                |
 
 Engineering documentation starts at [engineering/README.md](engineering/README.md).
 

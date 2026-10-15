@@ -9,5 +9,5 @@
   ],
   "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts", "e2e/**/*.ts"],
   "ignoreDependencies": ["@secretlint/secretlint-rule-preset-recommend"],
-  "ignoreBinaries": ["ssh-keygen"]
+  "ignoreBinaries": ["ssh-keygen", "Xvfb"]
 }

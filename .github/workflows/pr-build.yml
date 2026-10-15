@@ -3,6 +3,11 @@ name: PR build
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      browser-tests:
+        description: Run the browser tests
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -55,7 +60,16 @@ jobs:
       - name: Run all checks
         run: pnpm check:push
 
+      # Browser tests run on the developer's machine by default, on its GPU, and are
+      # reported in the pull request. The repository variable BROWSER_TESTS_IN_CI=true
+      # runs them here for every pull request; a manual run can ask for them once.
+      # This runner has no GPU, so a run here checks function, not speed.
+      - name: Note where the browser tests ran
+        if: vars.BROWSER_TESTS_IN_CI != 'true' && inputs.browser-tests != true
+        run: echo "Browser tests are off in CI (BROWSER_TESTS_IN_CI); the pull request reports a local run." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Install the browser
+        if: vars.BROWSER_TESTS_IN_CI == 'true' || inputs.browser-tests == true
         run: pnpm test:browser:install
 
       # The build check:push made, which the preview workflow publishes; it runs no code from it.
@@ -68,10 +82,12 @@ jobs:
           retention-days: 3
 
       - name: Test the build in a local browser
+        if: vars.BROWSER_TESTS_IN_CI == 'true' || inputs.browser-tests == true
         run: pnpm test:browser
 
       # Pages and previews serve the build below a path such as /<repository>/.
       - name: Test the build under a sub-path
+        if: vars.BROWSER_TESTS_IN_CI == 'true' || inputs.browser-tests == true
         run: |
           pnpm exec vite preview --host 127.0.0.1 --port 4180 --strictPort --base /app/ &
           started=false
