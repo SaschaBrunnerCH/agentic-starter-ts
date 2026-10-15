@@ -5,6 +5,7 @@ import {
   gpuLaunchArgs,
   gpuSetting,
   systemBrowser,
+  webgpuSetting,
   virtualDisplayEnvironment,
 } from "./scripts/browser-gpu.ts";
 
@@ -24,6 +25,8 @@ import {
 //                             remote browsers always run with "off".
 // BROWSER_GPU_EXECUTABLE      The browser for GPU runs. Unset: the first Chromium or
 //                             Chrome on PATH, else the installed Chrome.
+// BROWSER_WEBGPU              "required": the GPU check also needs a WebGPU adapter, for
+//                             applications that draw with WebGPU. Unset or "off": WebGL only.
 // A trailing slash, so that pages resolve below a sub-path instead of beside it.
 const baseURL = process.env.BROWSER_TEST_BASE_URL?.replace(/\/?$/u, "/");
 const remoteEndpoint = process.env.REMOTE_BROWSER_WS_ENDPOINT;
@@ -33,7 +36,7 @@ const gpuExecutable = gpu ? systemBrowser(process.env, existsSync) : undefined;
 // GPU; the workers inherit it through the environment. Unset: headless.
 const gpuDisplay = gpu ? process.env.BROWSER_GPU_DISPLAY : undefined;
 const gpuLaunchOptions = {
-  args: gpuLaunchArgs(process.platform),
+  args: gpuLaunchArgs(process.platform, webgpuSetting(process.env) === "required"),
   ...(gpuExecutable === undefined ? { channel: "chrome" } : { executablePath: gpuExecutable }),
   ...(gpuDisplay === undefined
     ? {}

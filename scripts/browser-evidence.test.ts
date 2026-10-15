@@ -108,3 +108,12 @@ describe("evidenceMarkdown", () => {
     );
   });
 });
+
+describe("the WebGPU adapter in the evidence", () => {
+  it("is shown when the run checked it, and left out otherwise", () => {
+    const text = evidenceMarkdown(run({ webgpuAdapter: "intel gen-9 Intel(R) UHD Graphics 630" }));
+    expect(text).toContain("WebGPU adapter: intel gen-9 Intel(R) UHD Graphics 630.");
+    expect(evidenceMarkdown(run())).not.toContain("WebGPU");
+    expect(readRuns(withRun([], run({ webgpuAdapter: "x" })))[0]?.webgpuAdapter).toBe("x");
+  });
+});
