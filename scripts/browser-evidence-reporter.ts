@@ -28,7 +28,8 @@ export default class BrowserEvidenceReporter implements Reporter {
   }
 
   onEnd(result: FullResult): void {
-    if (this.commit === "") return;
+    // CI keeps its own results; the record is for runs on a developer's machine.
+    if (this.commit === "" || process.env.CI === "true") return;
     const file = resolve(root, EVIDENCE_FILE);
     let previous: string | undefined;
     try {
