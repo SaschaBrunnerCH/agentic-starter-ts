@@ -100,6 +100,8 @@ Use the image whose version matches `@playwright/test` in `package.json`; Docker
 
 ### Report the results on the pull request
 
+Every local run records itself in `.local/browser-evidence.json` (ignored by Git): the commit, whether the working tree had uncommitted changes when it started, the application tested (the local build, or the deployment `BROWSER_TEST_BASE_URL` names, which need not be the commit), the renderer the GPU check printed and how it reached the GPU (headless or a virtual display; the check probes Chromium, so other browsers' renderers stay unknown), the platform, and the passed, failed, skipped and flaky tests per project. The newest 20 runs are kept. `pnpm task ready` posts the newest run on the pull request's head commit as a comment, once per commit. It warns, without stopping, when no run is recorded, when the newest run is for another commit, or when the run on the head started with uncommitted changes; then run again, or say in the pull request why no run is needed. The record replaces copying the renderer line and counts by hand; the command, the engines not run and any manual checks still go into the pull request text.
+
 `pnpm test:devices` runs the tests on several projects and farm devices in turn and prints a summary; `--report <pr>` posts it on the pull request, replacing its previous report. This coverage costs no CI minutes. It builds the checked-out commit first, and it reports only when the pull request is open at that commit and the working tree is clean, both before the run and again before posting, so the report describes the pull request. A `BROWSER_TEST_BASE_URL` or `REMOTE_BROWSER_WS_ENDPOINT` set in your shell is used and named in the report.
 
 ```sh
@@ -198,7 +200,7 @@ What a farm's machines draw with depends on the provider, the plan and the machi
 ## Rules
 
 - **When a browser test is required.** A change to what the user sees or does needs a browser test, or an update to one, in the same pull request. Logic that can be tested without a browser stays in unit tests: they are faster and fail more precisely.
-- **Evidence.** Report every local run in the pull request: the commit, the command, the browser and the renderer it printed, and the result. For a failure, attach or link its trace. A screenshot is an illustration; the trace is the evidence.
+- **Evidence.** Report every local run in the pull request: the commit, the command, the browser and the renderer it printed, and the result. `pnpm task ready` posts the recorded run for the head commit; see "Report the results on the pull request". For a failure, attach or link its trace. A screenshot is an illustration; the trace is the evidence.
 - **A failing browser test** is handled like any failing check: fix the cause. On a slower machine than the developer's, such as a CI runner, measure where the time goes before touching a bound; a bound that only holds on one machine is set for that machine and says so. Retries are off everywhere. Do not add retries, raise a timeout or mark a test as skipped to get a pull request through; a flaky test gets a `bug` issue.
 - **Credentials.** Farm credentials live in the `browser-farm` environment's secret and in uncommitted `.env` files. An agent does not read, print or pass them on, and does not start a farm run unless the issue or the owner asks for it: it spends money.
 - **Selectors.** Find elements by role and visible text, as a user would; avoid selectors tied to markup or styling.
