@@ -94,6 +94,17 @@ describe("evidenceMarkdown", () => {
     const text = evidenceMarkdown(
       run({ gpu: "off", renderer: null, rendererKind: null, display: null, remote: true }),
     );
-    expect(text).toContain("Renderer: not checked (BROWSER_GPU=off, remote browser).");
+    expect(text).toContain(
+      "Renderer (Chromium's GPU check): not checked (BROWSER_GPU=off, remote browser).",
+    );
+  });
+
+  it("names the application tested: the local build, or a deployment", () => {
+    expect(evidenceMarkdown(run())).toContain(
+      "Application: the commit's production build, served locally.",
+    );
+    expect(evidenceMarkdown(run({ target: "https://example.com/app/" }))).toContain(
+      "Application: https://example.com/app/, a deployment that need not be this commit.",
+    );
   });
 });

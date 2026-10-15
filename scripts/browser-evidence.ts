@@ -32,6 +32,8 @@ const runShape = json.object({
   display: json.nullable(json.string),
   /** A remote browser (a testing farm) instead of a local one. */
   remote: json.boolean,
+  /** BROWSER_TEST_BASE_URL: a deployment, not necessarily the commit; absent for its build. */
+  target: json.optional(json.string),
   platform: json.string,
   projects: json.record(countsShape),
 });
@@ -95,6 +97,10 @@ export function evidenceMarkdown(run: BrowserRun): string {
     run.renderer === null
       ? `not checked (BROWSER_GPU=${run.gpu}${run.remote ? ", remote browser" : ""})`
       : `${run.renderer} (${run.rendererKind ?? "unknown"}${run.display === null ? "" : `, ${run.display}`})`;
+  const application =
+    run.target === undefined
+      ? "the commit's production build, served locally"
+      : `${run.target}, a deployment that need not be this commit`;
   const rows = Object.entries(run.projects).map(
     ([project, c]) => `| ${project} | ${c.passed} | ${c.failed} | ${c.skipped} | ${c.flaky} |`,
   );
@@ -102,7 +108,10 @@ export function evidenceMarkdown(run: BrowserRun): string {
     evidenceMarker(run.commit),
     `**Browser tests** on \`${run.commit.slice(0, 7)}\`, ${run.platform}, finished ${run.finishedAt}: ${run.status}.`,
     "",
-    `Renderer: ${renderer}.`,
+    `Application: ${application}.`,
+    "",
+    // The GPU check probes Chromium; other browsers' renderers are not known.
+    `Renderer (Chromium's GPU check): ${renderer}.`,
     "",
     "| Project | Passed | Failed | Skipped | Flaky |",
     "| --- | --- | --- | --- | --- |",
