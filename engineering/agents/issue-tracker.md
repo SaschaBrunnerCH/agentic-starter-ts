@@ -55,6 +55,16 @@ An issue is claimed when it is assigned to someone and its Status is In progress
 - **No issue exists for the work.** If the owner asked for the work, create the issue with `pnpm issue create`, then claim it. An issue you propose yourself goes to Backlog without a readiness label, and you do not start it: the owner decides what is built and sets Ready. A pull request without an issue is not accepted, except Dependabot's.
 - **You stop without finishing.** Leave a handoff; keep the claim if you will resume, otherwise remove your assignment and set the Status back to Ready.
 
+## Images
+
+With gh 2.99 or later, attach images to issues and pull requests with `--attach`, repeatable, on `gh issue create|edit|comment` and `gh pr create|edit|comment`:
+
+```sh
+gh issue comment 123 --body-file comment.md --attach './screenshot.png#Alt text'
+```
+
+A Markdown reference in the body, `![Alt text](./screenshot.png)`, is replaced with the uploaded image.
+
 ## Project
 
 The Project linked to this repository is its live planning and execution view. `pnpm setup:github` creates it and prints its URL; it is also listed on the repository's Projects tab.
