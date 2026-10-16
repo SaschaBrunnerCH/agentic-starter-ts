@@ -55,6 +55,20 @@ An issue is claimed when it is assigned to someone and its Status is In progress
 - **No issue exists for the work.** If the owner asked for the work, create the issue with `pnpm issue create`, then claim it. An issue you propose yourself goes to Backlog without a readiness label, and you do not start it: the owner decides what is built and sets Ready. A pull request without an issue is not accepted, except Dependabot's.
 - **You stop without finishing.** Leave a handoff; keep the claim if you will resume, otherwise remove your assignment and set the Status back to Ready.
 
+## Images
+
+Screenshots, design mockups and visual test evidence go into the issue or pull request they explain, never into the repository. Images the application ships, test fixtures and icons stay in the repository.
+
+`gh issue create|edit|comment` and `gh pr create|edit|comment` attach them with a repeatable `--attach '<file>#<alt text>'`, available since gh 2.99.0; `gh --version` shows yours. GitHub stores the files, private like the repository.
+
+```sh
+gh issue comment 40 --body-file comment.md --attach './start.png#The start panel on a phone'
+```
+
+- A Markdown reference in the body, `![The start panel](./start.png)`, is replaced with the uploaded address.
+- An HTML `<img src="./start.png">` is not: its upload is appended to the body instead. Write the reference in Markdown, or move the appended address into the tag and edit the comment.
+- With an older gh, update it. Until then, attach the images on GitHub's web page, by dragging them into the comment box.
+
 ## Project
 
 The Project linked to this repository is its live planning and execution view. `pnpm setup:github` creates it and prints its URL; it is also listed on the repository's Projects tab.
