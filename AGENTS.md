@@ -43,7 +43,6 @@ Pass `--authorized-by-owner` and `--head` only for the commit the owner said yes
 | Audit production dependencies weekly and handle Dependabot pull requests within a week. | `.github/workflows/dependency-audit.yml`; see `engineering/agents/dependency-automation.md`. | Mixed |
 | Report vulnerabilities privately. | `SECURITY.md`; `scripts/setup-github.ts` enables private reporting where GitHub offers it. | Mixed |
 | Clean up locally after a merge. | `scripts/task.ts` (`pnpm task cleanup <pr>`) and "Post-merge cleanup" below. | Mixed |
-| Keep images that explain work (screenshots, mockups, visual evidence) in issues and pull requests, not in the repository. | `gh issue` and `gh pr` with `--attach` (gh 2.99 or later); see "Images" in `engineering/agents/issue-tracker.md`. | Review-only |
 | Use the domain terms of `CONTEXT.md`; work only with the approved AI tools and no unapproved MCP server. | Review; tools are listed in `engineering/agents/ai-tools.md`. | Review-only |
 | Escalate a test believed wrong with measured evidence; keep its tolerance. | The author records the measurements in the pull request or issue. | Review-only |
 | Verify task ownership and base, and leave resumable handoffs with verified states. | `engineering/agents/task-lifecycle.md`. | Review-only |
