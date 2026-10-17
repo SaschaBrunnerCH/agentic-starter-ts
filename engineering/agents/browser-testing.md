@@ -66,7 +66,7 @@ The browser tests include an accessibility check: axe (`@axe-core/playwright`) r
 
 ### All three engines, on every system you can reach
 
-Use the [browser/device matrix](browser-device-coverage.md#declare-the-supported-matrix) to distinguish engine, distribution, browser OS, viewport, API and evidence. The same guide covers optional tablet orientation/touch checks and real-device access.
+Use the [visual browser/device overview](browser-device-coverage.md) and its [text matrix](browser-device-coverage.md#declare-the-supported-matrix) to distinguish engine, distribution, browser OS, viewport, API and evidence. The same guide covers optional tablet orientation/touch checks and real-device access.
 
 Browsers come from three engines: Chromium (Chrome and Edge), Gecko (Firefox) and WebKit (Safari). Each has its own bugs, and each draws through the operating system's graphics drivers. Until a project adopts focused pull-request testing behind enforced complete release verification, a change to what users see is tested on all three engines and every operating system the developer can reach: Linux, native Windows and macOS, with WSL recorded separately. After adoption, pull requests run affected journeys and relevant engine/system smoke checks; the full declared supported inventory runs before release instead. Engine-specific changes still need the affected engine. The pull request lists each run with its engine, system and result, the renderer of each GPU run, and names what was not reachable and why, for example "macOS: no machine". A testing farm closes gaps for systems and phones nobody has.
 

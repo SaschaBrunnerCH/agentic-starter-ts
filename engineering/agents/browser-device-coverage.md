@@ -6,6 +6,12 @@ Playwright browsers and an installed Chrome, Chromium or Edge for hardware
 discovery; `pnpm browser:doctor --help` explains prerequisites. Select only the
 APIs the application uses, as the [GPU guide](browser-gpu-discovery.md) describes.
 
+[![Browser and device test paths: Playwright across Windows, WSL, Linux and macOS; local Android and iPhone/iPad over cable or wireless; emulation and farm protocols shown separately](../diagrams/browser-device-matrix.svg)](../diagrams/browser-device-matrix.svg)
+
+Open the graphic for full size. Built-in, documented and separate-integration
+labels describe possible paths; record actual test results separately using the
+[evidence format](#record-actual-evidence). The table below is its text counterpart.
+
 ## Declare the supported matrix
 
 Describe supported combinations explicitly. A useful row contains browser and
