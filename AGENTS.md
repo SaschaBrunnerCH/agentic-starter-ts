@@ -42,7 +42,7 @@ Pass `--authorized-by-owner` and `--head` only for the commit the owner said yes
 | Release only the head of `main` with the owner's authorization for the version; never move or delete a release tag. | `scripts/release.ts`, `.github/workflows/release.yml`, `.github/rulesets/release-tags.json` and immutable releases. See `engineering/operations/releases.md`. | Mixed |
 | Audit production dependencies weekly and handle Dependabot pull requests within a week. | `.github/workflows/dependency-audit.yml`; see `engineering/agents/dependency-automation.md`. | Mixed |
 | Report vulnerabilities privately. | `SECURITY.md`; `scripts/setup-github.ts` enables private reporting where GitHub offers it. | Mixed |
-| Clean up locally after a merge, preserving wanted browser diagnostics before explicit discard. | `scripts/task.ts` (`pnpm task cleanup <pr>`) retains ignored browser evidence through `scripts/task-rules.ts`; see "Post-merge cleanup" below. | Mixed |
+| Clean up locally after a merge, preserving wanted browser diagnostics before explicit discard. | `scripts/task.ts` (`pnpm task cleanup <pr>`) retains ignored browser diagnostics through `scripts/task-rules.ts`; see "Post-merge cleanup" below. | Mixed |
 | Use the domain terms of `CONTEXT.md`; work only with the approved AI tools and no unapproved MCP server. | Review; tools are listed in `engineering/agents/ai-tools.md`. | Review-only |
 | Escalate a test believed wrong with measured evidence; keep its tolerance. | The author records the measurements in the pull request or issue. | Review-only |
 | Verify task ownership and base, and leave resumable handoffs with verified states. | `engineering/agents/task-lifecycle.md`. | Review-only |
@@ -52,7 +52,7 @@ Change this table in the pull request that changes a guardrail. Enforced: a name
 
 ## Post-merge cleanup
 
-After a merge, or on finding a pull request already merged, clean up before the final response. `pnpm task cleanup <pr>` fetches, compares the local branch with the merged head, removes a clean worktree and its branch, verifies both are gone, and refuses instead of forcing. It cannot see other sessions or running processes: stop the task's processes and make sure no other session uses the worktree before running it, from outside the worktree. Without the command, do the same by hand: never delete a branch whose tip differs from the merged head, never force-remove a worktree, keep anything dirty, locked or uncertain and report why. Name what was removed or retained in the final response.
+After a merge, or on finding a pull request already merged, clean up before the final response. `pnpm task cleanup <pr>` fetches, compares the local branch with the merged head, removes a clean worktree and its branch, verifies both are gone, and refuses instead of forcing. Before removal, [preserve wanted browser diagnostics](engineering/agents/task-lifecycle.md#preserve-browser-diagnostics). It cannot see other sessions or running processes: stop the task's processes and make sure no other session uses the worktree before running it, from outside the worktree. Without the command, inspect ignored files as well as tracked and untracked changes, and apply the same evidence protection by hand: never delete a branch whose tip differs from the merged head, never force-remove a worktree, keep anything dirty, locked or uncertain and report why. Name what was removed or retained in the final response.
 
 ## External repository approval
 
