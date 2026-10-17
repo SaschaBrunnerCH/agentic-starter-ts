@@ -4,17 +4,10 @@ import {
   classifyRenderer,
   describeOwner,
   findOnPath,
-  freeDisplayNumber,
   gpuLaunchArgs,
   gpuSetting,
-  lockDecision,
-  rendererFailure,
   rendererNote,
-  systemBrowser,
-  tryVirtualDisplayNext,
   virtualDisplayEnvironment,
-  judgeAdapter,
-  webgpuFailure,
   webgpuSetting,
 } from "./browser-gpu.ts";
 
@@ -27,13 +20,18 @@ describe("gpuSetting", () => {
 
   it("turns it off on request, in CI and for a remote browser", () => {
     expect(gpuSetting({ BROWSER_GPU: "off" })).toBe("off");
-    expect(gpuSetting({ CI: "true", BROWSER_GPU: "required" })).toBe("off");
+    expect(gpuSetting({ CI: "true" })).toBe("off");
+    expect(gpuSetting({ CI: "true", BROWSER_GPU: "required" })).toBe("required");
+    expect(gpuSetting({ REMOTE_BROWSER_WS_ENDPOINT: "ws://remote", BROWSER_GPU: "required" })).toBe(
+      "required",
+    );
+    expect(() => gpuSetting({ CI: "true", BROWSER_GPU: "invalid" })).toThrow();
     expect(gpuSetting({ REMOTE_BROWSER_WS_ENDPOINT: "ws://127.0.0.1:9326/" })).toBe("off");
   });
 
   it("rejects an unknown value instead of guessing", () => {
     expect(() => gpuSetting({ BROWSER_GPU: "yes" })).toThrow(
-      'BROWSER_GPU must be "required" or "off", not "yes".',
+      'BROWSER_GPU must be "required" or "off".',
     );
   });
 });
@@ -63,12 +61,15 @@ describe("classifyRenderer", () => {
     expect(classifyRenderer(null)).toBe("unknown");
     expect(classifyRenderer(undefined)).toBe("unknown");
     expect(classifyRenderer("  ")).toBe("unknown");
+    expect(classifyRenderer("WebKit WebGL")).toBe("unknown");
+    expect(classifyRenderer("ANGLE generic renderer")).toBe("unknown");
+    expect(classifyRenderer("NVIDIA WARP CPU")).toBe("software");
   });
 });
 
 describe("gpuLaunchArgs", () => {
   it("asks for ANGLE on Vulkan without a window surface on Linux", () => {
-    expect(gpuLaunchArgs("linux")).toEqual([
+    expect(gpuLaunchArgs("vulkan")).toEqual([
       "--ignore-gpu-blocklist",
       "--enable-gpu",
       "--use-angle=vulkan",
@@ -78,8 +79,7 @@ describe("gpuLaunchArgs", () => {
   });
 
   it("keeps the platform's own backend elsewhere", () => {
-    expect(gpuLaunchArgs("darwin")).toEqual(["--ignore-gpu-blocklist", "--enable-gpu"]);
-    expect(gpuLaunchArgs("win32")).toEqual(["--ignore-gpu-blocklist", "--enable-gpu"]);
+    expect(gpuLaunchArgs("default")).toEqual(["--ignore-gpu-blocklist", "--enable-gpu"]);
   });
 });
 
@@ -94,48 +94,15 @@ describe("finding executables", () => {
     expect(findOnPath(["Xvfb"], { PATH: path }, () => false)).toBeUndefined();
     expect(findOnPath(["Xvfb"], {}, () => true)).toBeUndefined();
   });
-
-  it("prefers the configured browser, then a system Chromium", () => {
-    expect(systemBrowser({ BROWSER_GPU_EXECUTABLE: "/x/chrome", PATH: path }, () => true)).toBe(
-      "/x/chrome",
-    );
-    expect(
-      systemBrowser({ BROWSER_GPU_EXECUTABLE: "", PATH: path }, (p) => p.endsWith("chromium")),
-    ).toBe(join("/opt/bin", "chromium"));
-    expect(systemBrowser({ PATH: path }, () => false)).toBeUndefined();
-  });
 });
 
-describe("lockDecision", () => {
-  const owner = { pid: 4242, directory: "/work/app", startedAt: "2026-10-15T07:00:00.000Z" };
-
-  it("takes a free lock and one left by a process that is gone", () => {
-    expect(lockDecision(undefined, () => true)).toBe("take");
-    expect(lockDecision(owner, () => false)).toBe("take-stale");
-  });
-
-  it("is blocked by a living owner and names it", () => {
-    expect(lockDecision(owner, (pid) => pid === 4242)).toBe("blocked");
-    expect(describeOwner(owner)).toBe("process 4242 in /work/app, since 2026-10-15T07:00:00.000Z");
-  });
+it("names the lock owner", () => {
+  expect(describeOwner({ pid: 4242, directory: "/work/app", startedAt: "2026-10-15" })).toBe(
+    "process 4242 in /work/app, since 2026-10-15",
+  );
 });
 
-describe("the virtual display", () => {
-  it("is tried only on Linux with Xvfb, after headless did not reach the GPU", () => {
-    expect(tryVirtualDisplayNext("linux", "software", true)).toBe(true);
-    expect(tryVirtualDisplayNext("linux", "unknown", true)).toBe(true);
-    expect(tryVirtualDisplayNext("linux", "hardware", true)).toBe(false);
-    expect(tryVirtualDisplayNext("linux", "unknown", false)).toBe(false);
-    expect(tryVirtualDisplayNext("darwin", "unknown", true)).toBe(false);
-    expect(tryVirtualDisplayNext("win32", "software", true)).toBe(false);
-  });
-
-  it("takes the first number from 90 that no socket or lock file announces", () => {
-    expect(freeDisplayNumber([])).toBe(90);
-    expect(freeDisplayNumber(["X0", "X1", "X90", ".X91-lock", ".X11-unix", "X92-other"])).toBe(92);
-    expect(freeDisplayNumber(["X5"], 5)).toBe(6);
-  });
-
+describe("the browser environment", () => {
   it("points the browser at it and leaves the desktop session out", () => {
     expect(
       virtualDisplayEnvironment(
@@ -182,20 +149,6 @@ describe("rendererNote", () => {
   });
 });
 
-describe("rendererFailure", () => {
-  it("names the renderer and the saved report", () => {
-    expect(rendererFailure("SwiftShader", ["test-results/gpu-report.txt"])).toBe(
-      "BROWSER_GPU=required, but the browser draws with SwiftShader. The browser's GPU report is in test-results/gpu-report.txt; read it first. See the GPU section of engineering/agents/browser-testing.md, or run with BROWSER_GPU=off.",
-    );
-  });
-
-  it("says no WebGL, and leaves the report out when none was saved", () => {
-    expect(rendererFailure(null, [])).toMatch(
-      /^BROWSER_GPU=required, but the browser draws with no WebGL\. See/u,
-    );
-  });
-});
-
 describe("webgpuSetting", () => {
   it("is off unless required, and off wherever the GPU is not required", () => {
     expect(webgpuSetting({})).toBe("off");
@@ -210,37 +163,9 @@ describe("webgpuSetting", () => {
   });
 });
 
-describe("WebGPU in the launch flags and the message", () => {
+describe("WebGPU launch flags", () => {
   it("adds the WebGPU flag only when asked", () => {
-    expect(gpuLaunchArgs("linux", true)).toContain("--enable-unsafe-webgpu");
-    expect(gpuLaunchArgs("linux")).not.toContain("--enable-unsafe-webgpu");
-  });
-
-  it("says why and how to go on", () => {
-    expect(webgpuFailure("the browser offers WebGPU but no adapter")).toBe(
-      "BROWSER_WEBGPU=required, but the browser offers WebGPU but no adapter. See the GPU section of engineering/agents/browser-testing.md, or run without BROWSER_WEBGPU.",
-    );
-  });
-});
-
-describe("judgeAdapter", () => {
-  it("accepts a GPU adapter", () => {
-    expect(judgeAdapter("intel gen-9 Intel(R) UHD Graphics 630", false)).toEqual({
-      adapter: "intel gen-9 Intel(R) UHD Graphics 630",
-      reason: null,
-    });
-  });
-
-  it("refuses a fallback adapter and one that names a software renderer", () => {
-    expect(judgeAdapter("google swiftshader", false)).toEqual({
-      adapter: null,
-      reason: "the only adapter draws on the CPU (google swiftshader)",
-    });
-    expect(judgeAdapter("mesa llvmpipe", false).adapter).toBeNull();
-    expect(judgeAdapter("some vendor", true).adapter).toBeNull();
-  });
-
-  it("names an adapter without a description", () => {
-    expect(judgeAdapter("", false).adapter).toBe("an adapter without a description");
+    expect(gpuLaunchArgs("vulkan", true)).toContain("--enable-unsafe-webgpu");
+    expect(gpuLaunchArgs("vulkan")).not.toContain("--enable-unsafe-webgpu");
   });
 });

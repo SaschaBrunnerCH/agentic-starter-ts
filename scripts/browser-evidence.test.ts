@@ -117,3 +117,41 @@ describe("the WebGPU adapter in the evidence", () => {
     expect(readRuns(withRun([], run({ webgpuAdapter: "x" })))[0]?.webgpuAdapter).toBe("x");
   });
 });
+
+describe("GPU discovery evidence", () => {
+  it("retains the profile, version and report without implying other engines were probed", () => {
+    const record = run({
+      gpuProfile: JSON.stringify({
+        executablePath: "C:\\Users\\private\\Chrome\\chrome.exe",
+        backend: "default",
+        apis: ["webgl2"],
+      }),
+      gpuReport: "C:\\Users\\private\\repo\\.local\\browser-gpu\\run\\report.json",
+      browserVersion: "152",
+    });
+    expect(readRuns(withRun([], record))[0]).toEqual(record);
+    expect(evidenceMarkdown(record)).toContain(
+      "Chromium launch profile: `chrome.exe, default, webgl2, headless`. Browser version: 152.",
+    );
+    expect(evidenceMarkdown(record)).not.toContain("private\\Chrome");
+    expect(evidenceMarkdown(record)).toContain(".local/browser-gpu/run/report.json");
+    expect(
+      evidenceMarkdown(
+        run({
+          gpuProfile: JSON.stringify({
+            channel: "chrome",
+            backend: "default",
+            apis: ["webgl"],
+            display: ":99",
+          }),
+          gpuReport: "some-absolute-location",
+        }),
+      ),
+    ).toContain("chrome, default, webgl, private display");
+    expect(evidenceMarkdown(record)).toContain(
+      "other engines and physical mobile devices are unverified",
+    );
+    expect(evidenceMarkdown(run({ gpuProfile: "p" }))).toContain("Browser version: unknown");
+    expect(evidenceMarkdown(run({ gpuProfile: "p" }))).toContain("`unavailable`");
+  });
+});

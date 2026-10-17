@@ -13,7 +13,7 @@ function git(args: readonly string[]): string {
 
 /**
  * Records each local browser run in .local/browser-evidence.json: the commit, the renderer
- * the GPU check found (browser-gpu-setup.ts leaves it in the environment) and the counts per
+ * the GPU check found (browser-test.ts leaves it in the environment) and the counts per
  * project. `pnpm task ready` puts the run for the head commit into the pull request.
  */
 export default class BrowserEvidenceReporter implements Reporter {
@@ -57,6 +57,15 @@ export default class BrowserEvidenceReporter implements Reporter {
         ...(environment.BROWSER_TEST_BASE_URL === undefined
           ? {}
           : { target: environment.BROWSER_TEST_BASE_URL }),
+        ...(environment.BROWSER_GPU_PROFILE === undefined
+          ? {}
+          : { gpuProfile: environment.BROWSER_GPU_PROFILE }),
+        ...(environment.BROWSER_GPU_REPORT === undefined
+          ? {}
+          : { gpuReport: environment.BROWSER_GPU_REPORT }),
+        ...(environment.BROWSER_GPU_VERSION === undefined
+          ? {}
+          : { browserVersion: environment.BROWSER_GPU_VERSION }),
         platform: `${process.platform} ${process.arch}`,
         projects: this.counts,
       }),

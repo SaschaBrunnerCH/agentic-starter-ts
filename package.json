@@ -18,7 +18,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run --coverage",
-    "test:browser": "playwright test --project chromium",
+    "test:browser": "node scripts/browser-test.ts",
     "test:browser:install": "playwright install --with-deps chromium",
     "test:devices": "node scripts/test-devices.ts",
     "check:unused": "node scripts/check-unused.ts",
@@ -35,7 +35,8 @@
     "setup:previews": "node scripts/setup-previews.ts",
     "issue": "node scripts/issue.ts",
     "task": "node scripts/task.ts",
-    "release": "node scripts/release.ts"
+    "release": "node scripts/release.ts",
+    "browser:doctor": "node scripts/browser-doctor.ts"
   },
   "lint-staged": {
     "*.{cjs,cts,js,jsx,mjs,mts,ts,tsx}": "oxlint --fix --deny-warnings",
