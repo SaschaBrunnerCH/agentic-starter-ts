@@ -133,7 +133,9 @@ limitations must be checked before adopting it. It is not integrated here.
 ### iPhone/iPad: cable and wireless
 
 For Apple's standard inspection path, use a Mac, unlock and trust/pair the device,
-and enable Safari's Web Inspector in the device settings. Enable Safari's developer
+and enable Web Inspector under **Settings → Apps → Safari → Advanced** (older
+versions put Safari directly under Settings). Keep Safari open and the device
+unlocked during the check. Enable Safari's developer
 features on the Mac, open the intended page on the device and select it from
 Safari's Develop menu. [WebKit's inspection guide](https://webkit.org/web-inspector/enabling-web-inspector/)
 covers cable inspection and wireless inspection after Xcode device configuration.
@@ -146,8 +148,11 @@ serve that build and the device can browse it; Apple's standard local Safari
 inspection workflow requires macOS. Optional third-party
 [WebInspector bridges](https://github.com/doronz88/pymobiledevice3/blob/master/docs/guides/webview-debugging.md)
 offer other host paths, but need separate version, trust, transport and browser
-proof; they are not installed or supported by this starter. JavaScript/screenshot
-access alone does not establish native touch automation. Signed native automation
+proof; they are not installed or supported by this starter. Some automation tools
+also require **Remote Automation** in Safari's Advanced settings; follow that
+tool's prerequisites. JavaScript, screenshots and graphics readback alone do not
+establish native touch or keyboard automation. Use a normal Safari tab for the
+manual input journey and record it separately. Signed native automation
 and provider-specific iOS automation are separate integrations.
 
 Close owned inspection sessions/tabs, stop the test server, disable wireless
