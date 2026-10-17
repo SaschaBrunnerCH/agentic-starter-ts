@@ -66,6 +66,8 @@ The browser tests include an accessibility check: axe (`@axe-core/playwright`) r
 
 ### All three engines, on every system you can reach
 
+Use the [visual browser/device overview](browser-device-coverage.md) and its [text matrix](browser-device-coverage.md#declare-the-supported-matrix) to distinguish engine, distribution, browser OS, viewport, API and evidence. The same guide covers optional tablet orientation/touch checks and real-device access.
+
 Browsers come from three engines: Chromium (Chrome and Edge), Gecko (Firefox) and WebKit (Safari). Each has its own bugs, and each draws through the operating system's graphics drivers. Until a project adopts focused pull-request testing behind enforced complete release verification, a change to what users see is tested on all three engines and every operating system the developer can reach: Linux, native Windows and macOS, with WSL recorded separately. After adoption, pull requests run affected journeys and relevant engine/system smoke checks; the full declared supported inventory runs before release instead. Engine-specific changes still need the affected engine. The pull request lists each run with its engine, system and result, the renderer of each GPU run, and names what was not reachable and why, for example "macOS: no machine". A testing farm closes gaps for systems and phones nobody has.
 
 `playwright.config.ts` has five projects. `pnpm test:browser` defaults to `chromium`. `mobile-chrome` shares its verified launch profile. Other engines use Playwright's browsers and their renderer remains unverified; those runs check function:
@@ -113,19 +115,9 @@ With the Playwright container above, every project runs without installing brows
 
 ### Real phones and tablets
 
-The quickest check needs no setup: serve the build on your network and open it on the device.
+Follow [laptop-to-device setup](browser-device-coverage.md#reach-a-real-device-from-a-laptop) for Android USB/Wi-Fi, iPhone/iPad cable/wireless and Windows/WSL networking boundaries. A reachable LAN build checks ordinary UI; secure APIs need trusted HTTPS or a verified secure loopback route. Desktop emulation never establishes physical-device GPU or native-input acceptance.
 
-```sh
-pnpm build && pnpm preview --host   # prints a network address; open it on a phone in the same Wi-Fi
-```
-
-To see what the device does:
-
-- **Android:** turn on USB debugging, connect the phone and open `chrome://inspect` in Chrome on the computer; the phone's tabs open in the developer tools. Playwright's experimental Android API can automate Chrome on a connected phone through `adb`; these tests do not use it.
-- **iPhone and iPad:** turn on Web Inspector in the device's Safari settings, connect it to a Mac and use Safari's Develop menu. Nothing automates Safari on a real iPhone through Playwright.
-- **From WSL:** a USB device reaches WSL only through `usbipd-win`; the network address above is simpler.
-
-Record a check done by hand in the pull request: device, browser version, the commit or URL, what you did and what you saw.
+The guide separates connection, inspection, automation and application acceptance, including platform/tool prerequisites and owned cleanup. Record each real run using its [evidence format](browser-device-coverage.md#record-actual-evidence); keep unavailable devices explicitly unverified.
 
 ### Let an agent use the browser
 
@@ -153,21 +145,11 @@ What it does not protect against: Playwright MCP is not a security boundary, and
 
 ## Testing farm
 
-A testing farm is the easy way to broad coverage: browsers, operating systems and real phones you do not own, tested with the same tests from one secret. It is optional and started by hand, since farm minutes cost money. No provider is built in.
+A testing farm can supply browsers, operating systems and real devices you do not own. It is optional and started by hand, since sessions consume quota or money. No provider SDK is built in. The existing connector runs these tests only through a compatible Playwright protocol endpoint; a WebDriver/Appium, CDP or provider SDK connection needs separate integration.
 
 ### Providers
 
-Each of these serves Playwright; how it connects decides the effort:
-
-| Provider                                                                        | Desktop browsers                                                        | Real phones                                                              |
-| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| [BrowserStack](https://www.browserstack.com/docs/automate/playwright)           | Through an endpoint: Chrome, Edge, Firefox, WebKit on Windows and macOS | Android and iOS through its own SDK, not a plain endpoint                |
-| [TestingBot](https://testingbot.com/support/web-automate/playwright)            | Through an endpoint                                                     | Android through Playwright's Android API, which these tests do not use   |
-| [LambdaTest](https://www.lambdatest.com/support/docs/playwright-testing/)       | Through an endpoint                                                     | Android through the same endpoint, with the capability for a real device |
-| [Sauce Labs](https://docs.saucelabs.com/web-apps/automated-testing/playwright/) | Through its own runner, `saucectl`, not an endpoint                     | Not for Playwright                                                       |
-| Azure Playwright Workspaces                                                     | Linux and Windows browsers, through the `@azure/playwright` package     | None                                                                     |
-
-Offers change: check the provider's documentation for the devices it serves through Playwright and the Playwright versions it supports. The farm's Playwright must match `@playwright/test` in `package.json`, or lie in the range the provider supports. A provider that needs its own SDK, runner or the Android API needs its own connection code; record that choice as an ADR.
+Use the [farm connection matrix and current primary references](browser-device-coverage.md#testing-farms) before selecting a provider or device. Provider-specific iOS and Android automation exists, but the phone-emulation projects do not automatically connect to it. Check versions, catalog availability, actual capabilities, budgets, build identity and cleanup. A provider's feature list does not establish this template's integration or physical-GPU acceptance.
 
 ### Connect one
 
@@ -177,8 +159,9 @@ Offers change: check the provider's documentation for the devices it serves thro
    ```text
    windows-edge   chromium       wss://<provider endpoint with credentials and capabilities>
    macos-webkit   webkit         wss://...
-   android-pixel  mobile-chrome  wss://...
    ```
+
+   These examples name remote desktop browsers. Use a real-device endpoint only when the provider explicitly supports the same Playwright protocol and project semantics; an Appium URL cannot be placed in this file.
 
 3. For the workflow, store it as the environment's secret:
 
@@ -188,13 +171,13 @@ Offers change: check the provider's documentation for the devices it serves thro
 
 4. Run the devices from your machine with `pnpm test:devices --endpoints <file> --report <pr>`, which costs no CI minutes. To run them in CI instead, start the workflow "Browser tests on a testing farm" with the URL to test: production or a pull request's preview. It runs `main`'s tests on every device in turn, lists each result in the run's summary and keeps the traces of failures per device.
 
-Locally, the same tests reach one farm device with `REMOTE_BROWSER_WS_ENDPOINT` and `BROWSER_TEST_BASE_URL` exported from a `.env` file that is not committed. With only the endpoint set, the local build is served and the remote browser reaches it through the Playwright connection (`exposeNetwork`). Not every provider supports that, so give a farm a URL it can reach unless its documentation says otherwise.
+Locally, the same tests reach one farm device with `REMOTE_BROWSER_WS_ENDPOINT` and `BROWSER_TEST_BASE_URL` exported from a `.env` file that is not committed. With only the endpoint set, the local build is served and the connector requests loopback exposure through Playwright (`exposeNetwork`). This is not proof that a provider supports forwarding or that the rendering device can reach the build; prefer an identified reachable URL unless that path has been verified.
 
 Most farms show video and logs on their side; the trace is the provider-independent evidence.
 
 ### What a farm's browsers draw with
 
-What a farm's machines draw with depends on the provider, the plan and the machine, and changes as providers replace their machines: some desktop browsers run in virtual machines without a GPU and draw in software, others on a virtual or a real GPU, and real phones on their own. Do not assume it from the provider's description, from another provider or from an earlier run. Before reading any timing from a farm, read the renderer on each device in that run (the WebGL renderer string, as the local GPU check prints it) and record it with the result; a software or virtual renderer makes the run evidence for function only. Real phones are driven through WebDriver (Appium) on most providers, not through the Playwright tests in `e2e/`, so a check on them is a script of its own or a check by hand: record the device, its operating system, the browser and the renderer.
+Read the adapter and exercise each required API on the rendering host, then check the application's actual frame. Software/virtual GPU results, remote-device evidence and native-workstation acceptance remain distinct. The [farm guide](browser-device-coverage.md#testing-farms) explains these limits and session/tunnel cleanup. Real-device automation may use WebDriver/Appium or provider-specific Playwright paths; neither is implied by viewport emulation or a passing desktop suite.
 
 ## Rules
 

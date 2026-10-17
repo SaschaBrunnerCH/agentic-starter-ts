@@ -15,6 +15,7 @@ Contributor documentation: how work is planned, done, verified and merged. Produ
 | [Review by a second agent](agents/review.md)                   | When to ask for one, how to brief it, what it establishes                    |
 | [Browser testing](agents/browser-testing.md)                   | Browser tests locally, in the PR build and on a testing farm                 |
 | [Browser GPU discovery](agents/browser-gpu-discovery.md)       | Find and verify a hardware launch profile across operating systems           |
+| [Device coverage](agents/browser-device-coverage.md)           | Matrix, tablet emulation, wired/wireless phones and tablets, farm limits     |
 | [Dependency automation](agents/dependency-automation.md)       | Dependabot and the weekly audit                                              |
 | [Dependency-direction rules](agents/dependency-rules.md)       | When to add rules about which code may import which, and how to enforce them |
 | [Deployment](operations/deployment.md)                         | Deploy to Pages, the test after it, rollback, other targets                  |
