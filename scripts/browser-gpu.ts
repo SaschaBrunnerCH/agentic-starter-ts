@@ -1,5 +1,5 @@
-// The rules of local browser runs on the machine's GPU; see the GPU section of
-// engineering/agents/browser-testing.md. scripts/browser-gpu-setup.ts applies them.
+// GPU discovery rules; scripts/browser-gpu-discovery.ts applies them.
+// See engineering/agents/browser-gpu-discovery.md.
 
 import { delimiter, join } from "node:path";
 
@@ -35,14 +35,6 @@ export function webgpuSetting(
   throw new Error('BROWSER_WEBGPU must be "required" or "off".');
 }
 
-/** Why the run stops when no WebGPU adapter is available. */
-export function webgpuFailure(reason: string): string {
-  return (
-    `BROWSER_WEBGPU=required, but ${reason}. ` +
-    "See engineering/agents/browser-gpu-discovery.md, or run without BROWSER_WEBGPU."
-  );
-}
-
 /** What drew the browser's WebGL: a GPU, a software rasterizer, or nobody can tell. */
 export type RendererKind = "hardware" | "software" | "unknown";
 
@@ -60,39 +52,15 @@ export function classifyRenderer(renderer: string | null | undefined): RendererK
   return HARDWARE_RENDERER.test(text) ? "hardware" : "unknown";
 }
 
-/**
- * Whether a WebGPU adapter is on the GPU. WebGPU picks its adapter apart from WebGL, so a
- * hardware WebGL renderer says nothing about it: a fallback adapter, or one whose description
- * names a software renderer, draws on the CPU and is refused.
- */
-export function judgeAdapter(
-  text: string,
-  fallback: boolean,
-): { adapter: string; reason: null } | { adapter: null; reason: string } {
-  const described = text.trim() === "" ? "an adapter without a description" : text.trim();
-  if (fallback || classifyRenderer(text) === "software") {
-    return { adapter: null, reason: `the only adapter draws on the CPU (${described})` };
-  }
-  if (classifyRenderer(text) !== "hardware") {
-    return { adapter: null, reason: `the adapter identity is unknown (${described})` };
-  }
-  return { adapter: described, reason: null };
-}
-
-/**
- * Chromium flags that keep hardware acceleration in headless mode. ANGLE's Vulkan
- * backend on Linux, presenting frames without a window surface (`--disable-vulkan-surface`):
- * without one, headless Chromium on Linux often finds no WebGL, because Vulkan's window
- * surface needs a display. Metal and Direct3D are Chromium's defaults on macOS and Windows.
- */
-export function gpuLaunchArgs(platform: NodeJS.Platform, webgpu = false): string[] {
+/** Hardware-enabled headless flags; Vulkan is an explicit candidate, never an OS verdict. */
+export function gpuLaunchArgs(backend: "default" | "vulkan", webgpu = false): string[] {
   // WebGPU is behind this flag in Chromium on Linux, and it lifts the adapter blocklist.
   const common = [
     "--ignore-gpu-blocklist",
     "--enable-gpu",
     ...(webgpu ? ["--enable-unsafe-webgpu"] : []),
   ];
-  if (platform === "linux") {
+  if (backend === "vulkan") {
     return [
       ...common,
       "--use-angle=vulkan",
@@ -102,9 +70,6 @@ export function gpuLaunchArgs(platform: NodeJS.Platform, webgpu = false): string
   }
   return common;
 }
-
-// The system's browser, not Playwright's bundled one: its GPU stack is the machine's.
-const SYSTEM_BROWSERS = ["chromium", "chromium-browser", "google-chrome", "google-chrome-stable"];
 
 /** The first of the names found on PATH, as a full path. */
 export function findOnPath(
@@ -121,19 +86,6 @@ export function findOnPath(
   return undefined;
 }
 
-/**
- * The executable to launch: BROWSER_GPU_EXECUTABLE when set, else the first system
- * Chromium or Chrome on PATH. Undefined lets Playwright use the installed Chrome.
- */
-export function systemBrowser(
-  environment: Readonly<Record<string, string | undefined>>,
-  exists: (path: string) => boolean,
-): string | undefined {
-  const chosen = environment.BROWSER_GPU_EXECUTABLE;
-  if (chosen !== undefined && chosen !== "") return chosen;
-  return findOnPath(SYSTEM_BROWSERS, environment, exists);
-}
-
 /** Who holds the lock of GPU browser runs, shared by one user's sessions. */
 export interface LockOwner {
   pid: number;
@@ -141,51 +93,8 @@ export interface LockOwner {
   startedAt: string;
 }
 
-/**
- * A lock whose owner process is gone was left by an interrupted run and may be taken;
- * a living owner blocks, so two runs never share the GPU.
- */
-export function lockDecision(
-  existing: LockOwner | undefined,
-  isAlive: (pid: number) => boolean,
-): "take" | "take-stale" | "blocked" {
-  if (existing === undefined) return "take";
-  return isAlive(existing.pid) ? "blocked" : "take-stale";
-}
-
 export function describeOwner(owner: LockOwner): string {
   return `process ${owner.pid} in ${owner.directory}, since ${owner.startedAt}`;
-}
-
-/**
- * Whether to try a private virtual display (Xvfb) after headless did not reach the GPU.
- * Headless comes first everywhere. On some Linux drivers headless Chromium finds the GPU
- * but cannot create a WebGL context on it, while the same browser draws on the GPU on a
- * virtual display; nothing of it appears on the user's desktop.
- */
-export function tryVirtualDisplayNext(
-  platform: NodeJS.Platform,
-  headlessKind: RendererKind,
-  hasXvfb: boolean,
-): boolean {
-  return headlessKind !== "hardware" && platform === "linux" && hasXvfb;
-}
-
-/**
- * The first X display number from 90 on that no server announces, by its socket in
- * /tmp/.X11-unix (`X<n>`) or its lock file in /tmp (`.X<n>-lock`). A server in another
- * namespace may announce neither; the setup then moves on to the next number.
- */
-export function freeDisplayNumber(names: readonly string[], first = 90): number {
-  const used = new Set(
-    names
-      .map((name) => /^(?:X|\.X)(\d+)(?:-lock)?$/u.exec(name)?.[1])
-      .filter(Boolean)
-      .map(Number),
-  );
-  let number = first;
-  while (used.has(number)) number += 1;
-  return number;
 }
 
 // A desktop session's variables make Chromium choose Wayland instead of the virtual display.
@@ -222,16 +131,4 @@ export function rendererNote(
     return "a virtual machine's GPU: functions are tested, timings are not those of a device";
   }
   return undefined;
-}
-
-/** Why the run stops when the GPU check fails, and where the browser's own GPU report is. */
-export function rendererFailure(renderer: string | null, reportFiles: readonly string[]): string {
-  const report =
-    reportFiles.length > 0
-      ? ` The browser's GPU report is in ${reportFiles.join(" and ")}; read it first.`
-      : "";
-  return (
-    `BROWSER_GPU=required, but the browser draws with ${renderer ?? "no WebGL"}.${report} ` +
-    "See engineering/agents/browser-gpu-discovery.md, or run with BROWSER_GPU=off."
-  );
 }

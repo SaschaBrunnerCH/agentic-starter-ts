@@ -1,4 +1,4 @@
-// Resolve discovery before Playwright imports its configuration. Keep its lease and
+// Resolve discovery before Playwright imports its configuration. Keep its lock and
 // any private display until the owned test process exits, including on interruption.
 import { spawn, type ChildProcess } from "node:child_process";
 import { createRequire } from "node:module";
@@ -33,8 +33,9 @@ const interrupt = () => {
   controller.abort(new Error("Browser tests interrupted"));
   child?.kill("SIGTERM");
 };
-process.once("SIGINT", interrupt);
-process.once("SIGTERM", interrupt);
+process.on("SIGINT", interrupt);
+process.on("SIGTERM", interrupt);
+process.on("SIGHUP", interrupt);
 try {
   if (gpuSetting(env) === "required" && !args.includes("--list") && !args.includes("--help")) {
     if (
@@ -81,4 +82,5 @@ try {
   }
   process.off("SIGINT", interrupt);
   process.off("SIGTERM", interrupt);
+  process.off("SIGHUP", interrupt);
 }

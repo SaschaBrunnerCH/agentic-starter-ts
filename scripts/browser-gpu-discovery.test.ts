@@ -28,7 +28,10 @@ vi.mock("@playwright/test", () => ({
     launchServer: async (options: LaunchOptions) => {
       fixture.launches.push(options);
       fixture.abort();
-      if (fixture.firstBrowserFails && options.executablePath?.endsWith("google-chrome"))
+      if (
+        fixture.firstBrowserFails &&
+        /google-chrome$|chrome\.exe$/u.test(options.executablePath ?? "")
+      )
         throw new Error("First browser cannot launch");
       return {
         process: () => ({ pid: 123, spawnargs: [], exitCode: 0, signalCode: null }),
@@ -122,7 +125,15 @@ describe("discovery ownership and failure paths", () => {
     expect(fixture.launches[0]?.args).toContain("--enable-unsafe-webgpu");
     await gpu.close();
   });
-  it("keeps the lease through acceptance and refuses an overlapping run", async () => {
+  it("releases an unused lock and preserves the directory-creation error", async () => {
+    writeFileSync(join(home, ".local"), "blocks directory creation");
+    await expect(
+      commands.discoverGpu({ BROWSER_GPU_EXECUTABLE: "/chosen" }, new AbortController().signal),
+    ).rejects.toThrow(/mkdir/u);
+    expect(existsSync(lock)).toBe(false);
+    expect(fixture.launches).toHaveLength(0);
+  });
+  it("keeps the lock through acceptance and refuses an overlapping run", async () => {
     const gpu = await commands.discoverGpu(
       { BROWSER_GPU_EXECUTABLE: "/chosen" },
       new AbortController().signal,
@@ -130,16 +141,18 @@ describe("discovery ownership and failure paths", () => {
     expect(existsSync(lock)).toBe(true);
     await expect(
       commands.discoverGpu({ BROWSER_GPU_EXECUTABLE: "/chosen" }, new AbortController().signal),
-    ).rejects.toThrow("GPU lease");
+    ).rejects.toThrow("GPU lock");
     expect(fixture.launches).toHaveLength(1);
     expect(fixture.closes).toBe(0);
     expect(readFileSync(gpu.report, "utf8")).toContain("test-version");
+    expect(readFileSync(gpu.report, "utf8")).toContain('"reproduce": [');
+    expect(readFileSync(gpu.report, "utf8")).toContain('"browser:doctor"');
     await gpu.close();
     await gpu.close();
     expect(existsSync(lock)).toBe(false);
     expect(readFileSync(gpu.report, "utf8")).toContain('"discovery": "passed"');
   });
-  it("preserves an unreadable lease, and diagnoses explicit remote verification", async () => {
+  it("preserves an unreadable lock, and diagnoses explicit remote verification", async () => {
     mkdirSync(join(lock, ".."), { recursive: true });
     writeFileSync(lock, "incomplete owner");
     await expect(commands.discoverGpu({}, new AbortController().signal)).rejects.toThrow(
@@ -157,11 +170,13 @@ describe("discovery ownership and failure paths", () => {
   it("tries another installed browser and retains earlier launch failures", async () => {
     const bin = join(home, "bin");
     mkdirSync(bin);
-    writeFileSync(join(bin, "google-chrome"), "");
-    writeFileSync(join(bin, "chromium"), "");
+    const first = process.platform === "win32" ? "chrome.exe" : "google-chrome";
+    const second = process.platform === "win32" ? "chromium.exe" : "chromium";
+    writeFileSync(join(bin, first), "");
+    writeFileSync(join(bin, second), "");
     fixture.firstBrowserFails = true;
     const gpu = await commands.discoverGpu({ PATH: bin }, new AbortController().signal);
-    expect(gpu.profile.browser).toEqual({ executablePath: join(bin, "chromium") });
+    expect(gpu.profile.browser).toEqual({ executablePath: join(bin, second) });
     expect(fixture.launches.length).toBeGreaterThan(1);
     const report = readFileSync(gpu.report, "utf8");
     expect(report).toContain("First browser cannot launch");
@@ -169,7 +184,7 @@ describe("discovery ownership and failure paths", () => {
     await gpu.close();
   });
   it.each(["software", "unknown", "no-work", "fallback"])(
-    "rejects %s without retaining a false pass or a lease",
+    "rejects %s without retaining a false pass or a lock",
     async (mode) => {
       fixture.identity =
         mode === "software"
@@ -195,7 +210,7 @@ describe("discovery ownership and failure paths", () => {
     expect(fixture.launches).toHaveLength(1);
     expect(existsSync(lock)).toBe(true);
   });
-  it("cancels discovery, closes its browser and releases the lease", async () => {
+  it("cancels discovery, closes its browser and releases the lock", async () => {
     const controller = new AbortController();
     fixture.abort = () => controller.abort(new Error("cancelled by control"));
     await expect(

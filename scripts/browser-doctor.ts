@@ -1,5 +1,4 @@
 import { readFileSync } from "node:fs";
-import { join, dirname } from "node:path";
 import { readProfile } from "./browser-gpu-profile.ts";
 import { parseArgs } from "node:util";
 import { discoverGpu } from "./browser-gpu-discovery.ts";
@@ -20,8 +19,9 @@ if (values.help) {
 } else {
   const controller = new AbortController();
   const interrupt = () => controller.abort(new Error("GPU discovery interrupted"));
-  process.once("SIGINT", interrupt);
-  process.once("SIGTERM", interrupt);
+  process.on("SIGINT", interrupt);
+  process.on("SIGTERM", interrupt);
+  process.on("SIGHUP", interrupt);
   try {
     if (
       values.profile !== undefined &&
@@ -40,9 +40,7 @@ if (values.help) {
       preferred,
     );
     try {
-      console.log(
-        `Verified ${gpu.version}: ${gpu.profile.apis.join(", ")}. Reproduce with pnpm browser:doctor --profile ${JSON.stringify(join(dirname(gpu.report), "selected-profile.json"))}; this revalidates rather than trusting a saved pass.`,
-      );
+      console.log(`Verified ${gpu.version}: ${gpu.profile.apis.join(", ")}.`);
     } finally {
       await gpu.close();
     }
@@ -52,5 +50,6 @@ if (values.help) {
   } finally {
     process.off("SIGINT", interrupt);
     process.off("SIGTERM", interrupt);
+    process.off("SIGHUP", interrupt);
   }
 }

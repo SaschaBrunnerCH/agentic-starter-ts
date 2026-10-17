@@ -42,6 +42,13 @@ describe("installed browser inventory", () => {
       { channel: "msedge" },
     ]);
   });
+  it("inventories Linux Edge even when Chrome was found", () => {
+    const present = new Set(["/bin/google-chrome", "/bin/microsoft-edge-stable"]);
+    expect(browserCandidates("linux", { PATH: "/bin" }, (path) => present.has(path))).toEqual([
+      { executablePath: "/bin/google-chrome" },
+      { executablePath: "/bin/microsoft-edge-stable" },
+    ]);
+  });
   it("recognizes Windows paths independent of the test driver's OS", () => {
     const paths = new Set([
       "C:\\bin\\chrome.exe",

@@ -1,4 +1,4 @@
-// Owns the discovery lease, disposable browser processes, private display and reports.
+// Owns the discovery lock, disposable browser processes, private display and reports.
 import { spawn, type ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -62,7 +62,7 @@ function acquireLock(): () => void {
       description = "an unreadable owner";
     }
     throw new Error(
-      `GPU lease ${lockFile} is held by ${description}. Wait or inspect its owned cleanup; do not remove another run's lock.`,
+      `GPU lock ${lockFile} is held by ${description}. Wait or inspect its owned cleanup; do not remove another run's lock.`,
       { cause: error },
     );
   }
@@ -169,7 +169,7 @@ async function probe(
   let keepBrowser = false;
   let interrupted = false;
   // Closing the owned browser interrupts an unresponsive GPU operation; the finally
-  // below still verifies cleanup before a next candidate or a lease release.
+  // below still verifies cleanup before a next candidate or a lock release.
   const interrupt = () => {
     interrupted = true;
     void serverBrowser?.close().catch(() => {});
@@ -183,6 +183,10 @@ async function probe(
         serverBrowser = await chromium.launchServer({
           ...profileLaunchOptions(profile, env),
           host: "127.0.0.1",
+          // The command owns signal handling and must finish lock cleanup before exit.
+          handleSIGINT: false,
+          handleSIGTERM: false,
+          handleSIGHUP: false,
         });
         const child = serverBrowser.process();
         writeFileSync(
@@ -212,7 +216,8 @@ async function probe(
         );
         const results = json.parseJson(JSON.stringify(raw), probeShape, "Browser graphics probe");
         if (interrupted) throw new Error("Graphics probe interrupted or timed out");
-        if (!usable(results, profile.apis)) {
+        const accepted = usable(results, profile.apis);
+        if (!accepted) {
           try {
             await page.goto("chrome://gpu");
             const text = await page.evaluate<string>(
@@ -226,7 +231,7 @@ async function probe(
         const version = browser.version();
         await page.close();
         await browser.close(); // Disconnect; the task owns the server process until acceptance ends.
-        keepBrowser = usable(results, profile.apis);
+        keepBrowser = accepted;
         return { version, results, server: serverBrowser };
       })(),
       20_000,
@@ -294,9 +299,11 @@ export async function discoverGpu(
   let cleanupProved = true;
   let acceptedServer: BrowserServer | undefined;
   let closed = false;
+  let lockReleased = false;
   const attempts: unknown[] = [];
   let selected: GpuProfile | undefined;
   const report = join(directory, "report.json");
+  const profileFile = join(directory, "selected-profile.json");
   const metadata = {
     driverOS: `${process.platform} ${release()}`,
     browserOS: process.platform,
@@ -317,7 +324,7 @@ export async function discoverGpu(
   const save = (status: string) => {
     writeFileSync(
       report,
-      `${JSON.stringify({ ...metadata, status, discovery: selected === undefined ? "failed" : "passed", selected: selected ?? null, attempts }, null, 2)}\n`,
+      `${JSON.stringify({ ...metadata, status, discovery: selected === undefined ? "failed" : "passed", selected: selected ?? null, reproduce: selected === undefined ? null : ["pnpm", "browser:doctor", "--profile", profileFile], attempts }, null, 2)}\n`,
     );
   };
   const close = async () => {
@@ -343,8 +350,9 @@ export async function discoverGpu(
     }
     if (!cleanupProved)
       throw new CleanupUnproved(`Cleanup unproved; retain ${lockFile} and inspect ${report}`);
-    save("cleanup-complete");
     unlock();
+    lockReleased = true;
+    save("cleanup-complete");
   };
   try {
     mkdirSync(directory, { recursive: true });
@@ -377,20 +385,23 @@ export async function discoverGpu(
         mkdirSync(attemptDirectory);
         try {
           const result = await probe(profile, env, attemptDirectory, signal);
-          if (usable(result.results, profile.apis)) acceptedServer = result.server;
+          const accepted = usable(result.results, profile.apis);
+          if (accepted) acceptedServer = result.server;
           attempts.push({ profile, version: result.version, results: result.results });
           save("discovering");
           console.log(
             `GPU attempt ${attempts.length}: ${JSON.stringify(profile)} → ${result.results.map((row) => `${row.api}: ${row.identity ?? "unknown"}; ${row.reason ?? (row.work ? "readback passed" : "readback failed")}`).join("; ")}`,
           );
-          if (usable(result.results, profile.apis)) {
+          if (accepted) {
             const note = rendererNote(env, result.results[0]?.identity ?? null);
             if (note !== undefined) console.log(note);
-            acceptedServer = result.server;
             selected = profile;
-            writeFileSync(join(directory, "selected-profile.json"), writeProfile(profile));
+            writeFileSync(profileFile, writeProfile(profile));
             save("selected");
             console.log(`GPU discovery evidence: ${report}`);
+            console.log(
+              `Reproduce profile: pnpm browser:doctor --profile ${JSON.stringify(profileFile)}`,
+            );
             return {
               profile,
               report,
@@ -418,7 +429,13 @@ export async function discoverGpu(
       `No verified hardware profile for ${profiles[0]?.apis.join(", ") ?? "requested APIs"}. Read ${report} and engineering/agents/browser-gpu-discovery.md. A failed candidate does not establish that the machine lacks a GPU.`,
     );
   } catch (error) {
-    await close();
+    try {
+      await close();
+    } catch (cleanupError) {
+      // Report I/O must not hide the original discovery error once all resources
+      // are proven closed and the lock has been released.
+      if (!lockReleased) throw cleanupError;
+    }
     throw error;
   }
 }

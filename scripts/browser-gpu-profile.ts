@@ -43,7 +43,14 @@ export function browserCandidates(
   const names =
     platform === "win32"
       ? ["chrome.exe", "msedge.exe", "chromium.exe"]
-      : ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"];
+      : [
+          "google-chrome",
+          "google-chrome-stable",
+          "chromium",
+          "chromium-browser",
+          "microsoft-edge",
+          "microsoft-edge-stable",
+        ];
   const found = new Set<string>();
   for (const directory of (value("PATH") ?? "")
     .split(platform === "win32" ? ";" : ":")
@@ -99,8 +106,10 @@ export function profileLaunchOptions(
   profile: GpuProfile,
   env: Readonly<NodeJS.ProcessEnv>,
 ): LaunchOptions {
-  const platform = profile.backend === "vulkan" ? "linux" : "win32";
-  const args = gpuLaunchArgs(platform, profile.apis.includes("webgpu"));
+  const args = gpuLaunchArgs(
+    profile.backend === "vulkan" ? "vulkan" : "default",
+    profile.apis.includes("webgpu"),
+  );
   if (profile.backend === "gl" || profile.backend === "wsl-d3d12") {
     args.push(
       "--use-gl=angle",

@@ -49,12 +49,6 @@ Run `pnpm browser:doctor` before concluding that hardware is unavailable. The [G
 
 `BROWSER_GPU=required` is the local default. CI and remote connections default to `off`, but an explicit `required` is never silently disabled. Remote hardware verification is currently unavailable: run discovery on the rendering host and use that host's acceptance procedure. `BROWSER_GPU=off` runs functional checks without a hardware claim; it does not itself force a software adapter.
 
-Select `BROWSER_GPU_APIS=webgl`, `webgl2`, `webgpu`, or a comma-separated combination for application tests. The default checks WebGL 1; legacy `BROWSER_WEBGPU=required` adds WebGPU. WebGPU alone does not require WebGL. `BROWSER_GPU_EXECUTABLE` exclusively selects an installed Chromium-based executable; automatic discovery can try other installed browsers. Linux explores default, OpenGL and Vulkan paths, with scoped Mesa D3D12 discovery on WSL and optional private Xvfb. Windows and macOS start with the browser's normal backend. All attempts stay headless or on a private display, under the participating runners' user-level lease, with one worker.
-
-Each required API must report a recognizable non-software identity and complete a draw/submission readback. Unknown or masked identities, CPU/software and fallback adapters fail hardware discovery. Reports retain failed candidates, browser version, API results and launch settings under `.local/browser-gpu/`; each acceptance invocation discovers and verifies again. No application tests are retried on another profile after failure.
-
-WSL D3D12 results prove hardware-backed translated rendering when observed; native Windows performance needs a Windows browser. Container/VM and remote results need their actual rendering context recorded. Available platform code paths are not proof that physical acceptance ran on every platform; #5 tracks the remaining machine checks.
-
 #### What an agent never does
 
 - Never open visible browser windows on the user's desktop session. A virtual display or headless only, one page at a time. Several heavy 3D pages on a live desktop can freeze the machine.
