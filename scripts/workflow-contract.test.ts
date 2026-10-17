@@ -38,6 +38,45 @@ describe("the workflows of this repository", () => {
     expect(build?.lines).toContain("        run: pnpm check:push");
   });
 
+  it("verify the tagged release build completely before packaging or publishing it", () => {
+    const release = workflowJobs(read("release.yml")).find((job) => job.id === "release");
+    expect(release).toBeDefined();
+    const source = release?.lines.join("\n") ?? "";
+    const steps = source.split(/^ {6}- name: /mu).slice(1);
+    const requiredSteps = [
+      "Install dependencies",
+      "Run all checks and build the release",
+      "Install the browser",
+      "Verify the release at the root",
+      "Verify the release under a sub-path",
+      "Package the build, its SBOM and checksums",
+      "Publish the release",
+    ];
+    const positions = requiredSteps.map((name) =>
+      steps.findIndex((step) => step.startsWith(`${name}\n`)),
+    );
+    expect(positions.every((position) => position >= 0)).toBe(true);
+    expect(positions).toEqual(positions.toSorted((a, b) => a - b));
+    // No intervening step may replace the tested output before it is archived.
+    expect(positions[5]).toBe((positions[4] ?? -1) + 1);
+    // Default step success semantics stop publication after any failed verification.
+    for (const position of positions) {
+      expect(steps[position]).not.toMatch(/^ {8}(?:if|continue-on-error):/mu);
+    }
+    expect(steps[positions[0] ?? -1]).toContain("pnpm install --frozen-lockfile");
+    expect(steps[positions[1] ?? -1]).toContain("run: pnpm check:push");
+    expect(steps[positions[2] ?? -1]).toContain("run: pnpm test:browser:install");
+    for (const position of positions.slice(3, 5)) {
+      expect(steps[position]).toContain(
+        "pnpm test:browser --forbid-only --reporter=list,./scripts/release-browser-reporter.ts",
+      );
+    }
+    expect(steps[positions[4] ?? -1]).toContain("BROWSER_TEST_BASE_URL=http://127.0.0.1:4180/app/");
+    expect(steps[positions[5] ?? -1]).toContain("--directory dist .");
+    expect(source).not.toMatch(/pnpm (?:run )?build|pnpm exec vite build|actions\/cache@/u);
+    expect(source).not.toContain("BROWSER_TESTS_IN_CI");
+  });
+
   it("run the browser tests in the PR build only when the CI switch asks for them", () => {
     const build = workflowJobs(read("pr-build.yml")).find((job) => job.id === "pr-build");
     expect(build).toBeDefined();

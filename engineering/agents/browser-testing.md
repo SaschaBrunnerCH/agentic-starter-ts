@@ -6,9 +6,10 @@ Unit tests check modules. Browser tests check that the built application works i
 | ---------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------- |
 | Your machine           | `pnpm test:browser` before you ask for review, or `pnpm test:devices`      | Chromium on the machine's GPU; Firefox, WebKit and phone emulation on demand | The production build in `dist/`, served for the run |
 | Pull request, optional | The browser test steps of `PR build`, when `BROWSER_TESTS_IN_CI` is `true` | Chromium on the CI machine, in software                                      | The production build, at the root and under a path  |
+| Release, required      | The verification steps of `Release`, independent of the PR switch          | Chromium on the CI machine, in software                                      | The tagged build, at the root and under a path      |
 | Testing farm, optional | `pnpm test:devices --endpoints`, or the farm workflow                      | Many browsers, operating systems and real phones, from one secret            | A deployed URL or a preview                         |
 
-Browser tests run on the developer's machine by default, and the pull request reports the run: commit, command, browser, renderer and result. Neither the push gate nor, by default, the `PR build` runs them, so that evidence is reviewed, not enforced.
+Browser tests run on the developer's machine by default, and the pull request reports the run: commit, command, browser, renderer and result. Neither the push gate nor, by default, the `PR build` runs them, so local evidence is reviewed. The optional PR browser steps and required [release verification](../operations/releases.md) enforce their own browser runs.
 
 Two switches change that:
 
