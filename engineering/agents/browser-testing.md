@@ -15,6 +15,21 @@ Two switches change that:
 - **`BROWSER_TESTS_IN_CI`**, a repository variable (Settings, Secrets and variables, Actions, Variables), `false` by default; `pnpm setup:github` creates it. Set to `true`, every `PR build` runs the browser tests at the root and under a path, and keeps the traces of a failure for seven days as the artifact `browser-test-results-<commit>-…`. To run them once, start the `PR build` by hand with "Run the browser tests" checked: `gh workflow run "PR build" --ref <branch> -f browser-tests=true`. CI runners have no GPU: a run there checks function, never speed, and costs CI minutes ([CI minutes](../operations/ci-minutes.md)).
 - **`BROWSER_GPU`**, an environment variable for local runs, `required` by default. See [On the GPU](#on-the-gpu).
 
+## As the suite grows
+
+Run the whole existing smoke suite while it is small. Before introducing selection, measure executed test counts and elapsed time for representative changes, including shared code; discovery counts and discovery time are not execution evidence. The guidance here leaves the starter's smoke suite and commands unchanged.
+
+For a larger application, keep PR browser coverage focused on affected journeys plus a small relevant smoke layer. Select from the complete merge-base-to-head diff and affected behavior, including shared code, dependencies, fixtures and harness changes. Explain the selected commands and their coverage in the PR. Unknown changes need an explicit selection; deleted or renamed specs need surviving or replacement coverage from the current inventory. A shared change may affect many journeys without requiring every browser, device and viewport combination.
+
+A focused PR needs no previous full-matrix baseline. The complete declared supported browser, device and scenario matrix belongs at the explicit [release boundary](../operations/releases.md), against the exact release candidate; a large application's sequence can take hours. Before reducing PR acceptance, enforce that complete release verification. This guidance alone enables neither selection nor a release gate; describe the checks actually enforced in the application. Keep the cheap PR gate and affected accessibility and URL-base checks.
+
+Keep browser tests maintainable as coverage grows:
+
+- Check layout at every required viewport: containment, non-overlap, focus and reachability. Run complete journeys at justified representative sizes, preserving any interactions that depend on layout. Prefer named layout concepts and semantic geometry over unexplained coordinates.
+- Keep pure state and conversion permutations in unit tests while retaining representative real-browser rendering and interaction checks. An adapter's readiness flag does not prove that the browser painted correctly.
+- Introduce narrow, typed application-owned diagnostic hooks only when a test needs them. Exclude those hooks from publishable builds and verify that boundary when introducing them. Keep vendor-specific fault injection scoped; avoid source-text patching and coupling shared behavior tests to library internals.
+- Reconcile coverage and selectors when splitting specs by behavior. Preserve assertions, tolerances, time limits and retry semantics, and report failures, skips and unrun checks separately from passes.
+
 ## On your machine
 
 ```sh
