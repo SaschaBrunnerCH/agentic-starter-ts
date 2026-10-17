@@ -57,6 +57,8 @@ describe("the workflows of this repository", () => {
     );
     expect(positions.every((position) => position >= 0)).toBe(true);
     expect(positions).toEqual(positions.toSorted((a, b) => a - b));
+    // No intervening step may replace the tested output before it is archived.
+    expect(positions[5]).toBe((positions[4] ?? -1) + 1);
     // Default step success semantics stop publication after any failed verification.
     for (const position of positions) {
       expect(steps[position]).not.toMatch(/^ {8}(?:if|continue-on-error):/mu);
@@ -71,7 +73,7 @@ describe("the workflows of this repository", () => {
     }
     expect(steps[positions[4] ?? -1]).toContain("BROWSER_TEST_BASE_URL=http://127.0.0.1:4180/app/");
     expect(steps[positions[5] ?? -1]).toContain("--directory dist .");
-    expect(source).not.toMatch(/pnpm build|actions\/cache@/u);
+    expect(source).not.toMatch(/pnpm (?:run )?build|pnpm exec vite build|actions\/cache@/u);
     expect(source).not.toContain("BROWSER_TESTS_IN_CI");
   });
 

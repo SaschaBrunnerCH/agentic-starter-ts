@@ -6,7 +6,7 @@ Checks run at three points. Each later point repeats the code checks of the earl
 | ------------ | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | Commit       | Prettier and Secretlint on staged files, Oxlint with fixes on staged source; the commit-message check | `lint-staged` in `package.json`, `.githooks/pre-commit`, `.githooks/commit-msg` |
 | Push         | A clean working tree at the pushed commit, then the whole gate: `pnpm check:push`                     | `.githooks/pre-push`, `scripts/pre-push.ts`, `scripts/run-local-checks.ts`      |
-| Pull request | The same gate and the browser tests, in the `PR build` workflow                                       | `.github/workflows/pr-build.yml`                                                |
+| Pull request | The same gate and optional browser tests, in the `PR build` workflow                                  | `.github/workflows/pr-build.yml`                                                |
 
 The gate runs these in order and reports every failure, not only the first: `format:check`, `lint`, `typecheck`, `check:unused`, `check:secrets`, `check:workflows`, `check:agents`, `check:links`, `check:dependencies`, `check:hooks`, `test`, `build` and `check:bundle`.
 
@@ -50,7 +50,7 @@ touch scratch.txt && git push --dry-run origin HEAD:refs/heads/hook-check; rm sc
 - If a hook itself is broken, so that it fails for a reason unrelated to the change: run `pnpm check:push` by hand, push once with `--no-verify`, state the reason in the pull request and file a `bug` issue for the hook. This never applies to a check that fails on the change.
 - Editing a pull request's title or body does not rerun CI; a new commit does. Report local results and CI results separately, each with its commit.
 
-Browser tests run in the pull request only, and on demand locally; see [browser testing](browser-testing.md).
+Browser tests run on demand locally, optionally in the PR build, and unconditionally for a release; see [browser testing](browser-testing.md).
 
 ## Typechecking
 
