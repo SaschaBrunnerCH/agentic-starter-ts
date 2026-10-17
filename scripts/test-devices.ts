@@ -117,8 +117,8 @@ function main(): number {
       "pnpm",
       [
         "exec",
-        "playwright",
-        "test",
+        "node",
+        "scripts/browser-test.ts",
         "--project",
         device.project,
         "--output",

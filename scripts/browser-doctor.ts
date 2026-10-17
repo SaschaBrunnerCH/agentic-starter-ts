@@ -1,0 +1,56 @@
+import { readFileSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { readProfile } from "./browser-gpu-profile.ts";
+import { parseArgs } from "node:util";
+import { discoverGpu } from "./browser-gpu-discovery.ts";
+import { scriptArguments } from "./script-arguments.ts";
+
+const { values } = parseArgs({
+  args: scriptArguments(),
+  options: {
+    api: { type: "string", multiple: true },
+    help: { type: "boolean" },
+    profile: { type: "string" },
+  },
+});
+if (values.help) {
+  console.log(
+    "Usage: pnpm browser:doctor [--api webgl|webgl2|webgpu]...\nDiscovers hardware on the rendering host. See engineering/agents/browser-gpu-discovery.md.",
+  );
+} else {
+  const controller = new AbortController();
+  const interrupt = () => controller.abort(new Error("GPU discovery interrupted"));
+  process.once("SIGINT", interrupt);
+  process.once("SIGTERM", interrupt);
+  try {
+    if (
+      values.profile !== undefined &&
+      (values.api !== undefined || process.env.BROWSER_GPU_EXECUTABLE)
+    )
+      throw new Error("Use --profile alone; it already selects the browser and APIs.");
+    const preferred =
+      values.profile === undefined ? undefined : readProfile(readFileSync(values.profile, "utf8"));
+    const gpu = await discoverGpu(
+      {
+        ...process.env,
+        BROWSER_GPU: "required",
+        ...(values.api === undefined ? {} : { BROWSER_GPU_APIS: values.api.join(",") }),
+      },
+      controller.signal,
+      preferred,
+    );
+    try {
+      console.log(
+        `Verified ${gpu.version}: ${gpu.profile.apis.join(", ")}. Reproduce with pnpm browser:doctor --profile ${JSON.stringify(join(dirname(gpu.report), "selected-profile.json"))}; this revalidates rather than trusting a saved pass.`,
+      );
+    } finally {
+      await gpu.close();
+    }
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  } finally {
+    process.off("SIGINT", interrupt);
+    process.off("SIGTERM", interrupt);
+  }
+}

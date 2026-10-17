@@ -7,15 +7,16 @@ import { delimiter, join } from "node:path";
 export type GpuSetting = "required" | "off";
 
 /**
- * BROWSER_GPU chooses; unset means "required". CI runners have no GPU, and a remote
- * browser brings its own, so both run with "off" whatever the variable says.
+ * Explicit requirements survive CI and remote transport. Only the default there is off.
  */
 export function gpuSetting(environment: Readonly<Record<string, string | undefined>>): GpuSetting {
-  if (environment.CI === "true" || environment.REMOTE_BROWSER_WS_ENDPOINT !== undefined) {
-    return "off";
-  }
   const value = environment.BROWSER_GPU ?? "";
-  if (value === "" || value === "required") return "required";
+  if (value === "required") return "required";
+  if (value === "") {
+    return environment.CI === "true" || environment.REMOTE_BROWSER_WS_ENDPOINT !== undefined
+      ? "off"
+      : "required";
+  }
   if (value === "off") return "off";
   throw new Error(`BROWSER_GPU must be "required" or "off", not "${value}".`);
 }
@@ -38,7 +39,7 @@ export function webgpuSetting(
 export function webgpuFailure(reason: string): string {
   return (
     `BROWSER_WEBGPU=required, but ${reason}. ` +
-    "See the GPU section of engineering/agents/browser-testing.md, or run without BROWSER_WEBGPU."
+    "See engineering/agents/browser-gpu-discovery.md, or run without BROWSER_WEBGPU."
   );
 }
 
@@ -48,12 +49,15 @@ export type RendererKind = "hardware" | "software" | "unknown";
 // Renderers that draw on the CPU: Chromium's SwiftShader, Mesa's llvmpipe, softpipe and
 // lavapipe, and Windows' Basic Render Driver.
 const SOFTWARE_RENDERER =
-  /swiftshader|subzero|llvmpipe|softpipe|lavapipe|basic render driver|software/iu;
+  /swiftshader|subzero|llvmpipe|softpipe|swrast|lavapipe|basic render|software|\bcpu\b|\bwarp\b/iu;
+const HARDWARE_RENDERER =
+  /nvidia|intel|amd|radeon|apple|adreno|qualcomm|mali|powervr|virtio|virgl|vmware|parallels/iu;
 
 export function classifyRenderer(renderer: string | null | undefined): RendererKind {
   const text = renderer?.trim() ?? "";
   if (text === "") return "unknown";
-  return SOFTWARE_RENDERER.test(text) ? "software" : "hardware";
+  if (SOFTWARE_RENDERER.test(text)) return "software";
+  return HARDWARE_RENDERER.test(text) ? "hardware" : "unknown";
 }
 
 /**
@@ -68,6 +72,9 @@ export function judgeAdapter(
   const described = text.trim() === "" ? "an adapter without a description" : text.trim();
   if (fallback || classifyRenderer(text) === "software") {
     return { adapter: null, reason: `the only adapter draws on the CPU (${described})` };
+  }
+  if (classifyRenderer(text) !== "hardware") {
+    return { adapter: null, reason: `the adapter identity is unknown (${described})` };
   }
   return { adapter: described, reason: null };
 }
@@ -225,6 +232,6 @@ export function rendererFailure(renderer: string | null, reportFiles: readonly s
       : "";
   return (
     `BROWSER_GPU=required, but the browser draws with ${renderer ?? "no WebGL"}.${report} ` +
-    "See the GPU section of engineering/agents/browser-testing.md, or run with BROWSER_GPU=off."
+    "See engineering/agents/browser-gpu-discovery.md, or run with BROWSER_GPU=off."
   );
 }

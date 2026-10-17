@@ -1,0 +1,84 @@
+// Resolve discovery before Playwright imports its configuration. Keep its lease and
+// any private display until the owned test process exits, including on interruption.
+import { spawn, type ChildProcess } from "node:child_process";
+import { createRequire } from "node:module";
+import { gpuSetting } from "./browser-gpu.ts";
+import { chromiumSelection, selectedProjects, writeProfile } from "./browser-gpu-profile.ts";
+import { discoverGpu, type DiscoveredGpu } from "./browser-gpu-discovery.ts";
+import { scriptArguments } from "./script-arguments.ts";
+
+const requested = scriptArguments();
+const args = requested.some((arg) => arg === "--project" || arg.startsWith("--project="))
+  ? requested
+  : ["--project", "chromium", ...requested];
+const env = { ...process.env };
+delete env.BROWSER_GPU_PROFILE;
+delete env.BROWSER_GPU_REPORT;
+delete env.BROWSER_GPU_WS_ENDPOINT;
+for (const name of [
+  "BROWSER_GPU_RENDERER",
+  "BROWSER_GPU_KIND",
+  "BROWSER_GPU_REACHED",
+  "BROWSER_WEBGPU_ADAPTER",
+  "BROWSER_GPU_VERSION",
+])
+  delete env[name];
+const chromium = chromiumSelection(args);
+gpuSetting(env); // Validate before selecting a functional-only project.
+if (!chromium && !env.BROWSER_GPU) env.BROWSER_GPU = "off";
+const controller = new AbortController();
+let child: ChildProcess | undefined;
+let gpu: DiscoveredGpu | undefined;
+const interrupt = () => {
+  controller.abort(new Error("Browser tests interrupted"));
+  child?.kill("SIGTERM");
+};
+process.once("SIGINT", interrupt);
+process.once("SIGTERM", interrupt);
+try {
+  if (gpuSetting(env) === "required" && !args.includes("--list") && !args.includes("--help")) {
+    if (
+      !chromium ||
+      (env.BROWSER_GPU === "required" &&
+        selectedProjects(args).some(
+          (project) => project !== "chromium" && project !== "mobile-chrome",
+        ))
+    )
+      throw new Error(
+        "Hardware verification for this engine is not implemented. Run its own hardware acceptance; BROWSER_GPU=required cannot be satisfied by a Chromium probe.",
+      );
+    gpu = await discoverGpu(env, controller.signal);
+    env.BROWSER_GPU_PROFILE = writeProfile(gpu.profile);
+    env.BROWSER_GPU_REPORT = gpu.report;
+    env.BROWSER_GPU_WS_ENDPOINT = gpu.wsEndpoint;
+    env.BROWSER_GPU_RENDERER =
+      gpu.results.find((result) => result.api !== "webgpu")?.identity ??
+      gpu.results[0]?.identity ??
+      "unknown";
+    env.BROWSER_GPU_KIND = "hardware";
+    env.BROWSER_GPU_REACHED =
+      gpu.profile.display === undefined ? "headless" : `virtual display ${gpu.profile.display}`;
+    env.BROWSER_GPU_VERSION = gpu.version;
+    const adapter = gpu.results.find((result) => result.api === "webgpu")?.identity;
+    if (adapter !== null && adapter !== undefined) env.BROWSER_WEBGPU_ADAPTER = adapter;
+  }
+  controller.signal.throwIfAborted();
+  const cli = createRequire(import.meta.url).resolve("@playwright/test/cli");
+  child = spawn(process.execPath, [cli, "test", ...args], { env, stdio: "inherit" });
+  process.exitCode = await new Promise<number>((accept, reject) => {
+    child?.once("error", reject);
+    child?.once("exit", (code) => accept(code ?? 1));
+  });
+} catch (error) {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exitCode = 1;
+} finally {
+  try {
+    await gpu?.close();
+  } catch (error) {
+    console.error(String(error));
+    process.exitCode = 1;
+  }
+  process.off("SIGINT", interrupt);
+  process.off("SIGTERM", interrupt);
+}

@@ -13,7 +13,7 @@ Browser tests run on the developer's machine by default, and the pull request re
 
 Two switches change that:
 
-- **`BROWSER_TESTS_IN_CI`**, a repository variable (Settings, Secrets and variables, Actions, Variables), `false` by default; `pnpm setup:github` creates it. Set to `true`, every `PR build` runs the browser tests at the root and under a path, and keeps the traces of a failure for seven days as the artifact `browser-test-results-<commit>-…`. To run them once, start the `PR build` by hand with "Run the browser tests" checked: `gh workflow run "PR build" --ref <branch> -f browser-tests=true`. CI runners have no GPU: a run there checks function, never speed, and costs CI minutes ([CI minutes](../operations/ci-minutes.md)).
+- **`BROWSER_TESTS_IN_CI`**, a repository variable (Settings, Secrets and variables, Actions, Variables), `false` by default; `pnpm setup:github` creates it. Set to `true`, every `PR build` runs the browser tests at the root and under a path, and keeps the traces of a failure for seven days as the artifact `browser-test-results-<commit>-…`. To run them once, start the `PR build` by hand with "Run the browser tests" checked: `gh workflow run "PR build" --ref <branch> -f browser-tests=true`. The ordinary hosted CI run makes no hardware claim: it checks function, never device speed, and costs CI minutes ([CI minutes](../operations/ci-minutes.md)).
 - **`BROWSER_GPU`**, an environment variable for local runs, `required` by default. See [On the GPU](#on-the-gpu).
 
 ## As the suite grows
@@ -45,35 +45,15 @@ The local server uses a port derived from the worktree's directory, so two workt
 
 ### On the GPU
 
-Applications that draw with WebGL or WebGPU behave differently on a GPU than in software: a scene that settles in a second on a GPU can take a minute on a CPU, and timings from a software renderer say nothing about real devices. With `BROWSER_GPU=required`, the default, `pnpm test:browser` therefore:
+Run `pnpm browser:doctor` before concluding that hardware is unavailable. The [GPU discovery guide](browser-gpu-discovery.md) explains platform paths, API selection, evidence and failure recovery. `pnpm test:browser` uses the same discovery before loading Playwright's configuration, then runs Chromium with that verified profile. `mobile-chrome` shares it; other engines need their own hardware acceptance. A scratch probe proves API access, not the application's selected renderer or painted frame.
 
-- runs the `chromium` project in the system's Chromium or Chrome, not Playwright's bundled one, because the system browser uses the machine's graphics drivers (`BROWSER_GPU_EXECUTABLE` chooses another);
-- draws headless first. On Linux the browser uses ANGLE on Vulkan and presents frames without a window surface (`--disable-vulkan-surface`): a Vulkan window surface needs a display, and without the flag headless Chromium on Linux often finds no WebGL at all. With it, headless draws on the GPU on most machines. When headless still does not reach the GPU and `Xvfb` is installed, it tries again on a private virtual display that the run starts and stops, so nothing appears on the desktop. Install `Xvfb` from the distribution: `xvfb` on Debian and Ubuntu, `xorg-x11-server-Xvfb` on Fedora, `xorg.xvfb` on Nix;
-- runs one page at a time, and takes a lock (`~/.cache/browser-gpu-tests/lock`), so two sessions of the same user never share the GPU; a second run fails at once and names the owner of the lock;
-- prints each attempt with the renderer that draws its WebGL, and stops before the first test when no attempt reaches the GPU: a software renderer (SwiftShader, llvmpipe and the like) or none.
+`BROWSER_GPU=required` is the local default. CI and remote connections default to `off`, but an explicit `required` is never silently disabled. Remote hardware verification is currently unavailable: run discovery on the rendering host and use that host's acceptance procedure. `BROWSER_GPU=off` runs functional checks without a hardware claim; it does not itself force a software adapter.
 
-On Windows and macOS the run uses the installed Chrome, through Direct3D or Metal; install Chrome, or name another Chromium-based browser in `BROWSER_GPU_EXECUTABLE`. Inside WSL, Linux browsers reach the Windows GPU through a D3D12 translation layer: the run prints a note, the tests check function, and timings are measured on the Windows side.
+Select `BROWSER_GPU_APIS=webgl`, `webgl2`, `webgpu`, or a comma-separated combination for application tests. The default checks WebGL 1; legacy `BROWSER_WEBGPU=required` adds WebGPU. WebGPU alone does not require WebGL. `BROWSER_GPU_EXECUTABLE` exclusively selects an installed Chromium-based executable; automatic discovery can try other installed browsers. Linux explores default, OpenGL and Vulkan paths, with scoped Mesa D3D12 discovery on WSL and optional private Xvfb. Windows and macOS start with the browser's normal backend. All attempts stay headless or on a private display, under the participating runners' user-level lease, with one worker.
 
-`BROWSER_GPU=off` runs the bundled browser in software, as CI does, for a machine without a usable GPU. CI and a remote browser (`REMOTE_BROWSER_WS_ENDPOINT`) always run with `off`. The other projects (`firefox`, `webkit`, the phone emulations) always use Playwright's browsers.
+Each required API must report a recognizable non-software identity and complete a draw/submission readback. Unknown or masked identities, CPU/software and fallback adapters fail hardware discovery. Reports retain failed candidates, browser version, API results and launch settings under `.local/browser-gpu/`; each acceptance invocation discovers and verifies again. No application tests are retried on another profile after failure.
 
-#### WebGPU
-
-The check above covers WebGL. An application that draws with WebGPU sets `BROWSER_WEBGPU=required` for its runs: the browser is then launched with `--enable-unsafe-webgpu` (WebGPU is behind this flag in Chromium on Linux, and it lifts the adapter blocklist), and with each attempt that finds WebGL on the GPU, the setup also asks that browser for a WebGPU adapter on a local page. It prints `WebGPU check: <adapter>` and records the adapter with the run, or stops with the reason: no `navigator.gpu`, or no adapter. WebGPU exists only in a secure context, which `http://localhost` is and `about:blank` is not. On some Linux machines headless finds WebGL but no WebGPU adapter, while a display gives both; then the run moves to the virtual display, as it does when headless finds no WebGL. With `BROWSER_GPU=off`, in CI or with a remote browser, the setting does nothing.
-
-#### When the renderer check fails
-
-An agent works through these steps in order and records what it tried in the pull request or the issue. Each step either finds the cause or rules one out.
-
-1. **Read the printed renderer, then the saved GPU report.** "SwiftShader", "llvmpipe" or "no WebGL" is the symptom, not the cause. When the check fails, the setup saves the browser's own report (`chrome://gpu`, as the failing browser sees it) to `test-results/gpu-report.txt`, and to `test-results/gpu-report.pdf` when the failing attempt ran headless; the error names the files. Its "Graphics Feature Status" and "Problems Detected" sections, and the "Command Line", usually name the cause: a flag, a blocklisted driver, a disabled feature. A passing run removes an old report.
-2. **Remove the desktop session's variables.** In a terminal inside a Wayland session, `WAYLAND_DISPLAY` and `XDG_SESSION_TYPE` make Chromium use Wayland, where it falls back to software. Run with `env -u WAYLAND_DISPLAY -u XDG_SESSION_TYPE`; the virtual display already does this for the browser itself.
-3. **Check the browser's own view.** The saved report is that view; to look again by hand, launch the same executable with the same flags, open `chrome://gpu` and read "WebGL" and "Vulkan" (the page's text is inside its `info-view` element's shadow root). "Hardware accelerated" there, but no context in a page, points to the display: on Linux install `Xvfb`, so the run can fall back to a virtual display.
-4. **Linux drivers.** The Vulkan loader must find the GPU's driver. With several GPUs, or a distribution that installs drivers outside the standard paths, point `VK_ICD_FILENAMES` at the right file in the driver's `icd.d` directory, for example Mesa's `intel_icd.x86_64.json`. `vulkaninfo --summary` lists what the loader sees.
-5. **Machines with two GPUs.** Laptops choose between an integrated and a discrete GPU. On Windows the per-application graphics preference (Settings, Display, Graphics) decides; elsewhere the driver's own switch does. The renderer string names the one that drew; record it.
-6. **WSL.** A Linux browser inside WSL reaches the Windows GPU only through Mesa's D3D12 translation (renderer "D3D12 (…)"); the run accepts it with a note. It is not a native browser's GPU path, so its timings do not stand for Windows. Run the GPU tests from a clone on the Windows side, with Chrome or Edge (`channel: "chrome"` or `"msedge"`), or report `BROWSER_GPU=off` and say so.
-7. **macOS and Windows.** Headless Chrome uses Metal or Direct3D by default; a software renderer there usually means a virtual machine, a remote desktop session or a blocklisted driver (`--ignore-gpu-blocklist` is already set).
-8. **Firefox.** Headless Firefox may expose WebGPU without an adapter; treat that as no GPU, not as a pass. Firefox GPU checks run headed, by a person.
-
-When no step helps, stop and report: the machine, the browser and version, the printed renderer and what each step showed. Then either run with `BROWSER_GPU=off`, say so in the pull request, and leave timing claims out, or ask the owner.
+WSL D3D12 results prove hardware-backed translated rendering when observed; native Windows performance needs a Windows browser. Container/VM and remote results need their actual rendering context recorded. Available platform code paths are not proof that physical acceptance ran on every platform; #5 tracks the remaining machine checks.
 
 #### What an agent never does
 
@@ -87,36 +67,36 @@ The browser tests include an accessibility check: axe (`@axe-core/playwright`) r
 
 ### All three engines, on every system you can reach
 
-Browsers come from three engines: Chromium (Chrome, Edge, most Android browsers), Gecko (Firefox) and WebKit (Safari, and every browser on iPhone and iPad). Each has its own bugs, and each draws through the operating system's graphics drivers. Until a project adopts focused pull-request testing behind enforced complete release verification, a change to what users see is tested on all three engines and every operating system the developer can reach: Linux, Windows (natively or through WSL) and macOS. After adoption, pull requests run affected journeys and relevant engine/system smoke checks; the full declared supported inventory runs before release instead. Engine-specific changes still need the affected engine. The pull request lists each run with its engine, system and result, the renderer of each GPU run, and names what was not reachable and why, for example "macOS: no machine". A testing farm closes gaps for systems and phones nobody has.
+Browsers come from three engines: Chromium (Chrome and Edge), Gecko (Firefox) and WebKit (Safari). Each has its own bugs, and each draws through the operating system's graphics drivers. Until a project adopts focused pull-request testing behind enforced complete release verification, a change to what users see is tested on all three engines and every operating system the developer can reach: Linux, native Windows and macOS, with WSL recorded separately. After adoption, pull requests run affected journeys and relevant engine/system smoke checks; the full declared supported inventory runs before release instead. Engine-specific changes still need the affected engine. The pull request lists each run with its engine, system and result, the renderer of each GPU run, and names what was not reachable and why, for example "macOS: no machine". A testing farm closes gaps for systems and phones nobody has.
 
-`playwright.config.ts` has five projects. `pnpm test:browser` runs `chromium` on the GPU; the others use Playwright's own browsers, whose renderer is often a software one, so they show whether the application works there, not how fast:
+`playwright.config.ts` has five projects. `pnpm test:browser` defaults to `chromium`. `mobile-chrome` shares its verified launch profile. Other engines use Playwright's browsers and their renderer remains unverified; those runs check function:
 
 ```sh
 pnpm exec playwright install --with-deps firefox webkit
-pnpm exec playwright test --project firefox
-pnpm exec playwright test --project webkit          # the engine of Safari
-pnpm exec playwright test --project mobile-chrome   # a Pixel 7 screen, touch and user agent
-pnpm exec playwright test --project mobile-safari   # an iPhone 15 screen on WebKit
+pnpm test:browser --project firefox
+pnpm test:browser --project webkit          # the engine of Safari
+pnpm test:browser --project mobile-chrome   # a Pixel 7 screen, touch and user agent
+pnpm test:browser --project mobile-safari   # an iPhone 15 screen on WebKit
 ```
 
 The mobile projects emulate a phone's screen, touch and user agent in a desktop engine. They catch layout and touch problems, not a phone browser's own bugs.
 
-| Machine         | What you can test                                                                                                                                                                                                                                                                           |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Linux           | All five projects. Where the browsers' system libraries cannot be installed, as on NixOS, use the container below.                                                                                                                                                                          |
-| Windows and WSL | In WSL, all five projects, as on Linux, but drawn in software: a Linux browser in WSL does not draw on the Windows GPU as a native one does. For the GPU, and for Chrome and Edge as users run them, use a clone on the Windows side, where `pnpm test:browser` finds the installed Chrome. |
-| macOS           | All five projects, and Chrome or Edge with a `channel` project. Playwright cannot drive Safari itself: `webkit` is its engine and the closest automated check, and Safari is checked by hand.                                                                                               |
+| Machine         | What you can test                                                                                                                                                                                                             |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Linux           | All five projects. Where the browsers' system libraries cannot be installed, as on NixOS, use the container below.                                                                                                            |
+| Windows and WSL | In WSL, Linux projects may reach hardware through D3D12; verify each required API. This is translated rendering. Use a Windows checkout for native Chrome/Edge acceptance and performance; record Windows and WSL separately. |
+| macOS           | All five projects, and Chrome or Edge with a `channel` project. Playwright cannot drive Safari itself: `webkit` is its engine and the closest automated check, and Safari is checked by hand.                                 |
 
 Where the browsers' system libraries cannot be installed, run Playwright's image as a browser server and point the tests at it. The image has all three engines:
 
 ```sh
 podman run -d --rm --name playwright --network host --init mcr.microsoft.com/playwright:v1.64.0-noble \
   /bin/sh -c "npx -y playwright@1.64.0 run-server --port 9326 --host 127.0.0.1"
-REMOTE_BROWSER_WS_ENDPOINT=ws://127.0.0.1:9326/ pnpm exec playwright test --project webkit
+REMOTE_BROWSER_WS_ENDPOINT=ws://127.0.0.1:9326/ pnpm test:browser --project webkit
 podman stop playwright
 ```
 
-Use the image whose version matches `@playwright/test` in `package.json`; Docker works the same way. The container draws in software: with `REMOTE_BROWSER_WS_ENDPOINT` set, `BROWSER_GPU` does not apply, and its timings say nothing about devices. Do not change a test or the configuration to make it pass on one machine.
+Use the image whose version matches `@playwright/test` in `package.json`; Docker works the same way. This container recipe makes no GPU pass-through or hardware claim. Remote runs default to functional mode; an explicit hardware requirement fails with a rendering-host verification instruction. Do not change a test or the configuration to make it pass on one machine.
 
 ### Report the results on the pull request
 

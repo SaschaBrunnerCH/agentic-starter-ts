@@ -27,7 +27,12 @@ describe("gpuSetting", () => {
 
   it("turns it off on request, in CI and for a remote browser", () => {
     expect(gpuSetting({ BROWSER_GPU: "off" })).toBe("off");
-    expect(gpuSetting({ CI: "true", BROWSER_GPU: "required" })).toBe("off");
+    expect(gpuSetting({ CI: "true" })).toBe("off");
+    expect(gpuSetting({ CI: "true", BROWSER_GPU: "required" })).toBe("required");
+    expect(gpuSetting({ REMOTE_BROWSER_WS_ENDPOINT: "ws://remote", BROWSER_GPU: "required" })).toBe(
+      "required",
+    );
+    expect(() => gpuSetting({ CI: "true", BROWSER_GPU: "invalid" })).toThrow();
     expect(gpuSetting({ REMOTE_BROWSER_WS_ENDPOINT: "ws://127.0.0.1:9326/" })).toBe("off");
   });
 
@@ -63,6 +68,9 @@ describe("classifyRenderer", () => {
     expect(classifyRenderer(null)).toBe("unknown");
     expect(classifyRenderer(undefined)).toBe("unknown");
     expect(classifyRenderer("  ")).toBe("unknown");
+    expect(classifyRenderer("WebKit WebGL")).toBe("unknown");
+    expect(classifyRenderer("ANGLE generic renderer")).toBe("unknown");
+    expect(classifyRenderer("NVIDIA WARP CPU")).toBe("software");
   });
 });
 
@@ -185,7 +193,7 @@ describe("rendererNote", () => {
 describe("rendererFailure", () => {
   it("names the renderer and the saved report", () => {
     expect(rendererFailure("SwiftShader", ["test-results/gpu-report.txt"])).toBe(
-      "BROWSER_GPU=required, but the browser draws with SwiftShader. The browser's GPU report is in test-results/gpu-report.txt; read it first. See the GPU section of engineering/agents/browser-testing.md, or run with BROWSER_GPU=off.",
+      "BROWSER_GPU=required, but the browser draws with SwiftShader. The browser's GPU report is in test-results/gpu-report.txt; read it first. See engineering/agents/browser-gpu-discovery.md, or run with BROWSER_GPU=off.",
     );
   });
 
@@ -218,7 +226,7 @@ describe("WebGPU in the launch flags and the message", () => {
 
   it("says why and how to go on", () => {
     expect(webgpuFailure("the browser offers WebGPU but no adapter")).toBe(
-      "BROWSER_WEBGPU=required, but the browser offers WebGPU but no adapter. See the GPU section of engineering/agents/browser-testing.md, or run without BROWSER_WEBGPU.",
+      "BROWSER_WEBGPU=required, but the browser offers WebGPU but no adapter. See engineering/agents/browser-gpu-discovery.md, or run without BROWSER_WEBGPU.",
     );
   });
 });
@@ -240,7 +248,8 @@ describe("judgeAdapter", () => {
     expect(judgeAdapter("some vendor", true).adapter).toBeNull();
   });
 
-  it("names an adapter without a description", () => {
-    expect(judgeAdapter("", false).adapter).toBe("an adapter without a description");
+  it("rejects an adapter without a known identity", () => {
+    expect(judgeAdapter("", false).adapter).toBeNull();
+    expect(judgeAdapter("some vendor", false).adapter).toBeNull();
   });
 });

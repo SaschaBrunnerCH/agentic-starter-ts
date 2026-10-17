@@ -57,6 +57,15 @@ export default class BrowserEvidenceReporter implements Reporter {
         ...(environment.BROWSER_TEST_BASE_URL === undefined
           ? {}
           : { target: environment.BROWSER_TEST_BASE_URL }),
+        ...(environment.BROWSER_GPU_PROFILE === undefined
+          ? {}
+          : { gpuProfile: environment.BROWSER_GPU_PROFILE }),
+        ...(environment.BROWSER_GPU_REPORT === undefined
+          ? {}
+          : { gpuReport: environment.BROWSER_GPU_REPORT }),
+        ...(environment.BROWSER_GPU_VERSION === undefined
+          ? {}
+          : { browserVersion: environment.BROWSER_GPU_VERSION }),
         platform: `${process.platform} ${process.arch}`,
         projects: this.counts,
       }),

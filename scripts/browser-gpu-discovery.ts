@@ -1,0 +1,424 @@
+// Owns the discovery lease, disposable browser processes, private display and reports.
+import { spawn, type ChildProcess } from "node:child_process";
+import { randomUUID } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createServer } from "node:http";
+import { homedir, release } from "node:os";
+import { join, resolve } from "node:path";
+import { chromium, type BrowserServer } from "@playwright/test";
+import * as json from "./json-shape.ts";
+import {
+  classifyRenderer,
+  describeOwner,
+  findOnPath,
+  rendererNote,
+  type LockOwner,
+} from "./browser-gpu.ts";
+import {
+  browserCandidates,
+  candidateProfiles,
+  profileLaunchOptions,
+  type GpuProfile,
+  writeProfile,
+} from "./browser-gpu-profile.ts";
+import { GRAPHICS_PROBE } from "./browser-gpu-probe.ts";
+
+const probeShape = json.array(
+  json.object({
+    api: json.string,
+    identity: json.nullable(json.string),
+    fallback: json.boolean,
+    work: json.boolean,
+    reason: json.nullable(json.string),
+  }),
+);
+type Probe = json.ShapeOf<typeof probeShape>;
+const ownerShape = json.object({
+  pid: json.number,
+  directory: json.string,
+  startedAt: json.string,
+});
+const lockFile = join(homedir(), ".cache", "browser-gpu-tests", "lock");
+
+function owner(): LockOwner {
+  return json.parseJson(readFileSync(lockFile, "utf8"), ownerShape, "GPU lock");
+}
+
+function acquireLock(): () => void {
+  mkdirSync(resolve(lockFile, ".."), { recursive: true, mode: 0o700 });
+  const current = {
+    pid: process.pid,
+    directory: process.cwd(),
+    startedAt: new Date().toISOString(),
+  };
+  try {
+    writeFileSync(lockFile, JSON.stringify(current), { flag: "wx", mode: 0o600 });
+  } catch (error) {
+    if (!(error instanceof Error) || !("code" in error) || error.code !== "EEXIST") throw error;
+    let description: string;
+    try {
+      description = describeOwner(owner());
+    } catch {
+      description = "an unreadable owner";
+    }
+    throw new Error(
+      `GPU lease ${lockFile} is held by ${description}. Wait or inspect its owned cleanup; do not remove another run's lock.`,
+      { cause: error },
+    );
+  }
+  return () => {
+    if (owner().pid === process.pid) rmSync(lockFile);
+  };
+}
+
+async function bounded<T>(promise: Promise<T>, milliseconds: number, message: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(() => reject(new Error(message)), milliseconds);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+class CleanupUnproved extends Error {}
+
+async function closeBrowser(browser: BrowserServer): Promise<void> {
+  try {
+    await bounded(browser.close(), 5_000, "Browser cleanup timed out");
+    const child = browser.process();
+    const profile = child.spawnargs
+      .find((arg) => arg.startsWith("--user-data-dir="))
+      ?.slice("--user-data-dir=".length);
+    if (child.exitCode === null && child.signalCode === null)
+      throw new Error("Owned browser process is still running");
+    if (profile !== undefined && existsSync(profile))
+      throw new Error("Owned browser profile still exists");
+  } catch (error) {
+    throw new CleanupUnproved(String(error));
+  }
+}
+
+async function stopDisplay(child: ChildProcess): Promise<void> {
+  if (child.exitCode !== null || child.signalCode !== null) return;
+  const exited = new Promise<void>((accept) => child.once("exit", () => accept()));
+  child.kill("SIGTERM");
+  try {
+    await bounded(exited, 3_000, "Virtual display cleanup timed out");
+  } catch (error) {
+    throw new CleanupUnproved(String(error));
+  }
+}
+
+async function startDisplay(
+  signal: AbortSignal,
+): Promise<{ child: ChildProcess; display: string }> {
+  // Let Xvfb allocate an unused display and report readiness. Checking only a
+  // filesystem socket misses Linux abstract sockets (including some WSL setups).
+  const child = spawn(
+    "Xvfb",
+    ["-displayfd", "3", "-screen", "0", "1280x800x24", "-nolisten", "tcp"],
+    { stdio: ["ignore", "ignore", "pipe", "pipe"] },
+  );
+  let diagnostic = "";
+  child.stderr?.on("data", (data: Buffer) => {
+    diagnostic = (diagnostic + data.toString()).slice(-4_000);
+  });
+  const interrupt = () => child.kill("SIGTERM");
+  signal.addEventListener("abort", interrupt, { once: true });
+  try {
+    signal.throwIfAborted();
+    const ready = new Promise<string>((accept, reject) => {
+      let number = "";
+      child.stdio[3]?.on("data", (data: Buffer) => {
+        number += data.toString();
+        if (/^\d+\n$/u.test(number)) accept(`:${number.trim()}`);
+      });
+      child.once("error", reject);
+      child.once("exit", () => reject(new Error(`Xvfb exited during startup: ${diagnostic}`)));
+    });
+    const display = await bounded(ready, 5_000, "Xvfb startup timed out");
+    return { child, display };
+  } catch (error) {
+    if (child.pid !== undefined) await stopDisplay(child);
+    throw error;
+  } finally {
+    signal.removeEventListener("abort", interrupt);
+  }
+}
+
+async function probe(
+  profile: GpuProfile,
+  env: Readonly<NodeJS.ProcessEnv>,
+  directory: string,
+  signal: AbortSignal,
+): Promise<{ version: string; results: Probe; server: BrowserServer }> {
+  const server = createServer((_request, response) => {
+    response.setHeader("content-type", "text/html");
+    response.end("<!doctype html><title>Graphics probe</title>");
+  });
+  await new Promise<void>((accept, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", accept);
+  });
+  let serverBrowser: BrowserServer | undefined;
+  let keepBrowser = false;
+  let interrupted = false;
+  // Closing the owned browser interrupts an unresponsive GPU operation; the finally
+  // below still verifies cleanup before a next candidate or a lease release.
+  const interrupt = () => {
+    interrupted = true;
+    void serverBrowser?.close().catch(() => {});
+  };
+  signal.addEventListener("abort", interrupt, { once: true });
+  let complete = false;
+  try {
+    const result = await bounded(
+      (async () => {
+        signal.throwIfAborted();
+        serverBrowser = await chromium.launchServer({
+          ...profileLaunchOptions(profile, env),
+          host: "127.0.0.1",
+        });
+        const child = serverBrowser.process();
+        writeFileSync(
+          join(directory, "ownership.json"),
+          JSON.stringify(
+            {
+              browserPid: child.pid,
+              profileArgument:
+                child.spawnargs.find((arg) => arg.startsWith("--user-data-dir=")) ?? null,
+            },
+            null,
+            2,
+          ),
+        );
+        const browser = await chromium.connect(serverBrowser.wsEndpoint());
+        signal.throwIfAborted();
+        const page = await browser.newPage();
+        page.setDefaultTimeout(5_000);
+        const address = server.address();
+        if (typeof address !== "object" || address === null)
+          throw new Error("Probe server has no port");
+        await page.goto(`http://127.0.0.1:${address.port}/`);
+        const raw: unknown = await bounded(
+          page.evaluate(`(${GRAPHICS_PROBE})(${JSON.stringify(profile.apis)})`),
+          8_000,
+          "Graphics API probe timed out",
+        );
+        const results = json.parseJson(JSON.stringify(raw), probeShape, "Browser graphics probe");
+        if (interrupted) throw new Error("Graphics probe interrupted or timed out");
+        if (!usable(results, profile.apis)) {
+          try {
+            await page.goto("chrome://gpu");
+            const text = await page.evaluate<string>(
+              `(() => { const texts = []; const walk = (node) => { if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) texts.push(node.textContent.trim()); if (node.shadowRoot) walk(node.shadowRoot); for (const child of node.childNodes) walk(child); }; walk(document.body); return texts.join("\\n"); })()`,
+            );
+            writeFileSync(join(directory, "chrome-gpu.txt"), text);
+          } catch {
+            /* The result still names the original failure when diagnostics cannot load. */
+          }
+        }
+        const version = browser.version();
+        await page.close();
+        await browser.close(); // Disconnect; the task owns the server process until acceptance ends.
+        keepBrowser = usable(results, profile.apis);
+        return { version, results, server: serverBrowser };
+      })(),
+      20_000,
+      "Graphics attempt timed out",
+    );
+    complete = true;
+    return result;
+  } finally {
+    signal.removeEventListener("abort", interrupt);
+    try {
+      if (serverBrowser !== undefined && (!complete || !keepBrowser))
+        await closeBrowser(serverBrowser);
+    } finally {
+      server.closeAllConnections();
+      await new Promise<void>((accept) => server.close(() => accept()));
+    }
+  }
+}
+
+function usable(results: Probe, apis: readonly string[]): boolean {
+  return (
+    results.length === apis.length &&
+    apis.every((api) =>
+      results.some(
+        (result) =>
+          result.api === api &&
+          result.work &&
+          !result.fallback &&
+          result.reason === null &&
+          classifyRenderer(result.identity) === "hardware",
+      ),
+    )
+  );
+}
+
+export interface DiscoveredGpu {
+  profile: GpuProfile;
+  report: string;
+  results: Probe;
+  version: string;
+  wsEndpoint: string;
+  close: () => Promise<void>;
+}
+
+export async function discoverGpu(
+  env: Readonly<NodeJS.ProcessEnv>,
+  signal: AbortSignal,
+  preferred?: GpuProfile,
+): Promise<DiscoveredGpu> {
+  if (env.REMOTE_BROWSER_WS_ENDPOINT !== undefined)
+    throw new Error(
+      "Explicit remote GPU verification is unavailable: local discovery cannot prove the remote browser's adapter. Run the doctor on the rendering host. See engineering/agents/browser-gpu-discovery.md.",
+    );
+  const profiles =
+    preferred === undefined
+      ? candidateProfiles(
+          process.platform,
+          env,
+          browserCandidates(process.platform, env, existsSync),
+        )
+      : [{ ...preferred, display: undefined }];
+  const unlock = acquireLock();
+  const directory = resolve(".local", "browser-gpu", randomUUID());
+  let display: { child: ChildProcess; display: string } | undefined;
+  let cleanupProved = true;
+  let acceptedServer: BrowserServer | undefined;
+  let closed = false;
+  const attempts: unknown[] = [];
+  let selected: GpuProfile | undefined;
+  const report = join(directory, "report.json");
+  const metadata = {
+    driverOS: `${process.platform} ${release()}`,
+    browserOS: process.platform,
+    wsl: env.WSL_DISTRO_NAME !== undefined || env.WSL_INTEROP !== undefined,
+    container: existsSync("/.dockerenv") || existsSync("/run/.containerenv"),
+    deviceAccess: { dxg: existsSync("/dev/dxg"), dri: existsSync("/dev/dri") },
+    graphicsEnvironment: Object.fromEntries(
+      [
+        "DISPLAY",
+        "WAYLAND_DISPLAY",
+        "XDG_SESSION_TYPE",
+        "MESA_LOADER_DRIVER_OVERRIDE",
+        "MESA_D3D12_DEFAULT_ADAPTER_NAME",
+        "VK_ICD_FILENAMES",
+      ].flatMap((name) => (env[name] === undefined ? [] : [[name, env[name]]])),
+    ),
+  };
+  const save = (status: string) => {
+    writeFileSync(
+      report,
+      `${JSON.stringify({ ...metadata, status, discovery: selected === undefined ? "failed" : "passed", selected: selected ?? null, attempts }, null, 2)}\n`,
+    );
+  };
+  const close = async () => {
+    if (closed) return;
+    closed = true;
+    if (acceptedServer !== undefined) {
+      try {
+        await closeBrowser(acceptedServer);
+      } catch (error) {
+        cleanupProved = false;
+        save("cleanup-unproved");
+        throw error;
+      }
+    }
+    if (display !== undefined) {
+      try {
+        await stopDisplay(display.child);
+      } catch (error) {
+        cleanupProved = false;
+        save("cleanup-unproved");
+        throw error;
+      }
+    }
+    if (!cleanupProved)
+      throw new CleanupUnproved(`Cleanup unproved; retain ${lockFile} and inspect ${report}`);
+    save("cleanup-complete");
+    unlock();
+  };
+  try {
+    mkdirSync(directory, { recursive: true });
+    const started = performance.now();
+    for (const headed of [false, true]) {
+      if (headed) {
+        if (process.platform !== "linux" || findOnPath(["Xvfb"], env, existsSync) === undefined)
+          break;
+        if (performance.now() - started > 170_000) break;
+        try {
+          display = await startDisplay(signal);
+        } catch (error) {
+          attempts.push({ stage: "virtual-display", error: String(error) });
+          save("discovering");
+          if (error instanceof CleanupUnproved) {
+            cleanupProved = false;
+            throw error;
+          }
+          break;
+        }
+      }
+      for (const candidate of profiles) {
+        signal.throwIfAborted();
+        if (performance.now() - started > 155_000) break;
+        const profile = {
+          ...candidate,
+          ...(display === undefined ? {} : { display: display.display }),
+        };
+        const attemptDirectory = join(directory, String(attempts.length + 1));
+        mkdirSync(attemptDirectory);
+        try {
+          const result = await probe(profile, env, attemptDirectory, signal);
+          if (usable(result.results, profile.apis)) acceptedServer = result.server;
+          attempts.push({ profile, version: result.version, results: result.results });
+          save("discovering");
+          console.log(
+            `GPU attempt ${attempts.length}: ${JSON.stringify(profile)} → ${result.results.map((row) => `${row.api}: ${row.identity ?? "unknown"}; ${row.reason ?? (row.work ? "readback passed" : "readback failed")}`).join("; ")}`,
+          );
+          if (usable(result.results, profile.apis)) {
+            const note = rendererNote(env, result.results[0]?.identity ?? null);
+            if (note !== undefined) console.log(note);
+            acceptedServer = result.server;
+            selected = profile;
+            writeFileSync(join(directory, "selected-profile.json"), writeProfile(profile));
+            save("selected");
+            console.log(`GPU discovery evidence: ${report}`);
+            return {
+              profile,
+              report,
+              results: result.results,
+              version: result.version,
+              wsEndpoint: result.server.wsEndpoint(),
+              close,
+            };
+          }
+        } catch (error) {
+          attempts.push({ profile, error: String(error) });
+          save("discovering");
+          console.log(
+            `GPU attempt ${attempts.length}: ${error instanceof Error ? error.message : String(error)}`,
+          );
+          if (error instanceof CleanupUnproved) {
+            cleanupProved = false;
+            throw error;
+          }
+          if (acceptedServer !== undefined) throw error;
+        }
+      }
+    }
+    throw new Error(
+      `No verified hardware profile for ${profiles[0]?.apis.join(", ") ?? "requested APIs"}. Read ${report} and engineering/agents/browser-gpu-discovery.md. A failed candidate does not establish that the machine lacks a GPU.`,
+    );
+  } catch (error) {
+    await close();
+    throw error;
+  }
+}

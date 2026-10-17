@@ -1,3 +1,4 @@
+import { readProfile } from "./browser-gpu-profile.ts";
 import * as json from "./json-shape.ts";
 
 // The record of local browser runs that `pnpm task ready` puts into the pull request, so the
@@ -37,6 +38,9 @@ const runShape = json.object({
   /** BROWSER_TEST_BASE_URL: a deployment, not necessarily the commit; absent for its build. */
   target: json.optional(json.string),
   platform: json.string,
+  gpuProfile: json.optional(json.string),
+  gpuReport: json.optional(json.string),
+  browserVersion: json.optional(json.string),
   projects: json.record(countsShape),
 });
 const evidenceShape = json.object({ runs: json.array(runShape) });
@@ -93,6 +97,26 @@ export function evidenceMarker(commit: string): string {
   return `<!-- browser-evidence ${commit} -->`;
 }
 
+// Publication uses browser names and repository-relative evidence paths. Full
+// executable/profile locations remain in the ignored local record.
+function publicProfile(text: string): string {
+  try {
+    const profile = readProfile(text);
+    const name =
+      "channel" in profile.browser
+        ? profile.browser.channel
+        : profile.browser.executablePath.split(/[\\/]/u).at(-1);
+    return `${name}, ${profile.backend}, ${profile.apis.join(", ")}, ${profile.display === undefined ? "headless" : "private display"}`;
+  } catch {
+    return "unavailable (invalid recorded profile)";
+  }
+}
+
+function publicReport(path: string | undefined): string {
+  const relative = path?.replaceAll("\\", "/").match(/(?:^|\/)\.local\/(.+)$/u)?.[1];
+  return relative === undefined ? "unavailable" : `.local/${relative}`;
+}
+
 /** The pull-request comment for a run. */
 export function evidenceMarkdown(run: BrowserRun): string {
   const renderer =
@@ -114,6 +138,13 @@ export function evidenceMarkdown(run: BrowserRun): string {
     "",
     // The GPU check probes Chromium; other browsers' renderers are not known.
     `Renderer (Chromium's GPU check): ${renderer}.`,
+    ...(run.gpuProfile === undefined
+      ? []
+      : [
+          "",
+          `Chromium launch profile: \`${publicProfile(run.gpuProfile)}\`. Browser version: ${run.browserVersion ?? "unknown"}.`,
+          `Discovery report: \`${publicReport(run.gpuReport)}\` (local evidence; other engines and physical mobile devices are unverified).`,
+        ]),
     ...(run.webgpuAdapter === undefined ? [] : ["", `WebGPU adapter: ${run.webgpuAdapter}.`]),
     "",
     "| Project | Passed | Failed | Skipped | Flaky |",
