@@ -6,7 +6,7 @@ The `review` skill runs one with this brief: `/review <pr>` in Claude Code, whic
 
 The review is optional. A merge needs a green `PR build` and the owner's authorization, as the [decision workflow](decision-workflow.md) describes; a review adds evidence for that decision and replaces neither.
 
-When review is requested, run one independent round per pull request by default. Standards and specification are two assessments within that round. The author addresses findings and runs affected checks; further independent review requires the owner's explicit request. An owner request to stop reviews stops queued and future rounds.
+When review is requested, run one independent round per pull request by default. Further independent review requires the owner's explicit request. An owner request to stop reviews stops queued and future rounds.
 
 ## When to ask for one
 
