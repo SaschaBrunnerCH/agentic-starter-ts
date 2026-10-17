@@ -18,7 +18,7 @@ export function gpuSetting(environment: Readonly<Record<string, string | undefin
       : "required";
   }
   if (value === "off") return "off";
-  throw new Error(`BROWSER_GPU must be "required" or "off", not "${value}".`);
+  throw new Error('BROWSER_GPU must be "required" or "off".');
 }
 
 /**
@@ -32,7 +32,7 @@ export function webgpuSetting(
   const value = environment.BROWSER_WEBGPU ?? "";
   if (value === "" || value === "off") return "off";
   if (value === "required") return gpuSetting(environment);
-  throw new Error(`BROWSER_WEBGPU must be "required" or "off", not "${value}".`);
+  throw new Error('BROWSER_WEBGPU must be "required" or "off".');
 }
 
 /** Why the run stops when no WebGPU adapter is available. */

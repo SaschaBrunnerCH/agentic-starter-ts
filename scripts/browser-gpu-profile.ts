@@ -87,9 +87,12 @@ export function candidateProfiles(
       : env.WSL_DISTRO_NAME !== undefined || env.WSL_INTEROP !== undefined
         ? ["default", "wsl-d3d12", "vulkan", "gl"]
         : ["default", "gl", "vulkan"];
-  return browsers.flatMap((browser) =>
-    backends.map((backend) => ({ browser, backend, apis: requiredApis(env) })),
-  );
+  const apis = requiredApis(env);
+  const profiles: GpuProfile[] = [];
+  for (const browser of browsers) {
+    for (const backend of backends) profiles.push({ browser, backend, apis });
+  }
+  return profiles;
 }
 
 export function profileLaunchOptions(

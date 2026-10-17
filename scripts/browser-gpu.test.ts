@@ -38,7 +38,7 @@ describe("gpuSetting", () => {
 
   it("rejects an unknown value instead of guessing", () => {
     expect(() => gpuSetting({ BROWSER_GPU: "yes" })).toThrow(
-      'BROWSER_GPU must be "required" or "off", not "yes".',
+      'BROWSER_GPU must be "required" or "off".',
     );
   });
 });

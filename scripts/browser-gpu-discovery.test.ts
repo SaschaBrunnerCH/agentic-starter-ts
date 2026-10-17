@@ -99,6 +99,20 @@ afterEach(() => {
 // These tests exercise ownership/search failures with browser processes mocked.
 // They are not evidence of hardware access on any platform.
 describe("discovery ownership and failure paths", () => {
+  it("revalidates a saved profile instead of trusting an earlier hardware pass", async () => {
+    const first = await commands.discoverGpu(
+      { BROWSER_GPU_EXECUTABLE: "/chosen" },
+      new AbortController().signal,
+    );
+    const profile = first.profile;
+    await first.close();
+    fixture.identity = "SwiftShader";
+    await expect(commands.discoverGpu({}, new AbortController().signal, profile)).rejects.toThrow(
+      "No verified hardware profile",
+    );
+    expect(fixture.launches).toHaveLength(2);
+    expect(existsSync(lock)).toBe(false);
+  });
   it("checks WebGPU independently without adding WebGL", async () => {
     const gpu = await commands.discoverGpu(
       { BROWSER_GPU_EXECUTABLE: "/chosen", BROWSER_GPU_APIS: "webgpu" },
