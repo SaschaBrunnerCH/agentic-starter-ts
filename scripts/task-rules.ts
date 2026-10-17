@@ -124,14 +124,11 @@ export function worktreeOfBranch(porcelain: string, branch: string): string | un
 
 /** Ignored paths the gate and the installer recreate; everything else may be evidence. */
 const regenerable = [
-  // .local/ is deliberately absent: it holds a task's logs and drafts.
+  // .local/, test-results/ and playwright-report/ hold evidence, not disposable output.
   "node_modules/",
   "dist/",
   "coverage/",
   ".artifacts/",
-  // Playwright rewrites both on every run; CI keeps the traces of a failure.
-  "test-results/",
-  "playwright-report/",
 ];
 
 /**

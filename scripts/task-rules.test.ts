@@ -190,7 +190,7 @@ describe("worktree contents", () => {
       irreplaceableIgnored(
         "!! node_modules/\n!! .artifacts/tools/x\n!! coverage/\n!! test-results/\n!! playwright-report/",
       ),
-    ).toEqual([]);
+    ).toEqual(["test-results/", "playwright-report/"]);
   });
 });
 
@@ -217,6 +217,46 @@ describe("cleanupDecision", () => {
       removeWorktree: true,
       deleteBranch: true,
     });
+  });
+
+  it("retains browser diagnostics without requiring a .local directory", () => {
+    for (const path of [
+      "test-results/",
+      "playwright-report/",
+      "test-results/failure/trace.zip",
+      "playwright-report/index.html",
+    ]) {
+      const decision = cleanupDecision({ ...merged, worktreeStatus: `!! ${path}\n` });
+      expect(decision.removeWorktree || decision.deleteBranch, path).toBe(false);
+      expect(decision.retained.join("\n"), path).toContain(path);
+      expect(decision.retained.join("\n")).toContain("--discard-ignored");
+      expect(
+        cleanupDecision({ ...merged, worktreeStatus: `!! ${path}\n`, discardIgnored: true }),
+      ).toEqual({ retained: [], removeWorktree: true, deleteBranch: true });
+    }
+  });
+
+  it("still removes a worktree containing only disposable outputs", () => {
+    expect(
+      cleanupDecision({
+        ...merged,
+        worktreeStatus: "!! node_modules/\n!! dist/\n!! coverage/\n!! .artifacts/tools/\n",
+      }),
+    ).toEqual({ retained: [], removeWorktree: true, deleteBranch: true });
+  });
+
+  it("does not let explicit diagnostic discard bypass other cleanup protections", () => {
+    for (const change of [
+      { branchTip: "b".repeat(40) },
+      { worktreeStatus: " M src/main.ts\n!! test-results/\n" },
+      { worktreeStatus: "?? notes.txt\n!! playwright-report/\n" },
+      { worktreeStatus: undefined },
+      { worktree: "/work/app" },
+      { workingDirectory: "/work/app-7-x/src" },
+    ]) {
+      const decision = cleanupDecision({ ...merged, ...change, discardIgnored: true });
+      expect(decision.removeWorktree || decision.deleteBranch).toBe(false);
+    }
   });
 
   it("removes only what exists", () => {

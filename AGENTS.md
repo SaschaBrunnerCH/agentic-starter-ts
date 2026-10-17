@@ -42,7 +42,7 @@ Pass `--authorized-by-owner` and `--head` only for the commit the owner said yes
 | Release only the head of `main` with the owner's authorization for the version; never move or delete a release tag. | `scripts/release.ts`, `.github/workflows/release.yml`, `.github/rulesets/release-tags.json` and immutable releases. See `engineering/operations/releases.md`. | Mixed |
 | Audit production dependencies weekly and handle Dependabot pull requests within a week. | `.github/workflows/dependency-audit.yml`; see `engineering/agents/dependency-automation.md`. | Mixed |
 | Report vulnerabilities privately. | `SECURITY.md`; `scripts/setup-github.ts` enables private reporting where GitHub offers it. | Mixed |
-| Clean up locally after a merge. | `scripts/task.ts` (`pnpm task cleanup <pr>`) and "Post-merge cleanup" below. | Mixed |
+| Clean up locally after a merge, preserving wanted browser diagnostics before explicit discard. | `scripts/task.ts` (`pnpm task cleanup <pr>`) retains ignored evidence including `test-results/` and `playwright-report/` through `scripts/task-rules.ts`; see "Post-merge cleanup" below. | Mixed |
 | Use the domain terms of `CONTEXT.md`; work only with the approved AI tools and no unapproved MCP server. | Review; tools are listed in `engineering/agents/ai-tools.md`. | Review-only |
 | Escalate a test believed wrong with measured evidence; keep its tolerance. | The author records the measurements in the pull request or issue. | Review-only |
 | Verify task ownership and base, and leave resumable handoffs with verified states. | `engineering/agents/task-lifecycle.md`. | Review-only |

@@ -23,7 +23,7 @@ pnpm build
 pnpm test:browser           # Chromium on the GPU; see below
 ```
 
-`pnpm install --frozen-lockfile` does not download browsers. The tests run against the production build, so build first; a stale `dist/` tests old code. A failure leaves a trace under `test-results/`; open it with `pnpm exec playwright show-trace <trace.zip>`. Copy a trace you want to keep out of the worktree: cleanup after the merge removes `test-results/`.
+`pnpm install --frozen-lockfile` does not download browsers. The tests run against the production build, so build first; a stale `dist/` tests old code. A failure leaves a trace under `test-results/`; open it with `pnpm exec playwright show-trace <trace.zip>`. Ordinary task cleanup retains worktrees containing `test-results/` or `playwright-report/`. Follow the [evidence copy step](task-lifecycle.md#handoff-with-unfinished-work) before explicitly discarding them. A later browser run can overwrite these directories; cleanup protection does not preserve earlier attempts automatically.
 
 The local server uses a port derived from the worktree's directory, so two worktrees can test at the same time; set `BROWSER_TEST_PORT` to choose one. A busy port fails the run instead of testing whatever answers there.
 

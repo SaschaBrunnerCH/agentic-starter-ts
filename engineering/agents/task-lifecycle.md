@@ -51,6 +51,8 @@ Include:
 
 Keep durable decisions in the issue or an ADR. Keep private transcripts, credentials and transient process details out of tracked documentation and pull-request text. On resume, verify the handoff against live state before acting; it is a record, not proof that an approval or check is still current.
 
+Before cleanup, copy wanted browser traces, screenshots and reports from `test-results/` and `playwright-report/` to the primary checkout's ignored task folder, for example `.local/issue-42/browser/`. Compare the copied bytes or checksums before discarding originals, and record the location in the existing handoff when work continues. Ordinary cleanup lists and retains these diagnostics; after preserving what is needed, use the existing `--discard-ignored` option to discard ignored originals. Dirty, locked, uncertain or mismatched worktrees remain protected. A local path gives remote reviewers no access; sharing diagnostics is a separate action subject to the data-handling and publication rules.
+
 ## Other situations
 
 - **The owner says no to a pull request.** Keep it open, change it on the same branch and ask again. If the work is dropped, close the pull request with the reason, set the issue back to Backlog and clean up the worktree and branch by hand.
