@@ -1,7 +1,6 @@
 // Resolve discovery before Playwright imports its configuration. Keep its lock and
 // any private display until the owned test process exits, including on interruption.
-import { spawn, type ChildProcess } from "node:child_process";
-import { createRequire } from "node:module";
+import { fork, type ChildProcess } from "node:child_process";
 import { gpuSetting } from "./browser-gpu.ts";
 import {
   chromiumSelection,
@@ -62,7 +61,8 @@ let gpu: DiscoveredGpu | undefined;
 const interrupt = () => {
   if (controller.signal.aborted) return;
   controller.abort(new Error("Browser tests interrupted"));
-  child?.kill("SIGTERM");
+  process.exitCode = 1;
+  if (child?.connected) child.send("interrupt", () => {});
 };
 process.on("SIGINT", interrupt);
 process.on("SIGTERM", interrupt);
@@ -96,11 +96,14 @@ try {
     if (adapter !== null && adapter !== undefined) env.BROWSER_WEBGPU_ADAPTER = adapter;
   }
   controller.signal.throwIfAborted();
-  const cli = createRequire(import.meta.url).resolve("@playwright/test/cli");
-  child = spawn(process.execPath, [cli, "test", ...args], { env, stdio: "inherit" });
+  child = fork(new URL("./browser-test-cli.ts", import.meta.url), ["test", ...args], {
+    env,
+    execArgv: [],
+    stdio: ["inherit", "inherit", "inherit", "ipc"],
+  });
   process.exitCode = await new Promise<number>((accept, reject) => {
     child?.once("error", reject);
-    child?.once("exit", (code) => accept(code ?? 1));
+    child?.once("exit", (code) => accept(controller.signal.aborted ? 1 : (code ?? 1)));
   });
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
