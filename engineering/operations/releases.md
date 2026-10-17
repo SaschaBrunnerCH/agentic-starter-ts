@@ -27,7 +27,15 @@ This creates the annotated tag `v0.2.0` and pushes it. A pushed release tag cann
 
 ## What the workflow builds
 
-`.github/workflows/release.yml` runs on the tag. It refuses a tag that is not a version or not on `main`, then builds the commit with `pnpm install --frozen-lockfile` and `pnpm build` and publishes a GitHub release with:
+`.github/workflows/release.yml` runs on the tag, including a tag pushed directly. It refuses a tag that is not a version or not on `main`, installs its own dependencies and Chromium, then runs the gate at the tagged commit. The gate builds `dist/` once. The workflow tests that output and packages the same directory without rebuilding.
+
+The complete required release inventory is the gate plus every test in the existing Chromium smoke suite, including axe accessibility checks, at both the root and `/app/`. Both browser runs must execute a nonempty suite with every test passing once. Empty, skipped, unrun, failed or retried tests prevent publication. The release reporter enforces this in the actual run; a green PR build or an earlier browser report cannot replace it. Release browser tests run regardless of `BROWSER_TESTS_IN_CI`.
+
+The Linux runner draws in software: this verifies function, not physical GPU acceleration or native-device performance. Firefox, WebKit, phone emulation, physical GPUs and testing farms remain additional coverage unless a derived application explicitly adopts them as release requirements. Expand this declared inventory when the product supports more configurations; a large product's full release sequence may take hours, without becoming a prerequisite for every PR.
+
+This adds the gate, one Chromium installation and two small smoke runs to an explicit release, with no new job or scheduled run. Measure the resulting job duration in the PR; the hosted install and total release cost are not established by local tests.
+
+Only successful verification permits packaging and publishing these assets:
 
 | Asset                 | Content                                                                   |
 | --------------------- | ------------------------------------------------------------------------- |
@@ -37,6 +45,10 @@ This creates the annotated tag `v0.2.0` and pushes it. A pushed release tag cann
 | Notes                 | Generated from the merged pull requests, in sections by label             |
 
 A tag with a pre-release part, such as `v1.0.0-rc.1`, is published as a pre-release. In a public repository the workflow also records build provenance for the archive, which `gh attestation verify` checks. GitHub offers that for private repositories only with Enterprise Cloud, so the step is skipped there.
+
+## When verification fails
+
+Publication stops, and the workflow retains available browser failure traces for seven days. Keep the immutable tag. Diagnose the failure before rerunning: an environment failure can be rerun at the same tag after its cause is resolved; a source or workflow correction goes through a PR, then a newly authorized version. Never move or delete the failed tag. A failed or partial run is not a verified release, and normal merges still deploy without creating releases.
 
 ## Release notes
 

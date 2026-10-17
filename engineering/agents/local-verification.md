@@ -10,6 +10,8 @@ Checks run at three points. Each later point repeats the code checks of the earl
 
 The gate runs these in order and reports every failure, not only the first: `format:check`, `lint`, `typecheck`, `check:unused`, `check:secrets`, `check:workflows`, `check:agents`, `check:links`, `check:dependencies`, `check:hooks`, `test`, `build` and `check:bundle`.
 
+An explicit [release](../operations/releases.md) repeats the gate at the tagged candidate and runs the complete required Chromium smoke suite at the root and a nested URL base before publication. It packages that tested build. This release check is unconditional; PR browser tests keep their existing CI switch.
+
 `check:unused` runs knip twice: as on a developer's machine and with `CI=true`, as the `PR build` runs it. knip loads tool configurations such as `playwright.config.ts` to find what they use, and a configuration may differ in CI, for example a reporter registered only for local runs. A file used only one way is then reported before the push instead of in the `PR build`.
 
 `lint` runs Oxlint with its type-aware rules, which need the `oxlint-tsgolint` package: an unawaited promise or a value of the wrong type in a template string fails it. The commit hook lints staged files without types, for speed. No rule is switched off except `react/react-in-jsx-scope`, which belongs to the JSX transform before React 17; React 19 and Vite use the automatic one. The React plugin adds the rules of hooks and missing effect dependencies; the `jsx-a11y` plugin adds accessibility rules for JSX. A type assertion is refused, so JSON that a script reads, from `gh` or from a file, is checked with a shape from `scripts/json-shape.ts`; a missing or wrongly typed field then fails where it is read, with its path.
