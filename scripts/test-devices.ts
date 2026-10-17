@@ -36,8 +36,11 @@ Run on this machine (Windows, WSL, Linux or macOS); no GitHub login needed witho
 Install selected Playwright browsers first: pnpm exec playwright install firefox webkit
 Chromium hardware tests discover installed Chrome, Chromium or Edge automatically.
 Emulation does not connect a physical phone/tablet. For a real device, open a
-reachable build and follow engineering/agents/browser-testing.md#real-phones-and-tablets.
-Remote endpoints run where that browser lives; local discovery cannot prove its GPU.`;
+reachable build and follow engineering/agents/browser-device-coverage.md:
+  tablet portrait/landscape; Android USB/Wi-Fi; iPhone/iPad cable/wireless;
+  Windows/WSL host boundaries; real devices, farm protocols and evidence.
+Remote endpoints require a compatible Playwright protocol, not CDP or Appium.
+They run where that browser lives; local discovery cannot prove its GPU.`;
 
 function git(args: readonly string[]): string {
   return spawnSync("git", args, { cwd: root, encoding: "utf8" }).stdout.trim();
