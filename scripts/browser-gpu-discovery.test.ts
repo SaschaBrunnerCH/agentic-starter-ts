@@ -152,6 +152,37 @@ describe("discovery ownership and failure paths", () => {
     expect(existsSync(lock)).toBe(false);
     expect(readFileSync(gpu.report, "utf8")).toContain('"discovery": "passed"');
   });
+  it.each(["missing", "unreadable", "replaced"])(
+    "fails safely and records cleanup when its lock is %s",
+    async (mode) => {
+      const gpu = await commands.discoverGpu(
+        { BROWSER_GPU_EXECUTABLE: "/chosen" },
+        new AbortController().signal,
+      );
+      const replacement =
+        mode === "unreadable"
+          ? "incomplete owner"
+          : JSON.stringify({
+              pid: process.pid,
+              directory: home,
+              startedAt: "another acquisition",
+            });
+      if (mode === "missing") rmSync(lock);
+      else writeFileSync(lock, replacement);
+      await expect(gpu.close()).rejects.toThrow("GPU lock");
+      expect(fixture.closes).toBe(1);
+      expect(readFileSync(gpu.report, "utf8")).toContain('"status": "lock-release-failed"');
+      expect(readFileSync(gpu.report, "utf8")).toContain('"lockReleased": false');
+      if (mode !== "missing") expect(readFileSync(lock, "utf8")).toBe(replacement);
+    },
+  );
+  it("preserves the discovery failure when lock cleanup also fails", async () => {
+    fixture.identity = "SwiftShader";
+    fixture.abort = () => rmSync(lock, { force: true });
+    await expect(
+      commands.discoverGpu({ BROWSER_GPU_EXECUTABLE: "/chosen" }, new AbortController().signal),
+    ).rejects.toThrow(/No verified hardware profile.*GPU lock/su);
+  });
   it("preserves an unreadable lock, and diagnoses explicit remote verification", async () => {
     mkdirSync(join(lock, ".."), { recursive: true });
     writeFileSync(lock, "incomplete owner");

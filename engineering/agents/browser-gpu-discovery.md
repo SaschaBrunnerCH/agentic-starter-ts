@@ -21,6 +21,12 @@ pnpm test:browser --api webgl2 --project mobile-chrome
 
 The doctor and tests use the same resolver. It explores a short list sequentially, with a 12-second browser-launch bound, an eight-second API probe bound, a 20-second attempt watchdog and a search budget below three minutes including normal cleanup. Linux tries the browser's default, ANGLE/OpenGL and Vulkan backends. WSL additionally tries scoped Mesa D3D12. Only after headless candidates fail does Linux try a task-owned Xvfb display, if installed. Windows and macOS keep the browser's default platform backend. Wayland session variables are removed from candidate browser processes; driver overrides apply to that candidate only.
 
+An X11 backend remains headless; only a task-owned virtual display enables headed
+launch. On WSL, Xvfb can fail to bind the shared `/tmp/.X11-unix` directory even
+when installed. Keep that diagnostic and leave the desktop's socket directory
+alone. An isolated namespace/container can supply private sockets for display
+checks; GPU access there still needs its own proof.
+
 Each required API runs on a loopback secure origin. WebGL clears a tiny canvas and reads its pixel. WebGPU clears a texture, submits work and reads it back. Hardware acceptance needs a recognized adapter identity, successful work and no CPU/software or fallback indication. Masked/generic/missing identity is unknown and cannot pass. A known vendor identity is useful browser evidence, not independent attestation of the physical device or an uncontended workstation.
 
 The accepted executable/channel, arguments, API list, browser environment changes and display are resolved **before** Playwright loads the worker configuration. Both Chromium projects connect to that same task-owned, probed browser process, which remains alive until acceptance ends. Direct `playwright test` with hardware required stops and points here; use `pnpm test:browser --project <name>` or `pnpm test:devices`. Each acceptance invocation probes again; there is no persistent success cache. Application failures stay failed: discovery never reruns failed application tests with another profile.
@@ -47,9 +53,17 @@ Every invocation writes a unique `.local/browser-gpu/<run>/report.json`, per-att
 
 Read failed candidates' diagnostics before changing settings. Driver tools such as `glxinfo` and `vulkaninfo` suggest a next candidate; they do not prove browser rendering. Different API/backend results are expected. Check device access, blocklisted drivers, installed browser version, dual-GPU selection and display initialization. Prefer a scoped candidate over changing the owner's graphics preferences. Optional diagnostic tools are installed by the owner, never by discovery.
 
-A lock at `~/.cache/browser-gpu-tests/lock` coordinates participating runners sharing that user home. Windows and WSL user homes may differ, so their locks may not coordinate either. Other projects may use different locks or none; check workstation load before a heavy run. Discovery never stops another run. A live, unreadable or abandoned lock blocks instead of being deleted automatically: inspect its recorded owner and establish that its exact browser/profile/display resources are gone before recovering it. Cancellation closes owned resources; unproved cleanup retains the barrier and reports a failure. Discovery owns the Playwright browser server, its disposable profile, private display and probe server, and verifies their closure. No visible desktop windows or process-name kills.
+A lock at `~/.cache/browser-gpu-tests/lock` coordinates participating runners sharing that user home. Windows and WSL user homes may differ, so their locks may not coordinate either. Other projects may use different locks or none; check workstation load before a heavy run. Discovery never stops another run. A live, unreadable or abandoned lock blocks instead of being deleted automatically: inspect its recorded owner and establish that its exact browser/profile/display resources are gone before recovering it. Cancellation closes owned resources; unproved cleanup retains the barrier and reports a failure. A missing, unreadable or replaced lock during release also fails; the report records `lock-release-failed` and retains the original discovery error when cleanup fails too. Discovery owns the Playwright browser server, its disposable profile, private display and probe server, and verifies their closure. No visible desktop windows or process-name kills.
 
 Before a performance claim, verify the application's **actual** context/adapter and expected painted frame on its declared device, with a deliberate software/no-adapter control through the same hardware gate. A scratch probe, readiness flag or smooth animation loop cannot establish scene correctness. Keep application-specific screenshot thresholds, shader compilation, device-loss/recovery and interaction checks in that application's acceptance suite; derive them from positive and negative scenes. A hardware identity never excuses a black canvas or a failed assertion.
+
+For optional manual diagnosis, use [WebGPU Report](https://webgpureport.org/) and
+[WebGL 2 Report](https://webglreport.com/?v=2) in the browser/device being
+investigated. They help inspect adapters, limits, features and extensions; match
+the rendering host, browser version and launch settings to the failing run.
+A capability report or a daily-profile result cannot prove the application's
+frame or the automation browser's adapter. These external pages are diagnostic
+links, never network dependencies or pass criteria of the default tests.
 
 ## Primary references
 

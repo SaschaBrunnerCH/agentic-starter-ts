@@ -67,7 +67,20 @@ function acquireLock(): () => void {
     );
   }
   return () => {
-    if (owner().pid === process.pid) rmSync(lockFile);
+    try {
+      const held = owner();
+      if (
+        held.pid !== current.pid ||
+        held.directory !== current.directory ||
+        held.startedAt !== current.startedAt
+      )
+        throw new Error("Ownership changed");
+      rmSync(lockFile);
+    } catch (error) {
+      throw new Error(`GPU lock ownership could not be released safely; inspect ${lockFile}.`, {
+        cause: error,
+      });
+    }
   };
 }
 
@@ -324,7 +337,7 @@ export async function discoverGpu(
   const save = (status: string) => {
     writeFileSync(
       report,
-      `${JSON.stringify({ ...metadata, status, discovery: selected === undefined ? "failed" : "passed", selected: selected ?? null, reproduce: selected === undefined ? null : ["pnpm", "browser:doctor", "--profile", profileFile], attempts }, null, 2)}\n`,
+      `${JSON.stringify({ ...metadata, status, lockReleased, discovery: selected === undefined ? "failed" : "passed", selected: selected ?? null, reproduce: selected === undefined ? null : ["pnpm", "browser:doctor", "--profile", profileFile], attempts }, null, 2)}\n`,
     );
   };
   const close = async () => {
@@ -350,7 +363,16 @@ export async function discoverGpu(
     }
     if (!cleanupProved)
       throw new CleanupUnproved(`Cleanup unproved; retain ${lockFile} and inspect ${report}`);
-    unlock();
+    try {
+      unlock();
+    } catch (error) {
+      try {
+        save("lock-release-failed");
+      } catch {
+        /* Keep the ownership error even when the report is unwritable. */
+      }
+      throw error;
+    }
     lockReleased = true;
     save("cleanup-complete");
   };
@@ -434,7 +456,12 @@ export async function discoverGpu(
     } catch (cleanupError) {
       // Report I/O must not hide the original discovery error once all resources
       // are proven closed and the lock has been released.
-      if (!lockReleased) throw cleanupError;
+      if (!lockReleased)
+        throw new AggregateError(
+          [error, cleanupError],
+          `${String(error)}; cleanup failed: ${String(cleanupError)}`,
+          { cause: cleanupError },
+        );
     }
     throw error;
   }

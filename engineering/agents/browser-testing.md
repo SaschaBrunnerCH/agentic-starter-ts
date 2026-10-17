@@ -33,6 +33,11 @@ Keep browser tests maintainable as coverage grows:
 
 ## On your machine
 
+Install Chrome, Chromium or Edge for local GPU discovery. The command below downloads
+Playwright's bundled Chromium for functional runs; that download alone does not
+satisfy discovery's installed-browser prerequisite. Use `pnpm browser:doctor --help`
+for setup and diagnostics.
+
 ```sh
 pnpm test:browser:install   # once: downloads Chromium and its system libraries
 pnpm build

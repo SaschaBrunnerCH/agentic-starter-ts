@@ -21,7 +21,8 @@ for (let index = 0; index < input.length; index++) {
   else if (arg.startsWith("--api=")) apis.push(arg.slice("--api=".length));
   else requested.push(arg);
 }
-if (requested.includes("--help")) {
+const help = requested.includes("--help") || requested.includes("-h");
+if (help) {
   console.log(`Test on this machine (Windows, WSL, Linux or macOS).
   pnpm build
   pnpm test:browser                         Chromium, verified local GPU
@@ -59,6 +60,7 @@ const controller = new AbortController();
 let child: ChildProcess | undefined;
 let gpu: DiscoveredGpu | undefined;
 const interrupt = () => {
+  if (controller.signal.aborted) return;
   controller.abort(new Error("Browser tests interrupted"));
   child?.kill("SIGTERM");
 };
@@ -67,7 +69,7 @@ process.on("SIGTERM", interrupt);
 process.on("SIGHUP", interrupt);
 try {
   requiredApis(env); // Reject missing/unknown --api values before any browser starts.
-  if (gpuSetting(env) === "required" && !args.includes("--list") && !args.includes("--help")) {
+  if (gpuSetting(env) === "required" && !args.includes("--list") && !help) {
     if (
       !chromium ||
       (env.BROWSER_GPU === "required" &&
