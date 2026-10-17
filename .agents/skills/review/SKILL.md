@@ -12,6 +12,8 @@ that did not write the change; Claude Code does that by itself for this skill.
 
 ## Rules
 
+- Run this requested review once, then report. Follow the linked guide's stopping rule;
+  another independent round requires the owner's explicit request.
 - Read-only. Do not edit, commit, push, merge, comment or label; read-only `gh` calls are fine.
 - Review a detached worktree, never the shared checkout:
   `git fetch origin && git worktree add --detach ../<repository>-review <commit>`.

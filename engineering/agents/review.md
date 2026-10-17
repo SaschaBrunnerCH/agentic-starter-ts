@@ -6,6 +6,8 @@ The `review` skill runs one with this brief: `/review <pr>` in Claude Code, whic
 
 The review is optional. A merge needs a green `PR build` and the owner's authorization, as the [decision workflow](decision-workflow.md) describes; a review adds evidence for that decision and replaces neither.
 
+When review is requested, run one independent round per pull request by default. Further independent review requires the owner's explicit request. An owner request to stop reviews stops queued and future rounds.
+
 ## When to ask for one
 
 - The owner asks for it.
@@ -29,8 +31,8 @@ The reviewer starts without the author's context, and that is the point.
 
 - Check every finding against the code before acting on it. A reviewer states mistakes with the same confidence as findings; a claim that cannot be reproduced is recorded as not confirmed, with the reason.
 - The author fixes each confirmed finding or states why not. A fix outside the issue's scope becomes its own issue.
-- Record the review in the pull request under "Verification": the reviewed commit, what the reviewer was given, the confirmed findings and what happened to each. Do not name the tool or model; the attribution rule covers pull-request text.
-- A new commit after the review is not reviewed. Say so, or have the changed part reviewed again.
+- Record the review in the pull request under "Verification": the reviewed commit, what the reviewer was given, each finding's disposition, subsequent fix commits and their verification. Do not name the tool or model; the attribution rule covers pull-request text.
+- A new commit after the review is not independently reviewed. State that limit, verify the fixes as the author, then proceed to the existing merge gate and owner authorization. Start another independent round only when the owner explicitly requests it.
 
 ## What a review does not establish
 
