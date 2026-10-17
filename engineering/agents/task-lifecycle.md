@@ -35,7 +35,11 @@ The task is ready for edits when its ownership, starting revision and required o
 
 3. Keep incomplete requirements open. A follow-up issue does not waive them: completion requires satisfying them or recording the owner's explicit scope change. Check the parent's own outcomes as well as child-issue status before closing an epic.
 4. Report local checks and GitHub CI separately, with the tested revision and unresolved failures. Verify each delivery claim: implemented, committed, pushed, merged and deployed are distinct states.
-5. After a verified merge, perform the [post-merge cleanup](../../AGENTS.md#post-merge-cleanup) before the final response. If work remains, leave the handoff below and report the remaining criteria and next action.
+5. After a verified merge, [preserve wanted browser diagnostics](#preserve-browser-diagnostics), then perform the [post-merge cleanup](../../AGENTS.md#post-merge-cleanup) before the final response. If work remains, leave the handoff below and report the remaining criteria and next action.
+
+## Preserve browser diagnostics
+
+Before cleanup, copy wanted browser traces, screenshots and reports from `test-results/` and `playwright-report/` to the primary checkout's ignored task folder, for example `.local/issue-42/browser/`. Compare the copied bytes or checksums before discarding originals, and record the location in the existing handoff when work continues. Ordinary cleanup lists and retains these diagnostics; after preserving what is needed, use the existing `--discard-ignored` option to discard ignored originals. Dirty, locked, uncertain or mismatched worktrees remain protected. A local path gives remote reviewers no access; sharing diagnostics is a separate action subject to the data-handling and publication rules.
 
 ## Handoff with unfinished work
 
