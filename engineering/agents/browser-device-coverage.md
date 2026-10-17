@@ -77,8 +77,12 @@ Use standalone [Platform Tools/ADB](https://developer.android.com/tools/adb) on
 Windows, Linux or macOS; an Android Studio installation is optional. Enable
 developer options and USB debugging, connect a data cable, unlock the device and
 approve its debugging authorization. Windows may need an OEM USB driver; Linux
-may need device permissions. Choose the intended device from `adb devices -l`.
-Replace `SERIAL` below with its identifier, keeping identifiers out of public logs:
+may need device permissions. Device security features can disable debugging;
+follow the manufacturer's instructions, for example
+[Samsung Auto Blocker](https://www.samsung.com/ca/support/mobile-devices/protect-your-samsung-galaxy-with-auto-blocker/),
+and restore those protections after testing. Choose the intended device from
+`adb devices -l`. Replace `SERIAL` below with its identifier, keeping identifiers
+out of public logs:
 
 ```text
 adb -s SERIAL reverse tcp:4173 tcp:4173
@@ -90,6 +94,11 @@ On the computer, use Chrome's `chrome://inspect/#devices`, enable USB discovery,
 and inspect the intended tab. [Chrome port forwarding](https://developer.chrome.com/docs/devtools/remote-debugging/local-server)
 also provides a UI for reaching the laptop server. Site reverse forwarding and
 forwarding a DevTools socket to the computer are different operations.
+
+An authorized ADB connection does not prove Chrome is ready for inspection. Keep
+the phone unlocked and Chrome open while connecting. Attach to an owned test tab
+and preserve existing tabs and browser data; do not reset a personal browser to
+make automation connect.
 
 With Windows ADB and a WSL server, prove Windows can reach that server first;
 reverse forwarding reaches Windows. Keep one ADB host in charge. Alternatively,
