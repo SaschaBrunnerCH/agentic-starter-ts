@@ -2,16 +2,18 @@
 
 Before declaring hardware unavailable, run `pnpm browser:doctor` for the application's graphics API. A software result from one browser/backend is a failed candidate, not a verdict on the machine. Discovery is built into `pnpm test:browser`; no skill or project-specific launch recipe is needed.
 
+Start with `pnpm test:devices --project chromium`: it builds and tests on **this machine**, discovers its local browser/GPU path, and records the result. The same command works in PowerShell, cmd and POSIX shells. Use `--help` on `test:browser`, `test:devices` or `browser:doctor` for setup and device guidance; no browser is launched by help. Missing hardware proof stays a reported failure. Configure only the APIs and supported devices the application actually uses.
+
 ```sh
 pnpm browser:doctor --api webgl2
 pnpm browser:doctor --api webgpu
 pnpm browser:doctor --api webgl2 --api webgpu
 pnpm build
-BROWSER_GPU_APIS=webgl2 pnpm test:browser
-BROWSER_GPU_APIS=webgl2 pnpm test:browser --project mobile-chrome
+pnpm test:browser --api webgl2
+pnpm test:browser --api webgl2 --project mobile-chrome
 ```
 
-On native PowerShell, set `$env:BROWSER_GPU_APIS = 'webgl2'` before the command; in Windows cmd use `set BROWSER_GPU_APIS=webgl2`. The same package commands run on Windows, Linux, macOS and WSL. A phone project emulates a viewport and touch on this machine; it does not use a phone GPU.
+`--api` is repeatable and overrides `BROWSER_GPU_APIS` for this invocation. A phone project emulates a viewport and touch on this machine; it does not use a phone GPU.
 
 `BROWSER_GPU_EXECUTABLE` chooses one installed Chromium-based browser exclusively. Without it, discovery inventories installed Chrome, Chromium and Edge paths appropriate to the OS; missing optional browsers and tools require no automatic installation. `BROWSER_GPU_APIS` accepts `webgl`, `webgl2`, `webgpu`, or a comma-separated combination. WebGL 1 is the default. Legacy `BROWSER_WEBGPU=required` adds WebGPU; an explicit `webgpu` API alone has no WebGL dependency.
 

@@ -56,7 +56,7 @@ Why each of these exists: [problems in agentic work](engineering/agents/agentic-
 ## Prerequisites
 
 - **Node.js 24**, **Git** and **pnpm 12**. The pnpm version is pinned in `packageManager` in `package.json`; install it with `npm install --global pnpm@12.10.1`. Node.js 24 still ships Corepack, so `corepack enable` works too.
-- **Linux or macOS.** On Windows use WSL; the workflow check has no Windows build.
+- **Linux or macOS for the complete repository gate.** On Windows use WSL for that gate; the workflow check has no Windows build. Browser/GPU commands also run natively on Windows.
 - **The GitHub CLI**, signed in as an account with administrator rights on the new repository and with the Project scope: `gh auth login`, then `gh auth refresh -s project`.
 - **A GitHub plan with rulesets for the repository.** Public repositories have them on every plan; private ones need a paid plan. Without rulesets nothing on GitHub protects `main`, and the merge rule is kept by discipline only.
 - **Network access** on the first gate run, which downloads two pinned tools, actionlint and zizmor.
@@ -105,6 +105,11 @@ The agent reads `AGENTS.md` on its own. [Getting started with agentic work](engi
 - **Look at Dependabot weekly.** Its pull requests are handled like any other; see [dependency automation](engineering/agents/dependency-automation.md).
 
 ## Commands
+
+To build and test on this machine, run `pnpm test:devices --project chromium`.
+Use `pnpm test:devices --help` for other engines and phones/tablets, or
+`pnpm browser:doctor --help` for local GPU setup. These browser commands use the same
+entrypoints on Windows, WSL, Linux and macOS; see [browser testing](engineering/agents/browser-testing.md).
 
 | Command               | Use                                                                                                                      |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------ |

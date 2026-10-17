@@ -14,7 +14,17 @@ const { values } = parseArgs({
 });
 if (values.help) {
   console.log(
-    "Usage: pnpm browser:doctor [--api webgl|webgl2|webgpu]...\nDiscovers hardware on the rendering host. See engineering/agents/browser-gpu-discovery.md.",
+    `Usage: pnpm browser:doctor [--api webgl|webgl2|webgpu]... [--profile <file>]
+
+Discover verified browser GPU access on this machine: Windows, WSL, Linux or macOS.
+Default: WebGL. Repeat --api to require multiple APIs; --profile rechecks a saved choice.
+Uses installed Chrome, Chromium or Edge. Reports attempted backends, readback,
+failures and next steps under .local/browser-gpu/. Installs no drivers or tools.
+
+Run app tests: pnpm build, then pnpm test:browser [--api webgl2]
+Other engines and device targets: pnpm test:devices --help
+Phones/tablets: engineering/agents/browser-testing.md#real-phones-and-tablets
+Setup and recovery: engineering/agents/browser-gpu-discovery.md`,
   );
 } else {
   const controller = new AbortController();

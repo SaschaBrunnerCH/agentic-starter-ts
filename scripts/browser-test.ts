@@ -3,15 +3,44 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { createRequire } from "node:module";
 import { gpuSetting } from "./browser-gpu.ts";
-import { chromiumSelection, selectedProjects, writeProfile } from "./browser-gpu-profile.ts";
+import {
+  chromiumSelection,
+  requiredApis,
+  selectedProjects,
+  writeProfile,
+} from "./browser-gpu-profile.ts";
 import { discoverGpu, type DiscoveredGpu } from "./browser-gpu-discovery.ts";
 import { scriptArguments } from "./script-arguments.ts";
 
-const requested = scriptArguments();
+const requested: string[] = [];
+const apis: string[] = [];
+const input = scriptArguments();
+for (let index = 0; index < input.length; index++) {
+  const arg = input[index] ?? "";
+  if (arg === "--api") apis.push(input[++index] ?? "");
+  else if (arg.startsWith("--api=")) apis.push(arg.slice("--api=".length));
+  else requested.push(arg);
+}
+if (requested.includes("--help")) {
+  console.log(`Test on this machine (Windows, WSL, Linux or macOS).
+  pnpm build
+  pnpm test:browser                         Chromium, verified local GPU
+  pnpm test:browser --api webgl2             require this API; repeat --api to combine
+  pnpm browser:doctor --help                diagnose this machine without app tests
+  pnpm test:devices --help                  engines, phone emulation and remote targets
+
+Missing setup: pnpm test:browser:install; hardware discovery also needs installed
+Chrome, Chromium or Edge. No drivers or optional tools are installed automatically.
+Real phones/tablets: engineering/agents/browser-testing.md#real-phones-and-tablets
+Platform paths and GPU failures: engineering/agents/browser-gpu-discovery.md
+Additional Playwright options follow.
+`);
+}
 const args = requested.some((arg) => arg === "--project" || arg.startsWith("--project="))
   ? requested
   : ["--project", "chromium", ...requested];
 const env = { ...process.env };
+if (apis.length > 0) env.BROWSER_GPU_APIS = apis.join(",");
 delete env.BROWSER_GPU_PROFILE;
 delete env.BROWSER_GPU_REPORT;
 delete env.BROWSER_GPU_WS_ENDPOINT;
@@ -37,6 +66,7 @@ process.on("SIGINT", interrupt);
 process.on("SIGTERM", interrupt);
 process.on("SIGHUP", interrupt);
 try {
+  requiredApis(env); // Reject missing/unknown --api values before any browser starts.
   if (gpuSetting(env) === "required" && !args.includes("--list") && !args.includes("--help")) {
     if (
       !chromium ||

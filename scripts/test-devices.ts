@@ -1,5 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
 import { arch, type } from "node:os";
 import { gh, ghJson, root } from "./github.ts";
 import { scriptArguments } from "./script-arguments.ts";
@@ -24,7 +26,18 @@ const usage = `Usage: pnpm test:devices [--project <name>]... [--endpoints <file
                      outside the repository: endpoints carry credentials.
   --base-url <url>   Test a deployed URL or a preview instead of the local build.
   --report <pr>      Post the results on the pull request; it must be open, at the
-                     checked-out commit, with a clean working tree.`;
+                     checked-out commit, with a clean working tree.
+
+Run on this machine (Windows, WSL, Linux or macOS); no GitHub login needed without --report.
+  pnpm test:devices --project chromium             build and test on this machine's GPU
+  pnpm test:devices --project firefox --project webkit
+  pnpm test:devices --project mobile-chrome         phone emulation on this machine
+
+Install selected Playwright browsers first: pnpm exec playwright install firefox webkit
+Chromium hardware tests discover installed Chrome, Chromium or Edge automatically.
+Emulation does not connect a physical phone/tablet. For a real device, open a
+reachable build and follow engineering/agents/browser-testing.md#real-phones-and-tablets.
+Remote endpoints run where that browser lives; local discovery cannot prove its GPU.`;
 
 function git(args: readonly string[]): string {
   return spawnSync("git", args, { cwd: root, encoding: "utf8" }).stdout.trim();
@@ -101,7 +114,14 @@ function main(): number {
   // The local build of exactly this commit, unless a deployed URL is tested.
   if (
     target === undefined &&
-    spawnSync("pnpm", ["build"], { cwd: root, stdio: "inherit" }).status !== 0
+    spawnSync(
+      process.execPath,
+      [
+        join(dirname(createRequire(import.meta.url).resolve("vite/package.json")), "bin/vite.js"),
+        "build",
+      ],
+      { cwd: root, stdio: "inherit" },
+    ).status !== 0
   ) {
     return 1;
   }
@@ -114,10 +134,8 @@ function main(): number {
     if (target !== undefined) env.BROWSER_TEST_BASE_URL = target;
     const started = performance.now();
     const run = spawnSync(
-      "pnpm",
+      process.execPath,
       [
-        "exec",
-        "node",
         "scripts/browser-test.ts",
         "--project",
         device.project,
