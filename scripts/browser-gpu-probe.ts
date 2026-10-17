@@ -1,5 +1,5 @@
 // Browser-side probes are strings because command scripts deliberately have no DOM globals.
-export const GRAPHICS_PROBE = `(async (apis) => {
+export const GRAPHICS_PROBE = `(async ({ apis, webgpuFeatureLevel = "core" }) => {
   const results = [];
   for (const api of apis) {
     try {
@@ -20,7 +20,7 @@ export const GRAPHICS_PROBE = `(async (apis) => {
         continue;
       }
       if (!navigator.gpu) { results.push({ api, identity: null, fallback: false, work: false, reason: "navigator.gpu is missing" }); continue; }
-      const adapter = await navigator.gpu.requestAdapter();
+      const adapter = await navigator.gpu.requestAdapter({ featureLevel: webgpuFeatureLevel });
       if (!adapter) { results.push({ api, identity: null, fallback: false, work: false, reason: "no adapter" }); continue; }
       const info = adapter.info ?? {};
       const identity = [info.vendor, info.architecture, info.device, info.description].filter(Boolean).join(" ");

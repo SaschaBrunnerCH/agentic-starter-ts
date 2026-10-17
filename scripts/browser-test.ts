@@ -13,11 +13,15 @@ import { scriptArguments } from "./script-arguments.ts";
 
 const requested: string[] = [];
 const apis: string[] = [];
+let featureLevel: string | undefined;
 const input = scriptArguments();
 for (let index = 0; index < input.length; index++) {
   const arg = input[index] ?? "";
   if (arg === "--api") apis.push(input[++index] ?? "");
   else if (arg.startsWith("--api=")) apis.push(arg.slice("--api=".length));
+  else if (arg === "--webgpu-feature-level") featureLevel = input[++index] ?? "";
+  else if (arg.startsWith("--webgpu-feature-level="))
+    featureLevel = arg.slice("--webgpu-feature-level=".length);
   else requested.push(arg);
 }
 const help = requested.includes("--help") || requested.includes("-h");
@@ -26,6 +30,8 @@ if (help) {
   pnpm build
   pnpm test:browser                         Chromium, verified local GPU
   pnpm test:browser --api webgl2             require this API; repeat --api to combine
+  pnpm test:browser --api webgpu --webgpu-feature-level compatibility
+                                           explicit WebGPU compatibility requirement
   pnpm browser:doctor --help                diagnose this machine without app tests
   pnpm test:devices --help                  engines, phone emulation and remote targets
 
@@ -41,6 +47,7 @@ const args = requested.some((arg) => arg === "--project" || arg.startsWith("--pr
   : ["--project", "chromium", ...requested];
 const env = { ...process.env };
 if (apis.length > 0) env.BROWSER_GPU_APIS = apis.join(",");
+if (featureLevel !== undefined) env.BROWSER_WEBGPU_FEATURE_LEVEL = featureLevel;
 delete env.BROWSER_GPU_PROFILE;
 delete env.BROWSER_GPU_REPORT;
 delete env.BROWSER_GPU_WS_ENDPOINT;

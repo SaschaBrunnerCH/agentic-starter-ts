@@ -54,6 +54,13 @@ Run `pnpm browser:doctor` before concluding that hardware is unavailable. The [G
 
 `BROWSER_GPU=required` is the local default. CI and remote connections default to `off`, but an explicit `required` is never silently disabled. Remote hardware verification is currently unavailable: run discovery on the rendering host and use that host's acceptance procedure. `BROWSER_GPU=off` runs functional checks without a hardware claim; it does not itself force a software adapter.
 
+WebGPU defaults to core. Applications that explicitly support compatibility can use
+`pnpm test:browser --api webgpu --webgpu-feature-level compatibility`. The same option
+works with `browser:doctor`; its saved profile records the requirement. See
+[feature-level discovery and limits](browser-gpu-discovery.md#webgpu-core-and-compatibility).
+A compatibility pass never satisfies a core requirement or changes the application's
+own adapter requests.
+
 #### What an agent never does
 
 - Never open visible browser windows on the user's desktop session. A virtual display or headless only, one page at a time. Several heavy 3D pages on a live desktop can freeze the machine.

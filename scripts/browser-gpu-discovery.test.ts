@@ -14,6 +14,8 @@ const fixture = vi.hoisted(() => {
     fallback: false,
     cleanupFails: false,
     firstBrowserFails: false,
+    onlyCompatibility: false,
+    requestedLevels: [] as string[],
     launches,
     closes: 0,
     abort: () => {},
@@ -50,17 +52,27 @@ vi.mock("@playwright/test", () => ({
         goto: async () => {},
         evaluate: async (script: string) => {
           if (!script.includes("const results")) return "GPU diagnostic text";
-          const apis = json.parseJson(
+          const { apis, webgpuFeatureLevel } = json.parseJson(
             script.slice(script.lastIndexOf(")(") + 2, -1),
-            json.array(json.string),
+            json.object({ apis: json.array(json.string), webgpuFeatureLevel: json.string }),
             "Probe APIs",
           );
+          fixture.requestedLevels.push(webgpuFeatureLevel);
           return apis.map((api) => ({
             api,
-            identity: fixture.identity,
+            identity:
+              fixture.onlyCompatibility && api === "webgpu" && webgpuFeatureLevel === "core"
+                ? null
+                : fixture.identity,
             fallback: fixture.fallback,
-            work: fixture.work,
-            reason: null,
+            work:
+              fixture.onlyCompatibility && api === "webgpu" && webgpuFeatureLevel === "core"
+                ? false
+                : fixture.work,
+            reason:
+              fixture.onlyCompatibility && api === "webgpu" && webgpuFeatureLevel === "core"
+                ? "no adapter"
+                : null,
           }));
         },
       }),
@@ -85,10 +97,12 @@ beforeEach(async () => {
     fallback: false,
     cleanupFails: false,
     firstBrowserFails: false,
+    onlyCompatibility: false,
     closes: 0,
     abort: () => {},
   });
   fixture.launches.length = 0;
+  fixture.requestedLevels.length = 0;
   lock = join(home, ".cache", "browser-gpu-tests", "lock");
   vi.spyOn(console, "log").mockImplementation(() => {});
   commands = await import("./browser-gpu-discovery.ts");
@@ -102,6 +116,29 @@ afterEach(() => {
 // These tests exercise ownership/search failures with browser processes mocked.
 // They are not evidence of hardware access on any platform.
 describe("discovery ownership and failure paths", () => {
+  it("keeps a core failure failed and offers compatibility as a separate diagnostic", async () => {
+    fixture.onlyCompatibility = true;
+    const env = { BROWSER_GPU_EXECUTABLE: "/chosen", BROWSER_GPU_APIS: "webgpu" };
+    await expect(commands.discoverGpu(env, new AbortController().signal)).rejects.toThrow(
+      "pnpm browser:doctor --api webgpu --webgpu-feature-level compatibility",
+    );
+    expect(fixture.requestedLevels.length).toBeGreaterThan(0);
+    expect(fixture.requestedLevels.every((level) => level === "core")).toBe(true);
+    expect(
+      fixture.launches.every((launch) => !launch.args?.includes("--use-webgpu-adapter=opengles")),
+    ).toBe(true);
+    expect(existsSync(lock)).toBe(false);
+    const compatible = await commands.discoverGpu(
+      { ...env, BROWSER_WEBGPU_FEATURE_LEVEL: "compatibility" },
+      new AbortController().signal,
+    );
+    expect(compatible.profile.webgpuFeatureLevel).toBe("compatibility");
+    expect(fixture.requestedLevels.at(-1)).toBe("compatibility");
+    await compatible.close();
+    expect(readFileSync(compatible.report, "utf8")).toContain(
+      '"webgpuFeatureLevel": "compatibility"',
+    );
+  });
   it("revalidates a saved profile instead of trusting an earlier hardware pass", async () => {
     const first = await commands.discoverGpu(
       { BROWSER_GPU_EXECUTABLE: "/chosen" },

@@ -7,9 +7,21 @@ import {
   readProfile,
   requiredApis,
   writeProfile,
+  webgpuFeatureLevel,
 } from "./browser-gpu-profile.ts";
 
 describe("required graphics APIs", () => {
+  it("requires an explicit compatibility feature level and rejects unknown levels", () => {
+    expect(webgpuFeatureLevel({})).toBe("core");
+    expect(webgpuFeatureLevel({ BROWSER_WEBGPU_FEATURE_LEVEL: "core" })).toBe("core");
+    expect(webgpuFeatureLevel({ BROWSER_WEBGPU_FEATURE_LEVEL: "compatibility" })).toBe(
+      "compatibility",
+    );
+    for (const level of ["", "automatic", "compat", "CORE"])
+      expect(() => webgpuFeatureLevel({ BROWSER_WEBGPU_FEATURE_LEVEL: level })).toThrow(
+        "core or compatibility",
+      );
+  });
   it("keeps the default and legacy contract, while allowing WebGPU alone", () => {
     expect(requiredApis({})).toEqual(["webgl"]);
     expect(requiredApis({ BROWSER_WEBGPU: "required" })).toEqual(["webgl", "webgpu"]);
@@ -80,6 +92,51 @@ describe("installed browser inventory", () => {
 
 describe("bounded platform candidates and worker launch profile", () => {
   const browser = { executablePath: "/chosen/chrome" };
+  it("preserves compatibility through saved profiles and keeps native backends unchanged", () => {
+    for (const platform of ["linux", "win32", "darwin"] as const) {
+      const profiles = candidateProfiles(
+        platform,
+        {
+          WSL_INTEROP: "present",
+          BROWSER_GPU_APIS: "webgpu",
+          BROWSER_WEBGPU_FEATURE_LEVEL: "compatibility",
+        },
+        [browser],
+      );
+      for (const profile of profiles) {
+        expect(profile.webgpuFeatureLevel).toBe("compatibility");
+        const saved = readProfile(writeProfile(profile));
+        expect(saved).toEqual(profile);
+        const options = profileLaunchOptions(saved, {});
+        expect(options.args?.includes("--use-webgpu-adapter=opengles")).toBe(
+          platform === "linux" && (profile.backend === "gl" || profile.backend === "wsl-d3d12"),
+        );
+      }
+    }
+    const core = candidateProfiles("linux", { BROWSER_GPU_APIS: "webgpu" }, [browser]);
+    expect(core.every((profile) => profile.webgpuFeatureLevel === "core")).toBe(true);
+    expect(
+      core.every(
+        (profile) =>
+          !profileLaunchOptions(profile, {}).args?.includes("--use-webgpu-adapter=opengles"),
+      ),
+    ).toBe(true);
+    const legacy = readProfile(
+      JSON.stringify({ channel: "chrome", backend: "gl", apis: ["webgpu"] }),
+    );
+    expect(legacy.webgpuFeatureLevel ?? "core").toBe("core");
+    expect(profileLaunchOptions(legacy, {}).args).not.toContain("--use-webgpu-adapter=opengles");
+    expect(() =>
+      readProfile(
+        JSON.stringify({
+          channel: "chrome",
+          backend: "gl",
+          apis: ["webgpu"],
+          webgpuFeatureLevel: "auto",
+        }),
+      ),
+    ).toThrow("core or compatibility");
+  });
   it("keeps native defaults and alternative Linux APIs separate", () => {
     expect(candidateProfiles("win32", {}, [browser]).map((profile) => profile.backend)).toEqual([
       "default",

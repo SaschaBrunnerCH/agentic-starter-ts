@@ -223,7 +223,9 @@ async function probe(
           throw new Error("Probe server has no port");
         await page.goto(`http://127.0.0.1:${address.port}/`);
         const raw: unknown = await bounded(
-          page.evaluate(`(${GRAPHICS_PROBE})(${JSON.stringify(profile.apis)})`),
+          page.evaluate(
+            `(${GRAPHICS_PROBE})(${JSON.stringify({ apis: profile.apis, webgpuFeatureLevel: profile.webgpuFeatureLevel ?? "core" })})`,
+          ),
           8_000,
           "Graphics API probe timed out",
         );
@@ -448,7 +450,7 @@ export async function discoverGpu(
       }
     }
     throw new Error(
-      `No verified hardware profile for ${profiles[0]?.apis.join(", ") ?? "requested APIs"}. Read ${report} and engineering/agents/browser-gpu-discovery.md. A failed candidate does not establish that the machine lacks a GPU.`,
+      `No verified hardware profile for ${profiles[0]?.apis.join(", ") ?? "requested APIs"}. Read ${report} and engineering/agents/browser-gpu-discovery.md. A failed candidate does not establish that the machine lacks a GPU.${profiles[0]?.apis.includes("webgpu") && profiles[0].webgpuFeatureLevel !== "compatibility" ? " Core WebGPU remains required. Diagnose the separate compatibility capability with: pnpm browser:doctor --api webgpu --webgpu-feature-level compatibility. Use it for application tests only if the application explicitly supports that feature level." : ""}`,
     );
   } catch (error) {
     try {
