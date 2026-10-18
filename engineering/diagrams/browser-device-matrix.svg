@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 1660" width="1440" height="1660" font-family="Arial, Helvetica, sans-serif" role="img" aria-labelledby="title desc">
-<title id="title">Browser and device testing paths</title><desc id="desc">Capability map, not a passed-test certificate. Desktop Windows, WSL, Linux and macOS use Playwright for Chromium, Firefox and WebKit. Chromium has GPU discovery; other engines need separate hardware proof. Local Android phones and tablets use USB or Wi-Fi with ADB and Chrome inspection. iPhone and iPad use cable or wireless Safari inspection from a Mac. Emulation, real devices and farm protocols have separate evidence requirements.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 2110" width="1440" height="2110" font-family="Arial, Helvetica, sans-serif" role="img" aria-labelledby="title desc">
+<title id="title">Browser and device testing paths</title><desc id="desc">Capability map, not a passed-test certificate. Desktop Windows, WSL, Linux and macOS use Playwright for Chromium, Firefox and WebKit. Chromium has GPU discovery; other engines need separate hardware proof. Local Android phones and tablets use USB or Wi-Fi with ADB and Chrome inspection. iPhone and iPad use cable or wireless Safari inspection from a Mac. Emulation, real devices and farm protocols have separate evidence requirements. A dated provider overview groups browser/device farms, managed browsers and Linux GPU hosting; detailed capabilities and observations remain in the accompanying tables.</desc>
 <!-- Browser/OS icons: Font Awesome Free, Fonticons Inc., CC BY 4.0. WebKit logo: Copyright 2025 Apple Inc. Sources and notices: README.md. -->
-<rect x="0" y="0" width="1440" height="1660" rx="0" fill="#f3f6fa" stroke="#f3f6fa"/>
+<rect x="0" y="0" width="1440" height="2110" rx="0" fill="#f3f6fa" stroke="#f3f6fa"/>
 <text font-size="44" fill="#14283f" font-weight="700"><tspan x="44" y="70.08">Browser + device coverage</tspan></text>
 <text font-size="22" fill="#4a5e73" font-weight="400"><tspan x="46" y="112.03999999999999">Find the test path. Prove the result on the actual browser, API and device.</tspan></text>
 <rect x="46" y="139" width="104" height="30" rx="8" fill="#def3ee" stroke="#def3ee"/>
@@ -76,7 +76,7 @@
 <text font-size="22" fill="#00685e" font-weight="700"><tspan x="1060" y="699.04">Functional app tests</tspan></text>
 <text font-size="17" fill="#4a5e73" font-weight="400"><tspan x="1060" y="730.94">Hardware proof is separate</tspan></text>
 <text font-size="18" fill="#4a5e73" font-weight="400"><tspan x="46" y="797.76">Each requested API is independent: WebGL · WebGL 2 · WebGPU. A working probe does not prove application paint.</tspan></text>
-<text font-size="18" fill="#4a5e73" font-weight="400"><tspan x="46" y="827.76">Native Windows full-checkout, Linux and macOS hardware acceptance remains open in issue #5.</tspan></text>
+<text font-size="18" fill="#4a5e73" font-weight="400"><tspan x="46" y="827.76">Record platform acceptance with its tested revision, date and scope; remote results have their own limits.</tspan></text>
 <text font-size="25" fill="#14283f" font-weight="700"><tspan x="46" y="889.5">02   LOCAL PHONES + TABLETS · YOUR LAPTOP, YOUR DEVICE</tspan></text>
 <rect x="44" y="913" width="660" height="264" rx="15" fill="white" stroke="#d9e2eb"/>
 <rect x="736" y="913" width="660" height="264" rx="15" fill="white" stroke="#d9e2eb"/>
@@ -120,4 +120,19 @@
 <text font-size="18" fill="#4a5e73" font-weight="400"><tspan x="990" y="1479.76">Catalog + real returned capability</tspan><tspan x="990" y="1504.06">Quota · retention · owned cleanup</tspan></text>
 <text font-size="18" fill="#14283f" font-weight="400"><tspan x="46" y="1581.76">Record evidence separately: exact build · browser / OS · real or emulated device · API / adapter · journey · cleanup.</tspan></text>
 <text font-size="18" fill="#4a5e73" font-weight="400"><tspan x="46" y="1614.76">A logo or available route is not a passed test. Keep failed, unsupported and untested combinations visible.</tspan></text>
+<text font-size="25" fill="#14283f" font-weight="700"><tspan x="46" y="1688.50">04   PROVIDERS · CHOOSE THE MISSING COVERAGE</tspan></text>
+<rect x="44" y="1725" width="428" height="260" rx="15" fill="white" stroke="#d9e2eb"/>
+<text font-size="19" fill="#14283f" font-weight="700"><tspan x="66" y="1762.58">BROWSER + REAL-DEVICE FARMS</tspan></text>
+<text font-size="19" fill="#14283f" font-weight="400"><tspan x="66" y="1800.58">TestingBot · BrowserStack</tspan><tspan x="66" y="1826.23">Sauce Labs · TestMu AI (LambdaTest)</tspan><tspan x="66" y="1851.88">Perfecto · AWS Device Farm</tspan></text>
+<text font-size="16" fill="#4a5e73" font-weight="400"><tspan x="66" y="1957.12">Protocols and device/OS support differ</tspan></text>
+<rect x="506" y="1725" width="428" height="260" rx="15" fill="white" stroke="#d9e2eb"/>
+<text font-size="19" fill="#14283f" font-weight="700"><tspan x="528" y="1762.58">MANAGED BROWSERS</tspan></text>
+<text font-size="19" fill="#14283f" font-weight="400"><tspan x="528" y="1800.58">Browserless: Chromium / Firefox / WebKit</tspan><tspan x="528" y="1826.23">Kernel: Chromium</tspan><tspan x="528" y="1851.88"></tspan><tspan x="528" y="1877.53">GPU options depend on deployment / plan</tspan></text>
+<text font-size="16" fill="#4a5e73" font-weight="400"><tspan x="528" y="1957.12">Emulation does not supply a real phone</tspan></text>
+<rect x="968" y="1725" width="428" height="260" rx="15" fill="white" stroke="#d9e2eb"/>
+<text font-size="19" fill="#14283f" font-weight="700"><tspan x="990" y="1762.58">A FULL GPU CHECKOUT</tspan></text>
+<text font-size="19" fill="#14283f" font-weight="400"><tspan x="990" y="1800.58">Runpod: Linux GPU container</tspan><tspan x="990" y="1826.23"></tspan><tspan x="990" y="1851.88">SSH → existing package commands</tspan><tspan x="990" y="1877.53">Verify adapter, API work and app paint</tspan></text>
+<text font-size="16" fill="#4a5e73" font-weight="400"><tspan x="990" y="1957.12">No Windows / Mac / real-mobile target</tspan></text>
+<text font-size="19" fill="#14283f" font-weight="700"><tspan x="46" y="2028.58">Provider snapshot checked 2026-10-18 (UTC) · Availability is not tested acceptance.</tspan></text>
+<text font-size="18" fill="#4a5e73" font-weight="400"><tspan x="46" y="2063.76">See the dated provider tables for sources, connection limits and separately dated observations.</tspan></text>
 </svg>

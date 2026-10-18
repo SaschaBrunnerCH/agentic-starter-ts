@@ -156,7 +156,7 @@ A testing farm can supply browsers, operating systems and real devices you do no
 
 ### Providers
 
-Use the [farm connection matrix and current primary references](browser-device-coverage.md#testing-farms) before selecting a provider or device. Provider-specific iOS and Android automation exists, but the phone-emulation projects do not automatically connect to it. Check versions, catalog availability, actual capabilities, budgets, build identity and cleanup. A provider's feature list does not establish this template's integration or physical-GPU acceptance.
+Use the [farm connection matrix](browser-device-coverage.md#testing-farms) and [dated provider comparison](browser-device-coverage.md#provider-comparison) before selecting a provider or device. Provider-specific iOS and Android automation exists, but the phone-emulation projects do not automatically connect to it. Check versions, catalog availability, actual capabilities, budgets, build identity and cleanup. A provider's feature list does not establish this template's integration or physical-GPU acceptance.
 
 ### Connect one
 

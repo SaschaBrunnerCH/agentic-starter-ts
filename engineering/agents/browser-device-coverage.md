@@ -10,7 +10,8 @@ APIs the application uses, as the [GPU guide](browser-gpu-discovery.md) describe
 
 Open the graphic for full size. Built-in, documented and separate-integration
 labels describe possible paths; record actual test results separately using the
-[evidence format](#record-actual-evidence). The table below is its text counterpart.
+[evidence format](#record-actual-evidence). The table below is its text counterpart;
+the [provider comparison](#provider-comparison) helps choose remote coverage.
 
 ## Declare the supported matrix
 
@@ -260,16 +261,62 @@ before selecting a label from its catalog:
 | WebDriver/Appium or provider SDK/runner | No adapter                                                         | Shipping Safari, real-device input or other provider paths need their own implementation                  |
 | Manual real-device session              | Operator follows the same declared journey                         | Actual device, input, API/paint and cleanup evidence; no automatic Playwright-suite claim                 |
 
-Current primary references (checked 2026-10-17) illustrate different offerings:
-[TestingBot Playwright](https://testingbot.com/support/web-automate/playwright)
-documents browser endpoints; its [mobile offering](https://testingbot.com/support/app-automate)
-has separate automation paths. [BrowserStack](https://www.browserstack.com/docs/automate/playwright)
-documents desktop and mobile options, including
-[real iOS Playwright workflows](https://www.browserstack.com/docs/automate/playwright/playwright-ios/nodejs).
-[Sauce Labs](https://docs.saucelabs.com/basics/community-frameworks/)
-documents framework/runner-specific paths. A provider's Playwright-branded feature
-does not establish compatibility with this starter's plain endpoint connector.
-These are examples, not provider recommendations or bundled integrations.
+### Provider comparison
+
+**Snapshot checked 2026-10-18 (UTC).** Each row dates its linked documentation or
+catalog check, not future availability. This is a selection of providers, not an
+exhaustive catalog or a ranking. C = Chromium (Chrome/Edge where offered),
+F = Firefox/Gecko, W = Playwright WebKit. Shipping Safari is a separate path.
+Browser OS is the rendering host, not the controlling laptop; WSL still needs a
+WSL host. A provider's Playwright-branded feature does not establish compatibility
+with this starter's endpoint connector.
+
+| Browser/device farm                                                                                   | Desktop browser hosts and engines                                                                                                                                                                        | Physical phones/tablets                                                                                                                                                                         | Connection and starter fit                                                                                                                                                                                                                   | Last checked / basis              |
+| ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| [TestingBot](https://testingbot.com/support/web-automate/playwright)                                  | Playwright catalog: Windows/Linux C/F; macOS C/F/W                                                                                                                                                       | Android and iPhone/iPad; use the [physical-device catalog](https://testingbot.com/support/api/devices), separate from simulators/emulators                                                      | Desktop Playwright endpoint fits the connector, subject to version checks. [Android API](https://testingbot.com/support/web-automate/playwright/mobile) and [Appium](https://testingbot.com/support/app-automate) need separate mobile setup | 2026-10-18 · docs + live catalogs |
+| [BrowserStack](https://www.browserstack.com/docs/automate/playwright/browsers-and-os)                 | Windows/macOS C/F/W with browser/OS restrictions; no Linux desktop row in the checked catalog                                                                                                            | Real Android and iPhone/iPad catalog entries; [iOS Playwright](https://www.browserstack.com/docs/automate/playwright/playwright-ios/nodejs) has its own setup                                   | Desktop Playwright endpoint fits after compatibility checks; mobile SDK/device paths require separate verification                                                                                                                           | 2026-10-18 · docs + live catalog  |
+| [Sauce Labs](https://docs.saucelabs.com/web-apps/automated-testing/playwright/)                       | Published Playwright testing table: Windows/macOS C/F/W with [limits](https://docs.saucelabs.com/web-apps/automated-testing/playwright/limitations/). Linux client support is not a Linux browser target | [Android and iOS real phones/tablets](https://docs.saucelabs.com/mobile-apps/automated-testing/appium/real-devices/), plus separate virtual devices                                             | Documented `saucectl` runner; real mobile Appium. Neither integration is built in here                                                                                                                                                       | 2026-10-18 · docs only            |
+| [TestMu AI (formerly LambdaTest)](https://www.lambdatest.com/support/docs/playwright-testing/)        | Windows/macOS examples; desktop C/F/W with [bundle compatibility](https://www.lambdatest.com/support/docs/playwright-bundled-browser-support/); Linux browser target unverified                          | [Android](https://www.lambdatest.com/support/docs/playwright-android/) and [iPhone/iPad Safari](https://www.lambdatest.com/support/docs/playwright-ios-device/); iOS Playwright is a gated beta | Provider Playwright endpoints and Android API options. Published mobile version ranges exclude this starter's Playwright 1.64; no working integration claimed                                                                                | 2026-10-18 · docs only            |
+| [Perfecto](https://help.perfecto.io/perfecto-help/content/Perfecto/automation-testing/playwright.htm) | Windows Chrome/Edge; macOS C/F/W                                                                                                                                                                         | Android Chrome/WebView; iOS Safari Playwright beta with a specific client version                                                                                                               | Provider capabilities/endpoints need validation. Source version statements differ; confirm the supported client before selecting it                                                                                                          | 2026-10-18 · docs only            |
+| [AWS Device Farm](https://docs.aws.amazon.com/devicefarm/latest/developerguide/welcome.html)          | [Desktop TestGrid](https://docs.aws.amazon.com/devicefarm/latest/testgrid/techref-support.html): Windows Chrome/Edge/Firefox via WebDriver                                                               | Real Android/iOS mobile devices; select device pools and supported test framework                                                                                                               | AWS test uploads/Appium or desktop WebDriver need a separate integration; no plain Playwright endpoint assumed                                                                                                                               | 2026-10-18 · docs only            |
+
+Managed browsers and a rented GPU host serve different needs from device farms:
+
+| Provider / service                                                  | Browser or host coverage                                                                                             | GPU and full-checkout limits                                                                                                                                                                            | Connection and starter fit                                                                         | Last checked / basis                       |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| [Browserless](https://docs.browserless.io/overview/connection-urls) | Hosted C/F/W endpoints; emulation does not supply physical mobile devices                                            | [GPU infrastructure](https://docs.browserless.io/enterprise/private-deployment/performance) is a private-deployment option. Shared endpoints establish neither GPU access nor a full developer checkout | Choose a Playwright-protocol endpoint for the connector; Chrome CDP needs a separate adapter       | 2026-10-18 · docs; prior shared Chrome run |
+| [Kernel](https://www.kernel.sh/browsers)                            | Managed Chromium sessions, not a three-engine/device farm                                                            | [GPU browsers use virtual GPUs](https://www.kernel.sh/blog/gpu); verify entitlement/configuration. No physical-workstation or full-checkout acceptance inferred                                         | Documented Playwright-over-CDP path needs session lifecycle code; no general CDP adapter here      | 2026-10-18 · docs; GPU run not performed   |
+| [Runpod Pods](https://docs.runpod.io/pods/overview)                 | Rented Linux GPU container; install required browsers. This path supplies no Windows/macOS or physical mobile target | Full checkout/build/discovery on the host GPU; verify libraries, adapter and each API. Container results do not establish bare-metal desktop behavior                                                   | SSH to the host and use existing package commands; no provider SDK/provisioning integration needed | 2026-10-18 · docs + Linux GPU checkout     |
+
+### Dated observations
+
+These results describe particular sessions, not vendor-wide promises. The
+[platform verification issue](https://github.com/SaschaBrunnerCH/agentic-starter-ts/issues/5)
+records acceptance scope and evidence. These desktop results establish no
+physical cloud mobile run.
+
+| Provider / target               | Observed graphics result                                                           | Observed application result                                                                     | Run date (UTC) |
+| ------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | -------------- |
+| TestingBot Linux Chrome         | SwiftShader (software) WebGL2 readback; no WebGPU adapter                          | Interaction and axe passed; functional evidence only                                            | 2026-10-17     |
+| TestingBot macOS Chrome         | Apple Paravirtual (virtual GPU) WebGL2; WebGPU work/readback with Apple identity   | Interaction and axe passed; no physical-Mac/full-checkout proof                                 | 2026-10-17     |
+| BrowserStack macOS Chrome       | Apple M2/Metal WebGL2 and requested core/compatibility WebGPU readback passed      | Interaction and axe passed; Firefox/WebKit app checks also passed. No macOS local-tooling proof | 2026-10-18     |
+| BrowserStack Windows Chrome     | SwiftShader WebGL2; no WebGPU adapter                                              | Interaction and axe passed; functional evidence only                                            | 2026-10-18     |
+| Browserless shared Linux Chrome | SwiftShader WebGL2; no core/compatibility WebGPU adapter in checked configurations | Interaction and axe passed; private GPU deployment untested                                     | 2026-10-18     |
+| Runpod Linux GPU container      | NVIDIA WebGL2/core WebGPU work/readback; full checkout and bounded cleanup passed  | Application and axe passed; no bare-metal/performance claim                                     | 2026-10-18     |
+
+Keep account access separate from this public overview. Authentication and a
+catalog entry establish neither entitlement to every row nor successful
+allocation, device availability, protocol compatibility or GPU acceptance.
+Recheck linked catalogs and version/plan restrictions before each selection;
+record actual device/browser/adapter and cleanup in that run's evidence. Update
+only rows rechecked, with their date and source, when offerings change. Do not
+renew an old test's date after merely rereading a provider's documentation.
+
+Prefer the available local machine/device first. Add a farm for a missing browser
+or real device, or a full GPU host for checkout/discovery acceptance. Keep
+[focused PR checks and the full declared release inventory](browser-testing.md#as-the-suite-grows)
+unchanged. No account, SDK, paid plan or default matrix expansion is required by
+this overview.
 
 Check the live device catalog, plan access and returned OS/browser/device identity.
 Do not accept a substituted VM or emulator as the requested real-device row.
