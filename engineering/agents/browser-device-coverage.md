@@ -320,8 +320,8 @@ This technical comparison intentionally excludes plans and pricing.
 
 These results describe particular sessions, not vendor-wide promises. The
 [platform verification issue](https://github.com/SaschaBrunnerCH/agentic-starter-ts/issues/5)
-records acceptance scope and evidence. These desktop results establish no
-physical cloud mobile run.
+records acceptance scope and evidence. Desktop rows do not establish physical
+mobile coverage; the separate mobile samples below name their own devices.
 
 | Provider / target               | Observed graphics result                                                           | Observed application result                                                                     | Run date (UTC) |
 | ------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | -------------- |
@@ -331,6 +331,55 @@ physical cloud mobile run.
 | BrowserStack Windows Chrome     | SwiftShader WebGL2; no WebGPU adapter                                              | Interaction and axe passed; functional evidence only                                            | 2026-10-18     |
 | Browserless shared Linux Chrome | SwiftShader WebGL2; no core/compatibility WebGPU adapter in checked configurations | Interaction and axe passed; private GPU deployment untested                                     | 2026-10-18     |
 | Runpod Linux GPU container      | NVIDIA WebGL2/core WebGPU work/readback; full checkout and bounded cleanup passed  | Application and axe passed; no bare-metal/performance claim                                     | 2026-10-18     |
+
+#### Real phone and tablet observations
+
+Checked 2026-10-18 (UTC) through temporary WebDriver/Appium sessions, separate
+from the starter's Playwright emulation projects. Physical-device catalogs and
+explicit real-device capabilities selected these models; returned capabilities
+and provider device records established the device OS. These are provider-attested
+physical-device results, not an independent hardware audit or performance study.
+
+| Provider     | Returned device / rendering OS        | Browser observed                                          | Graphics work/readback                                                         | Run date (UTC) |
+| ------------ | ------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------ | -------------- |
+| TestingBot   | Galaxy S25 (SM-S931B), Android 15     | Chrome 149.0.7827.159                                     | WebGL2 Adreno 830; WebGPU `qualcomm adreno-8xx`, both requested modes passed   | 2026-10-18     |
+| TestingBot   | Galaxy Tab S11 (SM-X730), Android 16  | Chrome 150.0.7871.189                                     | WebGL2 Mali-G925; WebGPU `arm gen-5` readback passed, classifier finding below | 2026-10-18     |
+| TestingBot   | iPhone 17 Pro, iOS 26.5               | Safari 26.5                                               | Apple GPU WebGL2 and WebGPU, both requested modes passed                       | 2026-10-18     |
+| BrowserStack | Galaxy S25 (SM-S931B), Android 15     | Chrome 152 (reduced user agent; full version unavailable) | WebGL2 Adreno 830; WebGPU `qualcomm adreno-8xx`, both requested modes passed   | 2026-10-18     |
+| BrowserStack | Galaxy Tab S11 (SM-X736B), Android 16 | Chrome 152 (reduced user agent; full version unavailable) | WebGL2 Mali-G925; WebGPU `arm gen-5` readback passed, classifier finding below | 2026-10-18     |
+| BrowserStack | iPhone 17 Pro, iOS 26.6               | Safari 26.6                                               | Apple GPU WebGL2 and WebGPU, both requested modes passed                       | 2026-10-18     |
+| BrowserStack | iPad Air 13 2025, iPadOS 26.6         | Safari 26.6.1                                             | Apple GPU WebGL2 and WebGPU, both requested modes passed                       | 2026-10-18     |
+
+All seven samples passed the built application's greeting/input interaction,
+changed-screenshot check, axe with zero violations, landscape rotation with the
+application retained, and deliberate wrong-pixel rejection for working APIs.
+Both core and compatibility WebGPU requests were exercised; this does not prove
+that every browser implements the requested feature-level distinction. Each owned
+session was deleted and its provider record confirmed complete/done; both accounts
+returned to zero running/queued sessions. Input used WebDriver click/clear/send
+keys, not human multitouch. The starter has no application GPU scene, so API
+readback is separate from its UI paint evidence.
+
+TestingBot's physical iPad (9th generation) with iPadOS 26.6 remained unavailable
+across the bounded recheck on 2026-10-18; **current TestingBot iPad coverage is
+unverified**. An earlier iOS 15 diagnostic is retained as historical local
+evidence and does not satisfy this current-iPad sample. BrowserStack's newer iPad
+row above is the executed current-iPad result.
+
+At the tested harness revision `32f00b1`, both Tab S11 sessions returned working
+non-fallback WebGPU with identity `arm gen-5`, which the classifier left unknown.
+[Issue #52](https://github.com/SaschaBrunnerCH/agentic-starter-ts/issues/52) owns the
+narrow identity/reporting fix. Successful readback is not silently promoted to an
+automatic hardware-classification pass. The captured records remain unchanged.
+
+Device OS, provider summary OS and driver OS are separate fields. For example,
+the checked TestingBot iPhone session returned iOS 26.5 in capabilities and a
+matching device name, while its summary `os` was `TAHOE`; that summary is not the
+phone's OS. User agents can also be frozen or use desktop mode. Use returned device
+capabilities and device-specific provider metadata, preserve disagreements, and
+leave missing fields unverified. The driver for these runs was WSL Linux, not the
+Android/iOS rendering device. Harness revision and deployed index/assets were
+byte-matched before and after the batch; the observations are scoped to that build.
 
 Keep account access separate from this public overview. Authentication and a
 catalog entry establish neither access to every row nor successful
