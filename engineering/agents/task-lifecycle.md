@@ -16,6 +16,8 @@ cd ../<repository>-42-short-title
 pnpm install --frozen-lockfile
 ```
 
+Retained drafts and evidence go in the primary checkout's ignored `.local/`, using the [local artifact conventions](working-style.md#local-artifacts). Run `pnpm local:init` from any checkout to initialize its local README; issue/PR folders stay stable, with UTC dates inside them. This does not change sibling worktree names or the Git-common-directory handoff below.
+
 `pnpm install --frozen-lockfile` is needed in every new worktree: the checks and the Git hooks run tools from its `node_modules`.
 
 Naming:

@@ -34,6 +34,7 @@
     "setup:github": "node scripts/setup-github.ts",
     "setup:previews": "node scripts/setup-previews.ts",
     "issue": "node scripts/issue.ts",
+    "local:init": "node scripts/init-local-artifacts.ts",
     "task": "node scripts/task.ts",
     "release": "node scripts/release.ts",
     "browser:doctor": "node --import ./scripts/playwright-browsers-env.ts scripts/browser-doctor.ts",

@@ -50,6 +50,8 @@ touch scratch.txt && git push --dry-run origin HEAD:refs/heads/hook-check; rm sc
 - If a hook itself is broken, so that it fails for a reason unrelated to the change: run `pnpm check:push` by hand, push once with `--no-verify`, state the reason in the pull request and file a `bug` issue for the hook. This never applies to a check that fails on the change.
 - Editing a pull request's title or body does not rerun CI; a new commit does. Report local results and CI results separately, each with its commit.
 
+Keep retained logs, reports and verification notes under the primary checkout's ignored `.local/`, following the [artifact naming guidance](working-style.md#local-artifacts). Tool-owned `coverage/`, `test-results/` and reports keep their existing paths; copy wanted evidence before removing a task worktree.
+
 Bundled Playwright browsers are shared by worktrees under the Git common directory,
 in `playwright-browsers/<platform>-<arch>`; explicit `PLAYWRIGHT_BROWSERS_PATH` overrides win.
 Install through `pnpm test:browser:install` or `pnpm browser:cli install <engines>`,
