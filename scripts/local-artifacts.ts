@@ -1,5 +1,12 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  closeSync,
+  ftruncateSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 
 const readme = `# Local artifacts
@@ -56,16 +63,23 @@ export function initializeLocalArtifacts(cwd: string, localExclude = false): str
     const ignoreFile = localExclude
       ? git(primary, ["rev-parse", "--path-format=absolute", "--git-path", "info/exclude"]).trim()
       : join(primary, ".gitignore");
-    const existing = existsSync(ignoreFile) ? readFileSync(ignoreFile, "utf8") : "";
-    // Move only our exact rule to the end when a later exception defeated it.
-    const preserved = existing
-      .split(/\r?\n/u)
-      .filter((line) => line !== "/.local/")
-      .join("\n");
-    writeFileSync(
-      ignoreFile,
-      `${preserved}${preserved.endsWith("\n") || !preserved ? "" : "\n"}/.local/\n`,
-    );
+    // Read and update the same opened file, even if its path changes meanwhile.
+    const descriptor = openSync(ignoreFile, "a+");
+    try {
+      const existing = readFileSync(descriptor, "utf8");
+      // Move only our exact rule to the end when a later exception defeated it.
+      const preserved = existing
+        .split(/\r?\n/u)
+        .filter((line) => line !== "/.local/")
+        .join("\n");
+      ftruncateSync(descriptor, 0);
+      writeFileSync(
+        descriptor,
+        `${preserved}${preserved.endsWith("\n") || !preserved ? "" : "\n"}/.local/\n`,
+      );
+    } finally {
+      closeSync(descriptor);
+    }
     if (!ignored())
       throw new Error("Could not exclude all of .local; review the Git ignore rules.");
   }
@@ -73,6 +87,17 @@ export function initializeLocalArtifacts(cwd: string, localExclude = false): str
   const directory = join(primary, ".local");
   mkdirSync(directory, { recursive: true });
   const path = join(directory, "README.md");
-  if (!existsSync(path)) writeFileSync(path, readme, { flag: "wx" });
+  let descriptor: number;
+  try {
+    descriptor = openSync(path, "wx");
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "EEXIST") return directory;
+    throw error;
+  }
+  try {
+    writeFileSync(descriptor, readme);
+  } finally {
+    closeSync(descriptor);
+  }
   return directory;
 }
