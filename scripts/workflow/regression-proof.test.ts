@@ -147,18 +147,23 @@ const git = (cwd: string, ...args: string[]) => {
   return result.stdout.trim();
 };
 
-function fixture(test: string): { root: string; base: string; head: string } {
+function fixture(
+  test: string,
+  before = "export const sum = (a: number, b: number) => a - b;\n",
+  after = "export const sum = (a: number, b: number) => a + b;\n",
+  testFilename = "sum.test.ts",
+): { root: string; base: string; head: string } {
   const root = mkdtempSync(join(tmpdir(), "regression-fixture-"));
   made.push(root);
   git(root, "init", "-q", "-b", "main");
   mkdirSync(join(root, "src"));
   writeFileSync(join(root, ".gitignore"), "node_modules\n");
-  writeFileSync(join(root, "src/sum.ts"), "export const sum = (a: number, b: number) => a - b;\n");
+  writeFileSync(join(root, "src/sum.ts"), before);
   git(root, "add", ".");
   git(root, "commit", "-q", "-m", "Add sum");
   const base = git(root, "rev-parse", "HEAD");
-  writeFileSync(join(root, "src/sum.ts"), "export const sum = (a: number, b: number) => a + b;\n");
-  writeFileSync(join(root, "src/sum.test.ts"), test);
+  writeFileSync(join(root, "src/sum.ts"), after);
+  writeFileSync(join(root, "src", testFilename), test);
   git(root, "add", ".");
   git(root, "commit", "-q", "-m", "Fix sum");
   symlinkSync(
@@ -178,6 +183,145 @@ describe("runOnBase", () => {
     expect(run.failed).toEqual(["adds"]);
     expect(judge(["src/sum.test.ts"], [], run, false).kind).toBe("proven");
   });
+
+  it.each([
+    ["named", 'import { newHelper } from "./sum";', "newHelper()"],
+    ["quoted", 'import { "new-helper" as call } from "./sum";', "call()"],
+    ["aliased", 'import { newHelper as call } from "./sum";', "call()"],
+    ["default", 'import call from "./sum";', "call()"],
+    ["namespace", 'import * as subject from "./sum";', "subject.newHelper()"],
+    [
+      "dynamic namespace",
+      'import * as subject from "./sum"; const key = "newHelper";',
+      "subject[key]()",
+    ],
+    ["nested namespace", 'import * as subject from "./sum";', "subject[subject.key]()"],
+    ["computed namespace", 'import * as subject from "./sum";', 'subject["newHelper"]()'],
+  ])(
+    "refuses an absent %s export with real Vitest output",
+    { timeout: 60_000 },
+    (_name, imported, call) => {
+      const before = 'export const existing = () => 1; export const key = "newHelper";\n';
+      const { root, base, head } = fixture(
+        `import { expect, it } from "vitest";\n${imported}\nit("new API works", () => expect(${call}).toBe(1));\n`,
+        before,
+        `${before}export const newHelper = () => 1;\nexport { newHelper as "new-helper" };\nexport default newHelper;\n`,
+      );
+      const run = runOnBase(root, base, head, ["src/sum.test.ts"]);
+      expect(run.failed).toEqual([]);
+      expect(run.notLoaded).toHaveLength(1);
+      expect(judge(["src/sum.test.ts"], [], run, false).kind).toBe("missing");
+    },
+  );
+
+  it.each([
+    'export const sum = () => { throw new TypeError("broken implementation"); };',
+    "export const sum = undefined;",
+  ])(
+    "retains legitimate TypeErrors for an API present on the base",
+    { timeout: 60_000 },
+    (before) => {
+      const { root, base, head } = fixture(
+        'import { expect, it } from "vitest";\nimport { sum } from "./sum";\nit("adds", () => expect(sum(2, 3)).toBe(5));\n',
+        before,
+      );
+      const run = runOnBase(root, base, head, ["src/sum.test.ts"]);
+      expect(run.failed).toEqual(["adds"]);
+      expect(run.notLoaded).toEqual([]);
+      expect(judge(["src/sum.test.ts"], [], run, false).kind).toBe("proven");
+    },
+  );
+
+  it("ignores type-only imports while checking existing behavior", { timeout: 60_000 }, () => {
+    const { root, base, head } = fixture(
+      'import { expect, it } from "vitest";\nimport type { Future } from "./not-on-base";\nimport { type OtherFuture, sum as add } from "./sum";\nit("adds", () => expect(add(2, 3)).toBe(5));\n',
+    );
+    const run = runOnBase(root, base, head, ["src/sum.test.ts"]);
+    expect(run.failed).toEqual(["adds"]);
+    expect(judge(["src/sum.test.ts"], [], run, false).kind).toBe("proven");
+  });
+
+  it(
+    "checks combined default/namespace imports without colliding with test bindings",
+    { timeout: 60_000 },
+    () => {
+      const { root, base, head } = fixture(
+        'import { expect, it } from "vitest";\nimport call, * as subject from "./sum";\nconst __regressionImport = 1;\nit("adds", () => expect([call(2, 3), subject.sum(2, 3), __regressionImport]).toEqual([5, 5, 1]));\n',
+        "export const sum = (a: number, b: number) => a - b; export default sum;",
+        "export const sum = (a: number, b: number) => a + b; export default sum;",
+      );
+      const run = runOnBase(root, base, head, ["src/sum.test.ts"]);
+      expect(run.failed).toEqual(["adds"]);
+      expect(run.notLoaded).toEqual([]);
+    },
+  );
+
+  it("preserves namespace identity and method receivers", { timeout: 60_000 }, () => {
+    const source =
+      'import * as self from "./sum"; export function same() { return this === self; }';
+    const { root, base, head } = fixture(
+      'import { expect, it } from "vitest"; import * as subject from "./sum"; it("same namespace", () => expect(subject.same()).toBe(true));',
+      source,
+      source,
+    );
+    expect(runOnBase(root, base, head, ["src/sum.test.ts"])).toEqual({ failed: [], notLoaded: [] });
+  });
+
+  it(
+    "preserves computed-key coercion, nested access, optional access and local shadowing",
+    { timeout: 60_000 },
+    () => {
+      const source = 'export const key = "sum"; export const sum = () => 1;';
+      const { root, base, head } = fixture(
+        `import { expect, it } from "vitest"; import * as subject from "./sum";
+       it("namespace behavior", () => {
+         let conversions = 0;
+         const key = { [Symbol.toPrimitive]() { conversions++; return "sum"; } };
+         expect(subject[key]()).toBe(1);
+         expect(conversions).toBe(1);
+         expect(subject[subject.key]()).toBe(1);
+         expect(subject?.sum()).toBe(1);
+         const shadowed = (subject) => subject.inherited;
+         expect(shadowed(Object.create({ inherited: 2 }))).toBe(2);
+       });`,
+        source,
+        source,
+      );
+      expect(runOnBase(root, base, head, ["src/sum.test.ts"])).toEqual({
+        failed: [],
+        notLoaded: [],
+      });
+    },
+  );
+
+  it("checks imports in TSX regression tests", { timeout: 60_000 }, () => {
+    const { root, base, head } = fixture(
+      'import React from "react"; import { it, expect } from "vitest"; import { sum } from "./sum"; it("adds", () => expect((<span>{sum(2, 3)}</span>).props.children).toBe(5));',
+      undefined,
+      undefined,
+      "sum.test.tsx",
+    );
+    expect(runOnBase(root, base, head, ["src/sum.test.tsx"]).failed).toEqual(["adds"]);
+  });
+
+  it("leaves side-effect/framework imports alone", { timeout: 60_000 }, () => {
+    const { root, base, head } = fixture(
+      'import { expect, it } from "vitest";\nimport "./sum";\nit("always passes", () => expect(1).toBe(1));\n',
+    );
+    expect(runOnBase(root, base, head, ["src/sum.test.ts"])).toEqual({ failed: [], notLoaded: [] });
+  });
+
+  it(
+    "fails closed on unparseable imports and still removes the temporary checkout",
+    { timeout: 60_000 },
+    () => {
+      const { root, base, head } = fixture('import { it } from "vitest"; it("invalid", () => }');
+      expect(() => runOnBase(root, base, head, ["src/sum.test.ts"])).toThrow(
+        "Cannot inspect regression imports",
+      );
+      expect(git(root, "worktree", "list").split("\n")).toHaveLength(1);
+    },
+  );
 
   it("refuses a fix whose test passes on the code before it", { timeout: 60_000 }, () => {
     const { root, base, head } = fixture(
