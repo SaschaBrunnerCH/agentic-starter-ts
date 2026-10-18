@@ -1,6 +1,10 @@
 # Triage labels
 
-`pnpm setup:github` creates these labels. Change the list in `scripts/setup/setup-github.ts` and this page together.
+`pnpm setup:github` creates or updates labels from [.github/labels.json](../../.github/labels.json), the single source for exact names, colors and descriptions. This page explains their workflow meaning. Customize product areas in that configuration without editing setup code; update this guide when their meaning changes.
+
+Setup validates the entire file before contacting GitHub: records need names of 1–50 characters without surrounding whitespace, six hexadecimal color digits without `#`, and descriptions of at most 100 characters. Names must be unique ignoring case. Every workflow label below except `area:app` is required; retain `area:engineering`. Invalid or missing configuration stops setup before any remote write.
+
+Reconciliation creates missing configured labels and updates changed colors/descriptions. Unconfigured hosted labels remain; changing a name in configuration does not rename or delete the old hosted label. Remove obsolete labels separately after checking their use. Keeping the data here in JSON avoids downstream edits to otherwise shared setup code. Color and description validation follows [GitHub’s label API](https://docs.github.com/en/rest/issues/labels#create-a-label).
 
 ## Readiness and triage
 

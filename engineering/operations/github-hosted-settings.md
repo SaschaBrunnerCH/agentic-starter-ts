@@ -6,7 +6,7 @@ These settings live on GitHub, not in files, and a repository created from the t
 
 | Setting                    | Value                                                                                                                                                                                                                          |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Labels                     | The list in [triage labels](../agents/triage-labels.md)                                                                                                                                                                        |
+| Labels                     | Exact definitions in [.github/labels.json](../../.github/labels.json); meanings in [triage labels](../agents/triage-labels.md)                                                                                                 |
 | Merge methods              | Squash only; the branch is deleted after merge                                                                                                                                                                                 |
 | Project                    | One Project named after the repository, linked to it                                                                                                                                                                           |
 | Project field **Status**   | Backlog, Ready, In progress, In review, Blocked, Done                                                                                                                                                                          |
@@ -30,7 +30,7 @@ These settings live on GitHub, not in files, and a repository created from the t
 
 **Release tags** applies to everyone, with no bypass: a `v*` tag cannot be updated, force-pushed or deleted. See [releases](releases.md).
 
-The script adds and updates existing settings. When it creates a new Project, it removes GitHub's initial "View 1" after creating the named views; it preserves views on existing Projects. Status options a repository added itself are kept after the standard six. GitHub's default labels that are not in the list (such as `duplicate` or `good first issue`) and labels you renamed in the script stay until you remove them by hand.
+The script adds and updates existing settings. When it creates a new Project, it removes GitHub's initial "View 1" after creating the named views; it preserves views on existing Projects. Status options a repository added itself are kept after the standard six. GitHub's default labels that are not in the list (such as `duplicate` or `good first issue`) and labels whose configured names you changed stay until you remove them by hand.
 
 A ruleset is created only when none of that name exists; the script does not overwrite one. It compares an existing ruleset with its file and reports every difference as not applied, so a relaxed ruleset does not go unnoticed. To change a ruleset, edit the JSON file through a pull request, then delete the hosted ruleset and rerun the script, or apply the same change in the GitHub UI.
 
