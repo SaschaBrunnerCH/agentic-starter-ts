@@ -22,7 +22,7 @@ The third row is what makes the first two safe. An agent that is wrong gets stop
 
 1. **Write one small issue.** Pick something you could check in a minute. Use the template on GitHub's "New issue" page, or the commands in the README. Example:
 
-   > **Problem.** The page greets "agentic starter" in code; the name cannot be changed without editing source.
+   > **Problem.** The name input changes the greeting, but a shared URL cannot initialize it to a chosen name.
    >
    > **Expected outcome.** The page reads the name from a `name` query parameter and falls back to the current text.
    >
@@ -99,7 +99,7 @@ An agent running on a hosted service may be unable to reach the Project or to me
 ## Growing from here
 
 - **Grow the browser tests with the product.** One smoke test exists; add one for each thing a user must be able to do. When you need other browsers or real phones, connect a testing farm; see [browser testing](agents/browser-testing.md).
-- **Add checks as the product grows**, for example a bundle budget or an accessibility check, and add each to the guardrail table in the same pull request.
+- **Extend checks as the product grows.** A bundle budget and automated browser accessibility checks already exist. Adapt their scope and add product-specific checks, updating the guardrail table when enforcement changes.
 - **Record decisions** that constrain later work as [ADRs](adr/README.md), so an agent months later follows them without being told.
 - **Keep `CONTEXT.md` current.** Agents name things by the vocabulary they find there.
 - **Keep issues small.** One reviewable outcome per issue is the single habit that most improves results.

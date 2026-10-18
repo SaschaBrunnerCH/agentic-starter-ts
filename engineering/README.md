@@ -2,6 +2,30 @@
 
 Contributor documentation: how work is planned, done, verified and merged. Product usage documentation does not belong here.
 
+## Read first
+
+After the [repository setup](../README.md#start-a-new-repository):
+
+1. [Getting started](getting-started.md): follow a first session and learn what to review before a merge.
+2. [Task lifecycle](agents/task-lifecycle.md) and [working style](agents/working-style.md): start isolated work, keep changes focused and leave a handoff.
+3. [Local verification](agents/local-verification.md): understand the gate and the evidence it provides.
+
+```mermaid
+flowchart LR
+  issue["Issue<br/>pnpm issue"] --> task["Worktree<br/>pnpm task start"]
+  task --> commit["Commit hook<br/>format, lint, secrets"]
+  commit --> push["Push gate<br/>all checks"]
+  push --> pr["PR build<br/>checks; browser tests if switched on"]
+  pr --> preview["Preview<br/>per pull request"]
+  pr --> merge["Merge<br/>owner's yes"]
+  merge --> deploy["Deploy<br/>Pages and smoke test"]
+  deploy --> release["Release<br/>tag, notes, SBOM"]
+```
+
+Consult the guides below when their topic applies. For browser changes, start with [browser testing](agents/browser-testing.md), then GPU discovery or device coverage as needed.
+
+## Reference
+
 | Page                                                           | Covers                                                                       |
 | -------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | [Getting started with agentic work](getting-started.md)        | A first session for people new to this way of working                        |
