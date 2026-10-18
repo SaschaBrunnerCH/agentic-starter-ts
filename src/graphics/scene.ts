@@ -139,7 +139,7 @@ type Point = readonly [number, number, number];
 
 function project(longitude: number, latitude: number, scene: Scene): Point {
   const aspect = scene.height / scene.width;
-  if (scene.projection === "map") return [longitude / 200, (latitude / 100) * aspect, 1];
+  if (scene.projection === "map") return [longitude / 200, latitude / 200 / aspect, 1];
   const lon = (longitude + scene.angle) * radians;
   const lat = latitude * radians;
   const x = Math.cos(lat) * Math.sin(lon);

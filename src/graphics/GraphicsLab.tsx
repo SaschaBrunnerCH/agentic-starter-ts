@@ -194,8 +194,10 @@ export function GraphicsLab() {
   }));
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let resume = false;
     const reduce = () => {
-      if (media.matches)
+      if (media.matches) {
+        resume = false;
         setView((value) => ({
           ...value,
           motion: {
@@ -204,8 +206,8 @@ export function GraphicsLab() {
             playing: false,
           },
         }));
+      }
     };
-    let resume = false;
     const visibility = () => {
       setView((value) => {
         if (document.hidden) resume = value.motion.playing;

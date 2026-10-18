@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
-import { classifyRenderer } from "../scripts/browser/browser-gpu.ts";
+import { classifyRenderer, gpuSetting } from "../scripts/browser/browser-gpu.ts";
+import { requiredApis } from "../scripts/browser/browser-gpu-profile.ts";
 import { assertPainted } from "./graphics-evidence.ts";
 
 async function settled(page: Page) {
@@ -17,10 +18,8 @@ test("both native canvases paint the globe and flat map, with honest capability 
 }) => {
   await page.goto("./");
   await settled(page);
-  const required = process.env.BROWSER_GPU === "required";
-  const requireWebgpu =
-    (process.env.BROWSER_GPU_APIS ?? "").split(",").includes("webgpu") ||
-    process.env.BROWSER_WEBGPU === "required";
+  const required = gpuSetting(process.env) === "required";
+  const requireWebgpu = requiredApis(process.env).includes("webgpu");
   for (const api of ["WebGL2", "WebGPU"]) {
     const panel = page.getByRole("region", { name: api, exact: true });
     const canvas = panel.locator("canvas");
@@ -96,6 +95,49 @@ test("missing WebGPU leaves a readable explanation and the greeting usable", asy
   ).toContainText("WebGPU is unavailable");
   await page.getByLabel("Name").fill("Ada");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Hello, Ada.");
+});
+
+test("hidden pages freeze frames and reduced motion prevents automatic resume", async ({
+  page,
+}) => {
+  await page.goto("./");
+  await settled(page);
+  const canvas = page.locator('canvas[data-state="ready"]').first();
+  await page.getByRole("button", { name: "Resume rotation" }).click();
+  await page.evaluate(() => {
+    Object.defineProperty(document, "hidden", { value: true, configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await page.waitForTimeout(150);
+  const hidden = await canvas.getAttribute("data-frames");
+  await page.waitForTimeout(150);
+  expect(await canvas.getAttribute("data-frames")).toBe(hidden);
+  await page.evaluate(() => {
+    Object.defineProperty(document, "hidden", { value: false, configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(page.getByRole("button", { name: "Pause rotation" })).toBeVisible();
+  await expect.poll(() => canvas.getAttribute("data-frames")).not.toBe(hidden);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.evaluate(() => {
+    Object.defineProperty(document, "hidden", { value: true, configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+    window.matchMedia("(prefers-reduced-motion: reduce)").addEventListener(
+      "change",
+      () => {
+        document.documentElement.dataset.motionPreferenceObserved = "true";
+      },
+      { once: true },
+    );
+  });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  // Wait for the actual preference-change listener before restoring visibility.
+  await expect(page.locator("html")).toHaveAttribute("data-motion-preference-observed", "true");
+  await page.evaluate(() => {
+    Object.defineProperty(document, "hidden", { value: false, configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(page.getByRole("button", { name: "Resume rotation" })).toBeVisible();
 });
 
 test("a denied WebGPU adapter is reported without a pretend graphic", async ({ page }) => {

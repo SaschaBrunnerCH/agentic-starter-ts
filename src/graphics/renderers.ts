@@ -13,7 +13,11 @@ export interface Renderer {
 const background = { r: 8 / 255, g: 21 / 255, b: 34 / 255, a: 1 };
 
 export function webglRenderer(canvas: HTMLCanvasElement): Renderer {
-  const gl = canvas.getContext("webgl2", { antialias: true, preserveDrawingBuffer: true });
+  const gl = canvas.getContext("webgl2", {
+    alpha: false,
+    antialias: true,
+    preserveDrawingBuffer: true,
+  });
   if (!gl) throw new Error("WebGL2 is unavailable in this browser.");
   const shaders: WebGLShader[] = [];
   const program = gl.createProgram();

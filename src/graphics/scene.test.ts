@@ -30,6 +30,13 @@ describe("shared scene geometry", () => {
     const flat = sceneVertices({ ...scene, projection: "map" });
     expect(sceneVertices({ ...scene, projection: "map", angle: 90 })).toEqual(flat);
     expect(flat.length).toBeGreaterThan(globe.length);
+    // Measure the actual map bounds in pixels: equirectangular means 2:1.
+    const xs = [...flat].filter((_, index) => index % 6 === 0);
+    const ys = [...flat].filter((_, index) => index % 6 === 1);
+    const ratio =
+      ((Math.max(...xs) - Math.min(...xs)) * scene.width) /
+      ((Math.max(...ys) - Math.min(...ys)) * scene.height);
+    expect(ratio).toBeCloseTo(2, 1);
     const narrow = sceneVertices({ ...scene, width: 400 });
     expect(narrow.length).toBe(globe.length);
     expect(narrow[0]).toBeCloseTo((globe[0] ?? 0) * 2, 4);
