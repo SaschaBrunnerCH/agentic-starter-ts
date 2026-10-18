@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { parseSync, Visitor } from "vite";
 import { dirname, join } from "node:path";
 import * as json from "../shared/json-shape.ts";
 
@@ -123,6 +124,84 @@ function run(command: string, args: readonly string[], cwd: string) {
   return spawnSync(command, args, { cwd, encoding: "utf8", env: environment() });
 }
 
+/** Make missing static imports fail as availability errors, before claiming behavioral proof. */
+function withImportGuards(source: string, filename: string): string {
+  const parsed = parseSync(filename, source);
+  if (parsed.errors.length > 0) {
+    throw new Error(
+      `Cannot inspect regression imports in ${filename}: ${parsed.errors[0]?.message}`,
+    );
+  }
+  let prefix = "__regressionImport";
+  while (source.includes(prefix)) prefix += "_";
+  const imports: string[] = [];
+  const checks: string[] = [];
+  const edits: { start: number; end: number; text: string }[] = [];
+  for (const node of parsed.program.body) {
+    if (
+      node.type !== "ImportDeclaration" ||
+      node.importKind === "type" ||
+      node.source.value === "vitest"
+    )
+      continue;
+    const values = node.specifiers.filter(
+      (item) => item.type !== "ImportSpecifier" || item.importKind !== "type",
+    );
+    if (values.length === 0) continue;
+    const alias = `${prefix}${imports.length}`;
+    const missing = JSON.stringify(
+      `Regression imports: ${node.source.value} does not provide an export named `,
+    );
+    // Preserve import attributes and original bindings, including mock hoisting.
+    imports.push(
+      `import * as ${alias} from ${JSON.stringify(node.source.value)}${source.slice(node.source.end, node.end)}`,
+    );
+    for (const item of values) {
+      if (item.type === "ImportNamespaceSpecifier") {
+        const guard = `${alias}Key`;
+        // Keep the original namespace as receiver. Computed keys are evaluated
+        // and coerced once; shadowed names pointing at other objects are untouched.
+        checks.push(
+          `function ${guard}(target, key) { const name = Reflect.ownKeys({ [key]: 0 })[0]; if (target === ${alias} && !Object.hasOwn(target, name)) throw new Error(${missing} + String(name)); return name; }`,
+        );
+        new Visitor({
+          MemberExpression(member) {
+            if (member.object.type !== "Identifier" || member.object.name !== item.local.name)
+              return;
+            if (member.computed) {
+              edits.push({
+                start: member.property.start,
+                end: member.property.start,
+                text: `${guard}(${item.local.name}, `,
+              });
+              edits.push({ start: member.property.end, end: member.property.end, text: ")" });
+            } else if (member.property.type === "Identifier") {
+              edits.push({
+                start: member.object.end,
+                end: member.end,
+                text: `${member.optional ? "?." : ""}[${guard}(${item.local.name}, ${JSON.stringify(member.property.name)})]`,
+              });
+            }
+          },
+        }).visit(parsed.program);
+      } else {
+        const name =
+          item.type === "ImportDefaultSpecifier"
+            ? "default"
+            : item.imported.type === "Identifier"
+              ? item.imported.name
+              : item.imported.value;
+        checks.push(
+          `if (!Object.hasOwn(${alias}, ${JSON.stringify(name)})) throw new Error(${missing} + ${JSON.stringify(name)});`,
+        );
+      }
+    }
+  }
+  for (const edit of edits.toSorted((a, b) => b.start - a.start))
+    source = source.slice(0, edit.start) + edit.text + source.slice(edit.end);
+  return imports.length === 0 ? source : `${imports.join("\n")}\n${checks.join("\n")}\n${source}`;
+}
+
 /**
  * Runs the given unit tests, as they are at `head`, against the code of `base`: in a temporary
  * worktree of `root` at `base`, with the test files of `head` and the dependencies of `root`.
@@ -146,7 +225,7 @@ export function runOnBase(
       const content = run("git", ["show", `${head}:${test}`], root);
       if (content.status !== 0) throw new Error(`Could not read ${test} at ${head}.`);
       mkdirSync(dirname(join(tree, test)), { recursive: true });
-      writeFileSync(join(tree, test), content.stdout);
+      writeFileSync(join(tree, test), withImportGuards(content.stdout, test));
     }
     const report = join(scratch, "report.json");
     run(
