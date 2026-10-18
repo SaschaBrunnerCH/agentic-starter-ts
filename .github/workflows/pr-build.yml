@@ -3,11 +3,6 @@ name: PR build
 on:
   pull_request:
   workflow_dispatch:
-    inputs:
-      browser-tests:
-        description: Run the browser tests
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -60,17 +55,8 @@ jobs:
       - name: Run all checks
         run: pnpm check:push
 
-      # Browser tests run on the developer's machine by default, on its GPU, and are
-      # reported in the pull request. The repository variable BROWSER_TESTS_IN_CI=true
-      # runs them here for every pull request; a manual run can ask for them once.
-      # This runner has no GPU, so a run here checks function, not speed.
-      - name: Note where the browser tests ran
-        if: vars.BROWSER_TESTS_IN_CI != 'true' && inputs.browser-tests != true
-        run: echo "Browser tests are off in CI (BROWSER_TESTS_IN_CI); the pull request reports a local run." >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Install the browser
-        if: vars.BROWSER_TESTS_IN_CI == 'true' || inputs.browser-tests == true
-        run: pnpm test:browser:install
+      - name: Note local browser acceptance
+        run: echo "Browser acceptance runs locally in Chrome on a verified GPU; the PR reports the tested commit, renderer and results." >> "$GITHUB_STEP_SUMMARY"
 
       # The build check:push made, which the preview workflow publishes; it runs no code from it.
       - name: Keep the build for the preview
@@ -80,35 +66,3 @@ jobs:
           path: dist
           if-no-files-found: error
           retention-days: 3
-
-      - name: Test the build in a local browser
-        if: vars.BROWSER_TESTS_IN_CI == 'true' || inputs.browser-tests == true
-        run: pnpm test:browser
-
-      # Pages and previews serve the build below a path such as /<repository>/.
-      - name: Test the build under a sub-path
-        if: vars.BROWSER_TESTS_IN_CI == 'true' || inputs.browser-tests == true
-        run: |
-          pnpm exec vite preview --host 127.0.0.1 --port 4180 --strictPort --base /app/ &
-          started=false
-          for _ in $(seq 1 30); do
-            if (exec 3<>/dev/tcp/127.0.0.1/4180) 2>/dev/null; then
-              started=true
-              break
-            fi
-            sleep 1
-          done
-          if [ "$started" != true ]; then
-            echo "::error::The preview server did not start."
-            exit 1
-          fi
-          BROWSER_TEST_BASE_URL=http://127.0.0.1:4180/app/ pnpm test:browser
-
-      - name: Keep traces of a failure
-        if: failure()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: browser-test-results-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: test-results
-          if-no-files-found: ignore
-          retention-days: 7

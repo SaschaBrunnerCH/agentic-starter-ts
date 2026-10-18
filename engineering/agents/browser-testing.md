@@ -2,19 +2,11 @@
 
 Unit tests check modules. Browser tests check that the built application works in a real browser. They are written with Playwright, live in `e2e/`, and the same tests run everywhere below.
 
-| Where                  | Runs                                                                       | Browsers and devices                                                         | Application under test                              |
-| ---------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------- |
-| Your machine           | `pnpm test:browser` before you ask for review, or `pnpm test:devices`      | Chromium on the machine's GPU; Firefox, WebKit and phone emulation on demand | The production build in `dist/`, served for the run |
-| Pull request, optional | The browser test steps of `PR build`, when `BROWSER_TESTS_IN_CI` is `true` | Chromium on the CI machine, in software                                      | The production build, at the root and under a path  |
-| Release, required      | The verification steps of `Release`, independent of the PR switch          | Chromium on the CI machine, in software                                      | The tagged build, at the root and under a path      |
-| Testing farm, optional | `pnpm test:devices --endpoints`, or the farm workflow                      | Many browsers, operating systems and real phones, from one secret            | A deployed URL or a preview                         |
+Routine PR browser acceptance runs locally in Chrome on a verified GPU. Report the clean tested commit, command, browser version, actual application renderer and results on the PR using the existing evidence tooling. Broader engine, operating-system or device coverage runs only when the owner explicitly requests it. A software renderer cannot satisfy GPU acceptance.
 
-Browser tests run on the developer's machine by default, and the pull request reports the run: commit, command, browser, renderer and result. Neither the push gate nor, by default, the `PR build` runs them, so local evidence is reviewed. The optional PR browser steps and required [release verification](../operations/releases.md) enforce their own browser runs.
+The PR build runs the code/build gate without browser installation or journeys, including manual workflow runs. There is no PR CI browser override. Setup no longer creates `BROWSER_TESTS_IN_CI`; a legacy variable is ignored. Workflow contract controls reject browser commands added to the PR build, even behind that former switch.
 
-Two switches change that:
-
-- **`BROWSER_TESTS_IN_CI`**, a repository variable (Settings, Secrets and variables, Actions, Variables), `false` by default; `pnpm setup:github` creates it. Set to `true`, every `PR build` runs the browser tests at the root and under a path, and keeps the traces of a failure for seven days as the artifact `browser-test-results-<commit>-…`. To run them once, start the `PR build` by hand with "Run the browser tests" checked: `gh workflow run "PR build" --ref <branch> -f browser-tests=true`. The ordinary hosted CI run makes no hardware claim: it checks function, never device speed, and costs CI minutes ([CI minutes](../operations/ci-minutes.md)).
-- **`BROWSER_GPU`**, an environment variable for local runs, `required` by default. See [On the GPU](#on-the-gpu).
+`BROWSER_GPU` defaults to `required` locally; see [On the GPU](#on-the-gpu). Explicit [release verification](../operations/releases.md), deployment checks and owner-requested testing-farm runs have separate procedures. Their functional results do not replace local GPU evidence.
 
 ## As the suite grows
 
@@ -22,7 +14,7 @@ Run the whole existing smoke suite while it is small. Before introducing selecti
 
 For a larger application, keep pull-request browser coverage focused on affected journeys plus a small relevant smoke layer. Select from the complete merge-base-to-head diff and affected behavior, including shared code, dependencies, fixtures and harness changes. Explain the selected commands and their coverage in the pull request. Unknown changes need an explicit selection; deleted or renamed specs need surviving or replacement coverage from the current inventory. A shared change may affect many journeys without requiring every browser, device and viewport combination.
 
-A focused pull request needs no previous full-matrix baseline. The complete declared supported browser, device and scenario matrix belongs at the explicit [release boundary](../operations/releases.md), against the exact release candidate; a large application's sequence can take hours. Before reducing pull-request acceptance, enforce that complete release verification. The starter enforces the cheap gate on every pull request; browser CI is optional. Its release CLI checks the merged pull request's green build, which does not prove complete browser acceptance. Confirm that the tag-triggered workflow actually executes the complete inventory before publication: a workflow that only builds and publishes does not meet this contract. This guidance alone enables neither selection nor a release gate. Keep the cheap pull-request gate and affected accessibility checks at the root and under a sub-path.
+A focused pull request needs no previous full-matrix baseline. The complete declared supported browser, device and scenario matrix belongs at the explicit [release boundary](../operations/releases.md), against the exact release candidate; a large application's sequence can take hours. Before reducing pull-request acceptance, enforce that complete release verification. The starter enforces the cheap gate on every pull request; PR browser acceptance is local and reported on the PR. Its release CLI checks the merged pull request's green build, which does not prove complete browser acceptance. Confirm that the tag-triggered workflow actually executes the complete inventory before publication: a workflow that only builds and publishes does not meet this contract. This guidance alone enables neither selection nor a release gate. Keep the cheap pull-request gate and affected accessibility checks at the root and under a sub-path.
 
 Keep browser tests maintainable as coverage grows:
 
@@ -92,11 +84,11 @@ own adapter requests.
 
 The browser tests include an accessibility check: axe (`@axe-core/playwright`) runs the WCAG 2.2 A and AA rules on the page and fails on any violation. Add the same check to every new page or state a test opens. axe finds about half of all accessibility issues; keyboard use, focus order and whether text makes sense still need a person.
 
-### All three engines, on every system you can reach
+### Extra engines and systems on request
 
 Use the [visual browser/device overview](browser-device-coverage.md) and its [text matrix](browser-device-coverage.md#declare-the-supported-matrix) to distinguish engine, distribution, browser OS, viewport, API and evidence. The same guide covers optional tablet orientation/touch checks and real-device access.
 
-Browsers come from three engines: Chromium (Chrome and Edge), Gecko (Firefox) and WebKit (Safari). Each has its own bugs, and each draws through the operating system's graphics drivers. Until a project adopts focused pull-request testing behind enforced complete release verification, a change to what users see is tested on all three engines and every operating system the developer can reach: Linux, native Windows and macOS, with WSL recorded separately. After adoption, pull requests run affected journeys and relevant engine/system smoke checks; the full declared supported inventory runs before release instead. Engine-specific changes still need the affected engine. The pull request lists each run with its engine, system and result, the renderer of each GPU run, and names what was not reachable and why, for example "macOS: no machine". A testing farm closes gaps for systems and phones nobody has.
+Browsers use three engines: Chromium (Chrome and Edge), Gecko (Firefox) and WebKit (Safari). Routine PR acceptance uses local Chrome. Run broader engine/platform/device coverage only when the owner explicitly requests it, and record the scope and results. WSL translated rendering and native Windows rendering are separate evidence. An explicit release follows its declared inventory before publication.
 
 `playwright.config.ts` has five projects. `pnpm test:browser` defaults to `chromium`. `mobile-chrome` shares its verified launch profile. Other engines use Playwright's browsers and their renderer remains unverified; those runs check function:
 

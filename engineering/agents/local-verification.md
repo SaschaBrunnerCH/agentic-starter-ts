@@ -6,11 +6,11 @@ Checks run at three points. Each later point repeats the code checks of the earl
 | ------------ | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | Commit       | Prettier and Secretlint on staged files, Oxlint with fixes on staged source; the commit-message check | `lint-staged` in `package.json`, `.githooks/pre-commit`, `.githooks/commit-msg`       |
 | Push         | A clean working tree at the pushed commit, then the whole gate: `pnpm check:push`                     | `.githooks/pre-push`, `scripts/git/pre-push.ts`, `scripts/checks/run-local-checks.ts` |
-| Pull request | The same gate and optional browser tests, in the `PR build` workflow                                  | `.github/workflows/pr-build.yml`                                                      |
+| Pull request | The same code/build gate; local GPU browser evidence is reported on the PR                            | `.github/workflows/pr-build.yml`                                                      |
 
 The gate runs these in order and reports every failure, not only the first: `format:check`, `lint`, `typecheck`, `check:unused`, `check:secrets`, `check:workflows`, `check:agents`, `check:links`, `check:dependencies`, `check:hooks`, `test`, `build` and `check:bundle`.
 
-An explicit [release](../operations/releases.md) repeats the gate at the tagged candidate and runs the complete required Chromium smoke suite at the root and a nested URL base before publication. It packages that tested build. This release check is unconditional; PR browser tests keep their existing CI switch.
+An explicit [release](../operations/releases.md) repeats the gate at the tagged candidate and runs the complete required Chromium smoke suite at the root and a nested URL base before publication. It packages that tested build. This release check is unconditional; PR browser acceptance runs locally on the GPU and is reported on the PR.
 
 `check:unused` runs knip twice: as on a developer's machine and with `CI=true`, as the `PR build` runs it. knip loads tool configurations such as `playwright.config.ts` to find what they use, and a configuration may differ in CI, for example a reporter registered only for local runs. A file used only one way is then reported before the push instead of in the `PR build`.
 
@@ -62,7 +62,7 @@ is on demand, so the ordinary gate does not require browser downloads.
 entrypoints. See [browser setup](browser-testing.md#on-your-machine) for overrides
 and system-library requirements.
 
-Browser tests run on demand locally, optionally in the PR build, and unconditionally for a release; see [browser testing](browser-testing.md).
+PR browser acceptance runs locally on the GPU, with results reported on the PR; explicit release verification runs separately; see [browser testing](browser-testing.md).
 
 ## Typechecking
 

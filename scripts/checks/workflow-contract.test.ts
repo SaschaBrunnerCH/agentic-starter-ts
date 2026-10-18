@@ -77,12 +77,11 @@ describe("the workflows of this repository", () => {
     expect(source).not.toContain("BROWSER_TESTS_IN_CI");
   });
 
-  it("run the browser tests in the PR build only when the CI switch asks for them", () => {
+  it("keep browser acceptance out of the PR build", () => {
     const build = workflowJobs(read("pr-build.yml")).find((job) => job.id === "pr-build");
     expect(build).toBeDefined();
     expect(build === undefined ? [] : browserStepProblems(build)).toEqual([]);
-    // The steps exist: install, root and sub-path.
-    expect(read("pr-build.yml").match(/pnpm test:browser/gu)).toHaveLength(3);
+    expect(read("pr-build.yml")).not.toMatch(/BROWSER_TESTS_IN_CI|browser-tests:/u);
   });
 });
 
@@ -95,20 +94,26 @@ describe("the rules", () => {
     ]);
   });
 
-  it("notice a browser test step without the CI switch", () => {
+  it.each([
+    "pnpm test:browser",
+    "pnpm test:browser:install",
+    "pnpm browser:cli install chromium",
+    "pnpm exec playwright test",
+  ])("reject %s even behind the former CI switch", (command) => {
     const jobs = workflowJobs(
       [
         "jobs:",
         "  build:",
         "    steps:",
         "      - name: Test in a browser",
-        "        run: pnpm test:browser",
+        "        if: vars.BROWSER_TESTS_IN_CI == 'true' || inputs.browser-tests == true",
+        `        run: ${command}`,
         "      - name: Unit tests",
         "        run: pnpm test",
       ].join("\n"),
     );
     expect(jobs.flatMap(browserStepProblems)).toEqual([
-      'step "Test in a browser" of job build runs browser tests without the CI switch',
+      'step "Test in a browser" of job build runs browser acceptance in CI; run it locally on the GPU and report it on the PR',
     ]);
   });
 
