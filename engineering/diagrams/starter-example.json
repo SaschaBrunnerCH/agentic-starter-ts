@@ -1,16 +1,49 @@
 {
-  "capturedAt": "2026-10-18T10:25:10.064Z",
-  "commit": "58427a0d9df8834ee0c81509ee5368d8c272ff4d",
-  "workingTreeDirty": true,
+  "capturedAt": "2026-10-18T16:58:34.026Z",
+  "commit": "e44ae6f6f022032810a41c88ff13878da02271be",
+  "workingTreeDirty": false,
   "command": "node engineering/diagrams/capture-starter.mjs <preview-url>",
   "target": "Production build served by a local Vite preview",
-  "browser": "Playwright Chromium 156.0.8078.4",
-  "driver": "linux x64",
+  "browser": "Chromium 155.0.8059.82",
+  "driver": "win32 x64",
   "viewport": {
-    "width": 640,
-    "height": 240
+    "width": 1280,
+    "height": 1100
   },
   "deviceScaleFactor": 1,
-  "state": "Name filled with Ada; greeting and input asserted",
-  "gpu": "Disabled; no GPU or physical-device claim"
+  "state": "Initial greeting; both blueprint globes paused for reduced motion",
+  "graphics": [
+    {
+      "api": "WebGL2",
+      "state": "ready",
+      "projection": "globe",
+      "readback": {
+        "grid": 10222,
+        "coast": 3403
+      },
+      "painted": {
+        "grid": 13104,
+        "coast": 3243
+      },
+      "renderer": "ANGLE (NVIDIA, NVIDIA RTX PRO 3000 Blackwell Generation Laptop GPU (0x00002F38) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "fallback": "false"
+    },
+    {
+      "api": "WebGPU",
+      "state": "ready",
+      "projection": "globe",
+      "readback": {
+        "grid": 10250,
+        "coast": 3440
+      },
+      "painted": {
+        "grid": 13128,
+        "coast": 3273
+      },
+      "renderer": "nvidia · blackwell",
+      "fallback": "false"
+    }
+  ],
+  "discoveryReport": ".local/browser-gpu/0efe12d9-bbc8-45e1-9928-2757b8656cac/report.json",
+  "limits": "Application readback and compositor pixels checked. Driver OS recorded; WSL browser results are translated, not native Windows. No performance or cross-browser claim."
 }

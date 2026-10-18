@@ -59,11 +59,13 @@ With Python and Matplotlib 3.10.7 available in an optional environment, run `pyt
 
 ### Actual UI capture
 
-![The running starter after entering Ada: the heading reads Hello, Ada. and the Name field contains Ada.](starter-example.png)
+![The running starter: its editable greeting above matching cyan blueprint globes drawn by WebGL2 and WebGPU, with shared projection and rotation controls.](starter-example.png)
 
-[Capture metadata](starter-example.json) records revision, date, browser, viewport and state, including whether the tree was dirty. This capture used unchanged application sources at `58427a0` with documentation edits present. It shows the actual production preview; it establishes no physical-device or GPU acceptance.
+[Capture metadata](starter-example.json) records revision, date, browser, host, viewport, API identities, native readback and painted-image counts, including whether the tree was dirty. The image shows the actual production preview with both APIs rendering; it is not a mockup. These are observations of that capture, not a performance or cross-browser guarantee. WSL/translated, native and software results must remain distinct.
 
-Install Chromium through `pnpm test:browser:install`, then `pnpm build` and start `pnpm preview --host 127.0.0.1 --port 4173 --strictPort`. In another terminal, run `node engineering/diagrams/capture-starter.mjs`. The [script](capture-starter.mjs) uses the repository browser cache, asserts both greetings and writes the PNG/metadata. It runs headless with GPU disabled and closes its browser. Stop the owned preview afterwards. Follow the [shared-machine rules](../agents/working-style.md#sharing-the-machine); a screenshot does not replace browser or accessibility tests.
+The current capture was generated on 2026-10-18 by the tracked script at `e44ae6f`, in a clean native Windows checkout driving Chrome 155.0.8059.82 against the matching production preview. Both application renderers identified NVIDIA hardware and passed native readback and compositor checks. The PNG and JSON are the script's unmodified outputs; no separate capture harness or alternate metadata schema is needed.
+
+On a host with both APIs available, install through `pnpm test:browser:install`, run `pnpm build` and start `pnpm preview --host 127.0.0.1 --port 4173 --strictPort`. In another terminal, run `node engineering/diagrams/capture-starter.mjs`. The [script](capture-starter.mjs) uses the existing GPU discovery/ownership lock, connects to its verified browser, pauses motion through the reduced-motion preference, asserts the greeting and both actual native/painted canvas outputs, then writes the PNG/metadata. It runs headless or on discovery's private display and releases its owned browser/lock in cleanup. It refuses a capture missing either rendered panel; use [GPU discovery](../agents/browser-gpu-discovery.md) to diagnose availability. Run natively on Windows for native Windows evidence; a Linux browser on WSL remains translated evidence. A separately driven native capture must retain equivalent checks and record its method and limits in the metadata. Stop the owned preview afterwards. Follow the [shared-machine rules](../agents/working-style.md#sharing-the-machine); a screenshot does not replace browser or accessibility tests.
 
 ## Review and maintenance
 
