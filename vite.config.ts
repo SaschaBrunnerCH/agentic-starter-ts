@@ -1,3 +1,4 @@
+import { coverageThresholds } from "./scripts/checks/coverage-thresholds.ts";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
@@ -11,7 +12,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reportsDirectory: "coverage",
-      reporter: ["text-summary", "html"],
+      reporter: ["text-summary", "html", "json-summary"],
       include: ["src/**/*.{ts,tsx}", "scripts/**/*.ts"],
       exclude: [
         "**/*.test.{ts,tsx}", // Test bodies are evidence, not production behaviour.
@@ -32,7 +33,7 @@ export default defineConfig({
       ],
       // A floor, not a target: raise it when coverage rises, and lower it only
       // with a reason in the pull request.
-      thresholds: { statements: 95, branches: 90, functions: 95, lines: 95 },
+      thresholds: coverageThresholds,
     },
   },
 });
