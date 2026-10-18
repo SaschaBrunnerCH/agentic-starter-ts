@@ -139,7 +139,9 @@ try {
         text.replace(/### Replace the example[\s\S]*?(?=### Without React)/u, ""),
       );
       edit("engineering/diagrams/README.md", (text) =>
-        text.replace(/### Actual UI capture[\s\S]*?(?=## Review and maintenance)/u, ""),
+        text
+          .replace(/### Actual UI capture[\s\S]*?(?=## Review and maintenance)/u, "")
+          .replace(/^.*#actual-ui-capture.*\n/gmu, ""),
       );
       edit("engineering/designs/README.md", (text) =>
         text.replace(/^- \[Blueprint graphics example\].*\n/mu, ""),
