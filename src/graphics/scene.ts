@@ -237,8 +237,8 @@ export function pixelEvidence(pixels: Uint8Array): { grid: number; coast: number
     const red = data.getUint8(i);
     const green = data.getUint8(i + 1);
     const blue = data.getUint8(i + 2);
-    if (blue > 55 && green > 40 && blue > red * 1.5) grid++;
     if (red > 65 && green > 160 && blue > 180 && blue > red * 1.5) coast++;
+    else if (blue > 55 && green > 40 && blue > red * 1.5) grid++;
   }
   return { grid, coast };
 }

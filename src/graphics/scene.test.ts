@@ -55,9 +55,9 @@ it("distinguishes grid and coast ink from an empty background or unrelated color
         0, 0, 0, 255,
       ]),
     ),
-  ).toEqual({ grid: 2, coast: 1 });
+  ).toEqual({ grid: 1, coast: 1 });
   expect(pixelEvidence(new Uint8Array(400))).toEqual({ grid: 0, coast: 0 });
   expect(pixelEvidence(new Uint8Array([1, 2]))).toEqual({ grid: 0, coast: 0 });
   const backing = new Uint8Array([255, 255, 255, 255, 99, 232, 255, 255]);
-  expect(pixelEvidence(backing.subarray(4))).toEqual({ grid: 1, coast: 1 });
+  expect(pixelEvidence(backing.subarray(4))).toEqual({ grid: 0, coast: 1 });
 });

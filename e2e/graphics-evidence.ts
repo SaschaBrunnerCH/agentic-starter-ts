@@ -32,8 +32,8 @@ export async function assertPainted(canvas: Locator) {
         const r = pixels[i] ?? 0;
         const g = pixels[i + 1] ?? 0;
         const b = pixels[i + 2] ?? 0;
-        if (b > 55 && g > 40 && b > r * 1.5) grid++;
         if (r > 65 && g > 160 && b > 180 && b > r * 1.5) coast++;
+        else if (b > 55 && g > 40 && b > r * 1.5) grid++;
       }
       return { grid, coast };
     },
