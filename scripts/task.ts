@@ -322,9 +322,8 @@ function labelPullRequest(found: PullRequest, issues: readonly number[]): string
   }
 }
 
-// The local browser run for the head commit, as a pull-request comment once per commit; a
-// warning when there is none. Browser runs are local, so this is the only place their results
-// reach the pull request without being copied by hand.
+// Publish the latest clean browser result for the head, deduplicating the same result rather
+// than the commit. A later failure or different engine coverage must reach the reviewer too.
 function postBrowserEvidence(number: number, head: string): string {
   const file = resolve(root, EVIDENCE_FILE);
   const verdict = evidenceFor(
@@ -349,10 +348,14 @@ function postBrowserEvidence(number: number, head: string): string {
     "--jq",
     ".comments[].body",
   ]);
-  if (comments.includes(evidenceMarker(head)))
-    return "Browser evidence for the head commit is already on the pull request.";
-  gh(["pr", "comment", String(number), "--body", evidenceMarkdown(verdict.run)]);
-  return `Posted the browser run of ${verdict.run.finishedAt} for ${head.slice(0, 7)} to the pull request.`;
+  const body = evidenceMarkdown(verdict.run);
+  if (comments.includes(body))
+    return "This browser result for the head commit is already on the pull request.";
+  const supersedes = comments.includes(evidenceMarker(head))
+    ? "\n\nThis result supersedes earlier browser evidence for this commit."
+    : "";
+  gh(["pr", "comment", String(number), "--body", body + supersedes]);
+  return `Posted the browser run of ${verdict.run.finishedAt} (${verdict.run.status}) for ${head.slice(0, 7)} to the pull request.`;
 }
 
 // For a bug fix: the proof that its regression test fails without the fix, or why it is

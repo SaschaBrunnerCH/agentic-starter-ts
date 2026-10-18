@@ -66,11 +66,11 @@ Browser tests run on demand locally, optionally in the PR build, and uncondition
 
 ## Typechecking
 
-Application code, tooling and browser tests are separate TypeScript projects: `tsconfig.app.json` covers `src/` with browser types and no Node.js types, `tsconfig.node.json` covers `scripts/` and the config files with Node.js types and no browser types, and `tsconfig.e2e.json` covers `e2e/`. `pnpm typecheck` runs all three. A new top-level source directory is not checked until it is added to the `include` of one of them, or given its own project in `tsconfig.json` and in the `typecheck` script, and to `project` in `knip.json`.
+Four TypeScript projects separate the environments: `tsconfig.app.json` covers application source with browser types and no Node.js types; `tsconfig.test.json` covers application unit tests with browser and Node.js types; `tsconfig.node.json` covers tooling (including its unit tests) and config files with Node.js types and no browser types; and `tsconfig.e2e.json` covers `e2e/`. `pnpm typecheck` runs all four. A new top-level source directory is not checked until it is added to the `include` of one of them, or given its own project in `tsconfig.json` and in the `typecheck` script, and to `project` in `knip.json`.
 
 ## Adding a check
 
 1. Add the script to `package.json` and its name to the list in `scripts/run-local-checks.ts`. The PR build picks it up from there.
 2. Add or update the row in the `AGENTS.md` guardrail table, naming the script. `pnpm check:agents` rejects a row whose script or file does not exist.
 3. Prove that the check can fail: a test, or a control inside the check, gives it a deliberate violation and expects a rejection. `scripts/workflow-contract.test.ts` and `scripts/check-secrets.test.ts` are examples. A check that was never seen to fail proves nothing.
-4. If the check needs its own CI job, for example a browser lane, add the job to `pr-build.yml` and to the `needs` list of the `PR build` job. `PR build` stays the only required status; `scripts/workflow-contract.test.ts` fails when a job is missing from that list.
+4. If the check needs its own CI job, add the job to `pr-build.yml` and its job name to the required status checks in `.github/rulesets/main-integrity.json`. Every PR-build job must be directly required; `scripts/workflow-contract.test.ts` checks this and pins the expected status list, which must be updated deliberately. Give the job a timeout, disable checkout credentials and set artifact retention where applicable. Apply the matching hosted-ruleset change through the procedure in [GitHub hosted settings](../operations/github-hosted-settings.md#the-rulesets), recording its readback. Adding a step to the existing job needs no new required status.

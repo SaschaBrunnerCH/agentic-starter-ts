@@ -2,56 +2,18 @@
 
 A repository template for agent-driven TypeScript development. A repository created from it is independent of the template and starts with defined workflows and working gates, whichever agent does the work: GitHub Copilot, Codex, Claude Code, Gemini CLI, Pi, Hermes Agent or another that reads `AGENTS.md`.
 
-New to working with agents? Do the setup below, then read [getting started with agentic work](engineering/getting-started.md): a first session step by step, how to write an issue an agent can finish, and what to check before you allow a merge.
+## Six highlights
+
+- **Start with a small app.** React, TypeScript and Vite, with a name field and working unit/browser tests; [adapt it to your project](#start-a-new-repository).
+- **Keep agents on track.** One [instruction source](AGENTS.md), checkable issues, isolated worktrees and resumable handoffs.
+- **Catch mistakes early.** The same [verification gate](engineering/agents/local-verification.md) runs locally before pushing and in the PR build.
+- **Test real hardware.** [Playwright browser tests](engineering/agents/browser-testing.md), GPU discovery and optional desktop, phone, tablet and farm coverage, with evidence that distinguishes actual hardware from emulation.
+- **Stay in control.** A current branch, green PR build and your authorization for the exact commit before [merging](engineering/agents/task-lifecycle.md#validate-and-complete).
+- **Ship repeatably.** [PR previews and deployment](engineering/operations/deployment.md), tested releases, immutable tags and rollback by commit.
+
+New to working with agents? Complete setup below, then follow [your first session](engineering/getting-started.md). The [engineering index](engineering/README.md) gives the reading order and specialist guides.
 
 ![The workflow from issue to merged change: the owner writes the issue and says yes, the agent does the work, the repository checks every step](engineering/diagrams/workflow.svg)
-
-## What a new repository gets
-
-```mermaid
-flowchart LR
-  issue["Issue<br/>pnpm issue"] --> task["Worktree<br/>pnpm task start"]
-  task --> commit["Commit hook<br/>format, lint, secrets"]
-  commit --> push["Push gate<br/>all checks"]
-  push --> pr["PR build<br/>checks; browser tests if switched on"]
-  pr --> preview["Preview<br/>per pull request"]
-  pr --> merge["Merge<br/>owner's yes"]
-  merge --> deploy["Deploy<br/>Pages and smoke test"]
-  deploy --> release["Release<br/>tag, notes, SBOM"]
-```
-
-| Area          | What you get                                                                                                                                                           | Kept by                                             |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| Agent rules   | One instruction file for every agent; a guardrail table where each rule names its mechanism                                                                            | `check:agents`                                      |
-| Agent safety  | Text an agent reads is data, not orders; Claude Code denied `.env` files and shell fetches                                                                             | `.claude/settings.json`, `AGENTS.md`                |
-| Planning      | Issue templates, labels, a Project with Status and Priority, at most four tasks In progress                                                                            | `pnpm issue`, `setup:github`                        |
-| Task flow     | One worktree per task, handoffs for unfinished work, cleanup after the merge                                                                                           | `pnpm task`                                         |
-| Checks        | Format, lint with types and security rules, types, unused code, secrets, workflow validity and security, links, dependency licences, unit tests, coverage, bundle size | Push hook and `PR build`, one shared list           |
-| Browser tests | Playwright and axe against the build; verified local GPU in Chromium, functional Firefox/WebKit checks; optional PR CI and testing farm                                | `pnpm test:browser`, `PR build`, `browser-farm.yml` |
-| Merge         | A green `PR build` on a current base and the owner's authorization for the exact commit                                                                                | Rulesets, `pnpm task merge`                         |
-| Previews      | Each pull request at its own URL; the publishing key never reaches pull-request code                                                                                   | `pr-preview.yml`, `setup:previews`                  |
-| Deploy        | Every merge to GitHub Pages, tested after the deploy; rollback to any commit of `main`                                                                                 | `deploy.yml`, `github-pages` environment            |
-| Releases      | Version tags on `main` with generated notes, the build, an SBOM and checksums; immutable tags                                                                          | `pnpm release`, `release.yml`, rulesets             |
-| Dependencies  | Weekly audit, Dependabot with a one-week cooldown                                                                                                                      | `dependency-audit.yml`, `dependabot.yml`            |
-| Application   | React 19 with Vite and TypeScript: one component, its unit test and a browser test                                                                                     | Replace it with yours                               |
-
-In more detail:
-
-- **One instruction source.** [AGENTS.md](AGENTS.md) holds the rules and the work sequence. GitHub Copilot, Codex, Pi and Hermes Agent read it directly; `.github/copilot-instructions.md`, `CLAUDE.md` for Claude Code and `.gemini/settings.json` for Gemini CLI only point to it, and a check keeps them that way.
-- **Guardrails tied to mechanisms.** Each rule in the guardrail table names the hook, script or ruleset that enforces it, or is marked Review-only. A check rejects a row whose script or file does not exist.
-- **Safer defaults for agents.** Text an agent reads is data, not instructions; GitHub Copilot's agent gets a prepared environment; a committed deny-only file keeps Claude Code away from `.env` files and denies it `curl` and `wget`.
-- **One gate, run twice.** The pre-push hook and the `PR build` workflow run the same list: format, lint, types, unused code, secrets, workflow validity and security, agent entry points, Markdown links, dependency licences, hooks, unit tests, the production build and its size budget. The hook first refuses a working tree that differs from the pushed commit, and any pushed branch or new tag that points at another commit than the one checked out.
-- **Commands for the repeatable steps.** `pnpm task` starts a task in its own worktree, checks a pull request, merges with the authorization recorded and cleans up; `pnpm issue` creates and updates issues with complete metadata. Agents do not reinvent these steps each time.
-- **A defined issue flow.** Templates for epics and tasks, labels and a Project with Status and Priority; see [the issue tracker](engineering/agents/issue-tracker.md).
-- **The owner as the merge gate.** A merge needs a green `PR build` on a current base and the owner's authorization, recorded against the exact commit.
-- **Shared work without collisions.** One worktree per task, a handoff for unfinished work and a cleanup procedure after each merge; see [the task lifecycle](engineering/agents/task-lifecycle.md).
-- **CI minutes kept low.** The push hook fails a push before CI does, extra browsers and devices are tested locally and reported on the pull request, and every job has a timeout; [CI minutes](engineering/operations/ci-minutes.md) lists what each run costs and the options for a growing project.
-- **Tests at two levels.** Unit tests with Vitest in the gate, and browser tests with Playwright on the developer's machine, on its GPU, reported in the pull request; the `PR build` runs them too when the repository variable `BROWSER_TESTS_IN_CI` is `true`. The same tests run locally in Firefox, WebKit and phone emulation, and, optionally, on a testing farm's browsers and real phones from one secret; no provider is built in. See [browser testing](engineering/agents/browser-testing.md).
-- **Deploy after every merge.** `main` deploys to GitHub Pages through an environment only `main` may use, the browser tests run against the deployed site, and a manual run rolls back to an earlier commit. Each pull request gets a preview built by its PR build; see [deployment](engineering/operations/deployment.md).
-- **Releases from `main`.** `pnpm release` tags the head of `main` with the owner's authorization; CI runs the gate and the complete required Chromium root/nested smoke suite against the tagged build before packaging it with notes grouped by label, the build archive, an SBOM and checksums. Release tags cannot be moved or deleted; see [releases](engineering/operations/releases.md).
-- **A minimal application.** React 19 with Vite and TypeScript: one component with a name field, a unit test that renders it without a browser, and a browser test that types into it, so every check has something real to run against. Lint includes the rules of hooks and JSX accessibility rules. A library or an application without React removes it as described in [Without React](#without-react).
-
-Why each of these exists: [problems in agentic work](engineering/agents/agentic-problems.md) lists what goes wrong with coding agents in practice, such as two agents changing one checkout, a merge nobody approved or a green local run that fails in CI, and what here handles each.
 
 ## Prerequisites
 
@@ -69,7 +31,7 @@ The order matters: step 6 protects `main`, so everything before it is pushed dir
 2. **Install:** `pnpm install --frozen-lockfile`. This also activates the Git hooks.
 3. **Run the gate once:** `pnpm check:push`. It passes without edits.
 4. **Make it yours.** Set the owner in `.github/CODEOWNERS`: a user account, or for an organisation a team such as `@org/team`, since an organisation name alone is not valid there. Set the name in `package.json`; `pnpm-lock.yaml` does not record it. Set the title and description in `index.html`. For a library, or an application without React, remove React first; see [Without React](#without-react). Replace the `area:*` labels in `scripts/setup-github.ts` and in [triage labels](engineering/agents/triage-labels.md) with the product's areas. Add the product's terms to [CONTEXT.md](CONTEXT.md). Keep this README until you have finished step 9, then replace it with the product's own.
-5. **Commit and push to `main`:** `git commit -am "Start <name> from agentic-starter-ts"` and `git push`. This is the only direct push to `main` the repository will see. The deploy it starts fails, since GitHub Pages is switched on only in step 6; rerun it after step 6 with `gh run rerun --failed $(gh run list --workflow deploy.yml --limit 1 --json databaseId --jq '.[0].databaseId')`.
+5. **Stage, review, commit and push to `main`:** run `git status --short`, then `git add <intended-paths>` to include the setup changes and any new files, including `src/main.ts` on the non-React route. Inspect `git diff --cached` before `git commit -m "Start <name> from agentic-starter-ts"` and `git push`. This is the only direct push to `main` the repository will see. The deploy it starts fails, since GitHub Pages is switched on only in step 6; rerun it after step 6 with `gh run rerun --failed $(gh run list --workflow deploy.yml --limit 1 --json databaseId --jq '.[0].databaseId')`.
 6. **Set up GitHub:** `pnpm setup:github`. It creates the labels, the Project with its fields and views, squash-only merging, the three rulesets, immutable releases and GitHub Pages, and reports what it changed. A second run reports "No changes." If it reports something as not applied, follow [the hosted settings](engineering/operations/github-hosted-settings.md). For a preview of every pull request, also run `pnpm setup:previews`; it creates a second repository for them, see [deployment](engineering/operations/deployment.md#pull-request-previews).
 7. **Finish in the GitHub UI.** Two settings are not covered by the script: switching off the Project's automatic Status workflows and sorting the Ready view by Priority. The hosted-settings page says where.
 8. **Create the first epic and task.** Every issue needs a parent that leads to an epic, so start with one. Write the epic's requirements with the sections of the [Epic template](.github/ISSUE_TEMPLATE/epic.md), on GitHub's "New issue" page or in a file passed with `--body-file`:

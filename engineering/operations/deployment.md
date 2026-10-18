@@ -18,7 +18,7 @@ Each pull request from this repository gets a preview at `<previews URL>/pr-<num
 
 How a preview is published, and why pull-request code never sees the key:
 
-1. The PR build builds the pull request without secrets and keeps `dist/` as the artifact `site` for three days. It has already tested that build, at the root and under a sub-path.
+1. The PR build builds the pull request without secrets and keeps `dist/` as the artifact `site` for three days. The gate has passed. Browser checks at the root and under a sub-path run only when `BROWSER_TESTS_IN_CI` is `true` (false by default), or the PR build is started manually with browser tests enabled. A preview can therefore be published without those browser checks; see [browser testing](../agents/browser-testing.md).
 2. `.github/workflows/pr-preview.yml` runs on `workflow_run` after a successful PR build. GitHub takes its definition from `main`, never from the pull request. It skips pull requests from forks and builds of a commit the pull request has moved past.
 3. Its one job downloads the artifact and copies it into the previews repository with the deploy key. It checks out no code of this repository and runs nothing from the artifact; the files are only copied.
 4. The key is a secret of the environment `previews`, not of the repository. A pull request can change workflows, and its workflow runs get the repository's secrets; an environment secret reaches only a job that names the environment and runs from `main`. `setup:previews` removes a repository secret of the same name left by an earlier setup.
@@ -43,7 +43,7 @@ The workflow builds that commit again, deploys it and tests it. It refuses a com
 
 ## The application under a sub-path
 
-Pages serves a project site below `/<repository>/`. The build uses relative asset paths (`base: "./"` in `vite.config.ts`), so the same build works there and at the root of a domain. The PR build tests the build under `/app/` to keep it that way. An application with client-side routing needs its router's base set from `import.meta.env.BASE_URL` or the deployed path.
+Pages serves a project site below `/<repository>/`. The build uses relative asset paths (`base: "./"` in `vite.config.ts`), so the same build works there and at the root of a domain. When its browser checks are enabled, the PR build tests the build under `/app/` as well as at the root. [Release verification](releases.md) always runs both checks against the tagged build. An application with client-side routing needs its router's base set from `import.meta.env.BASE_URL` or the deployed path.
 
 ## Choosing another target
 
