@@ -98,6 +98,18 @@ Read failed candidates' diagnostics before changing settings. Driver tools such 
 
 A lock at `~/.cache/browser-gpu-tests/lock` coordinates participating runners sharing that user home. Windows and WSL user homes may differ, so their locks may not coordinate either. Other projects may use different locks or none; check workstation load before a heavy run. Discovery never stops another run. A live, unreadable or abandoned lock blocks instead of being deleted automatically: inspect its recorded owner and establish that its exact browser/profile/display resources are gone before recovering it. Cancellation closes owned resources; unproved cleanup retains the barrier and reports a failure. A missing, unreadable or replaced lock during release also fails; the report records `lock-release-failed` and retains the original discovery error when cleanup fails too. Discovery owns the Playwright browser server, its disposable profile, private display and probe server, and verifies their closure. No visible desktop windows or process-name kills.
 
+Browser shutdown reserves up to three seconds for graceful close (one on Windows),
+then terminates the owned browser within the remaining five-second cleanup budget.
+Linux/macOS use Playwright's `BrowserServer.kill()`. Windows uses asynchronous
+`taskkill /pid <owned-browser-pid> /T /F`: Playwright's synchronous Windows tree
+termination would block the deadline timer. It verifies process exit and disposable-profile
+removal before releasing ownership or trying another candidate. Each attempt's
+`cleanup.json` records graceful/forced timings, termination and profile checks,
+and errors. An unproved close records `cleanup-unproved`, retains the lock and
+stops discovery; a probe error survives a simultaneous cleanup failure. Forced
+shutdown does not turn a software renderer or failed API/application test into
+a pass. Other sessions' processes and profiles are never targeted.
+
 Before a performance claim, verify the application's **actual** context/adapter and expected painted frame on its declared device, with a deliberate software/no-adapter control through the same hardware gate. A scratch probe, readiness flag or smooth animation loop cannot establish scene correctness. Keep application-specific screenshot thresholds, shader compilation, device-loss/recovery and interaction checks in that application's acceptance suite; derive them from positive and negative scenes. A hardware identity never excuses a black canvas or a failed assertion.
 
 For optional manual diagnosis, use [WebGPU Report](https://webgpureport.org/) and
