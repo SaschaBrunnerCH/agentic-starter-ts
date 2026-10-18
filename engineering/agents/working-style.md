@@ -40,14 +40,14 @@ Keep scratch artifacts in the **primary checkout's `.local/`**, so task-worktree
 
 Run `pnpm local:init` once from any checkout to create its ignored `.local/README.md`; repeating it preserves existing content. The complete directory is ignored, including the README. Downstream projects that prefer an untracked exclusion can use `pnpm local:init --exclude`: it uses Git's shared `info/exclude`, including from linked worktrees, without editing `.gitignore`. Initialization refuses tracked `.local` files; review those explicitly rather than silently untracking them.
 
-Use UTC timestamps (`YYYYMMDD-HHMM`), lowercase hyphen-separated slugs and GitHub numbers padded to at least four digits:
+Use UTC timestamps (`YYYYMMDD-HHMM`), lowercase hyphen-separated slugs and GitHub numbers padded to at least four digits. `<title>` means the actual GitHub issue or PR title converted to a portable lowercase hyphen-separated slug:
 
-| Folder under `.local/`                  | Use                                                          |
-| --------------------------------------- | ------------------------------------------------------------ |
-| `gh-issue-0055-local-artifacts/`        | Task artifacts; dated activity subfolders when useful        |
-| `gh-pr-0056-local-artifacts/`           | PR-specific review evidence                                  |
-| `sessions/20261018-1430_browser-check/` | One-off work without an issue or PR                          |
-| `topics/browser-testing/`               | Optional continuing topic, with dated activities when useful |
+| Folder under `.local/`         | Use                                                           |
+| ------------------------------ | ------------------------------------------------------------- |
+| `gh-issue-0055-<title>/`       | Task artifacts; dated activity subfolders when useful         |
+| `gh-pr-0056-<title>/`          | PR-specific review evidence                                   |
+| `20261018-1430_browser-check/` | One-off work directly under `.local/`, without an issue or PR |
+| `topics/browser-testing/`      | Optional continuing topic, with dated activities when useful  |
 
 Keep each artifact in one canonical location; link related issue/PR folders from their READMEs rather than copying reports. Dates belong inside stable issue/PR folders, not in their names. Record completed or merged status in a README or optional index; keep paths stable. Existing folders remain valid: do not migrate or rename them automatically.
 

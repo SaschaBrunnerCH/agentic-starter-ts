@@ -16,13 +16,15 @@ personal data out of artifacts. Canonical guidance: [working style](../engineeri
 
 Use UTC timestamps, YYYYMMDD-HHMM, and lowercase hyphen-separated topic slugs.
 Pad GitHub numbers to at least four digits (0055, 0123, 10000).
+For \`<title>\`, use the actual GitHub issue or PR title converted to a portable
+lowercase hyphen-separated slug.
 
 | Folder | Content |
 | --- | --- |
-| gh-issue-0055-local-artifacts/ | Task work, with dated activity subfolders when useful |
-| gh-pr-0056-local-artifacts/ | PR-specific reviews; link to the issue folder instead of copying reports |
-| sessions/20261018-1430_browser-check/ | One-off work without a GitHub issue or PR |
-| topics/browser-testing/ | Optional continuing topic, with dated activities when useful |
+| \`gh-issue-0055-<title>/\` | Task work, with dated activity subfolders when useful |
+| \`gh-pr-0056-<title>/\` | PR-specific reviews; link to the issue folder instead of copying reports |
+| \`20261018-1430_browser-check/\` | One-off work without a GitHub issue or PR |
+| \`topics/browser-testing/\` | Optional continuing topic, with dated activities when useful |
 
 Keep each artifact in one canonical location. Cross-link related folders in their
 READMEs. Record completed or merged status there; keep folder names stable.
