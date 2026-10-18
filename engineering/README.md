@@ -50,7 +50,7 @@ Consult the guides below when their topic applies. For browser changes, start wi
 | [AI tools](agents/ai-tools.md)                                 | Approved agents, MCP servers, provider changes                               |
 | [AI incidents](operations/ai-incidents.md)                     | What counts, what to do, closing the gap                                     |
 | [GitHub hosted settings](operations/github-hosted-settings.md) | Rulesets, labels and Project that live outside the files                     |
-| [Diagrams](diagrams/README.md)                                 | Excalidraw sources and SVG exports of the workflow pictures                  |
+| [Visual documentation](diagrams/README.md)                     | Choosing formats, editable examples, charts, screenshots and maintenance     |
 | [ADRs](adr/README.md)                                          | Architecture Decision Records                                                |
 | [Research records](research/README.md)                         | Results of investigations, kept with their tested revision                   |
 | [Design notes](designs/README.md)                              | Options and recommendations before a decision                                |

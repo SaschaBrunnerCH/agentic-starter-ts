@@ -13,7 +13,10 @@ A repository template for agent-driven TypeScript development. A repository crea
 
 New to working with agents? Complete setup below, then follow [your first session](engineering/getting-started.md). The [engineering index](engineering/README.md) gives the reading order and specialist guides.
 
-![The workflow from issue to merged change: the owner writes the issue and says yes, the agent does the work, the repository checks every step](engineering/diagrams/workflow.svg)
+<picture>
+  <source media="(max-width: 600px)" srcset="engineering/diagrams/template-highlights-narrow.svg">
+  <img src="engineering/diagrams/template-highlights.svg" alt="Six starter highlights: small app, agent workflow, early verification, real hardware, owner control and repeatable delivery. The bullets above provide the text equivalent.">
+</picture>
 
 ## Prerequisites
 

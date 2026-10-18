@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-18",
+  "commit": "ab3e1c05013277a32ea8e7d942228bb9d6445dfc",
+  "command": "pnpm check:push",
+  "source": "Local V8 coverage summary from the pre-push gate for PR #60; thresholds from vite.config.ts at the same commit.",
+  "testFiles": 38,
+  "tests": 298,
+  "scope": "Instrumented unit-test coverage; excludes command orchestration and browser entry points. Not browser coverage, GPU acceptance or performance.",
+  "metrics": [
+    {
+      "name": "Statements",
+      "covered": 890,
+      "total": 920,
+      "floor": 95,
+      "percent": 96.73
+    },
+    {
+      "name": "Branches",
+      "covered": 679,
+      "total": 745,
+      "floor": 90,
+      "percent": 91.14
+    },
+    {
+      "name": "Functions",
+      "covered": 222,
+      "total": 226,
+      "floor": 95,
+      "percent": 98.23
+    },
+    {
+      "name": "Lines",
+      "covered": 755,
+      "total": 777,
+      "floor": 95,
+      "percent": 97.16
+    }
+  ]
+}
