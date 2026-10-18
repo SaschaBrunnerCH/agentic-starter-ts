@@ -9,7 +9,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 folder = Path(__file__).resolve().parent
-data = json.loads((folder / "coverage-example.json").read_text())
+data = json.loads((folder / "coverage-example.json").read_text(encoding="utf-8"))
 rows = data["metrics"]
 # Use the reported percentages: the coverage reporter truncates rather than rounds.
 values = [row["percent"] for row in rows]
@@ -37,4 +37,5 @@ with plt.rc_context({"font.family": "sans-serif", "svg.fonttype": "none",
 
 # Matplotlib emits spaces before SVG path line breaks; retain clean text diffs.
 output = folder / "coverage-example.svg"
-output.write_text("\n".join(line.rstrip() for line in output.read_text().splitlines()) + "\n")
+output.write_text("\n".join(line.rstrip() for line in output.read_text(encoding="utf-8").splitlines()) + "\n",
+                  encoding="utf-8")
