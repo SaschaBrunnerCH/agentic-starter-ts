@@ -10,14 +10,16 @@ const { values } = parseArgs({
     api: { type: "string", multiple: true },
     help: { type: "boolean" },
     profile: { type: "string" },
+    "webgpu-feature-level": { type: "string" },
   },
 });
 if (values.help) {
   console.log(
-    `Usage: pnpm browser:doctor [--api webgl|webgl2|webgpu]... [--profile <file>]
+    `Usage: pnpm browser:doctor [--api webgl|webgl2|webgpu]... [--webgpu-feature-level core|compatibility] [--profile <file>]
 
 Discover verified browser GPU access on this machine: Windows, WSL, Linux or macOS.
 Default: WebGL. Repeat --api to require multiple APIs; --profile rechecks a saved choice.
+WebGPU defaults to core. Compatibility is explicit and does not change application requests.
 Uses installed Chrome, Chromium or Edge. Reports attempted backends, readback,
 failures and next steps under .local/browser-gpu/. Installs no drivers or tools.
 
@@ -35,9 +37,14 @@ Setup and recovery: engineering/agents/browser-gpu-discovery.md`,
   try {
     if (
       values.profile !== undefined &&
-      (values.api !== undefined || process.env.BROWSER_GPU_EXECUTABLE)
+      (values.api !== undefined ||
+        values["webgpu-feature-level"] !== undefined ||
+        process.env.BROWSER_GPU_EXECUTABLE ||
+        process.env.BROWSER_WEBGPU_FEATURE_LEVEL !== undefined)
     )
-      throw new Error("Use --profile alone; it already selects the browser and APIs.");
+      throw new Error(
+        "Use --profile alone; it already selects the browser, APIs and feature level.",
+      );
     const preferred =
       values.profile === undefined ? undefined : readProfile(readFileSync(values.profile, "utf8"));
     const gpu = await discoverGpu(
@@ -45,12 +52,17 @@ Setup and recovery: engineering/agents/browser-gpu-discovery.md`,
         ...process.env,
         BROWSER_GPU: "required",
         ...(values.api === undefined ? {} : { BROWSER_GPU_APIS: values.api.join(",") }),
+        ...(values["webgpu-feature-level"] === undefined
+          ? {}
+          : { BROWSER_WEBGPU_FEATURE_LEVEL: values["webgpu-feature-level"] }),
       },
       controller.signal,
       preferred,
     );
     try {
-      console.log(`Verified ${gpu.version}: ${gpu.profile.apis.join(", ")}.`);
+      console.log(
+        `Verified ${gpu.version}: ${gpu.profile.apis.join(", ")}${gpu.profile.apis.includes("webgpu") ? ` (WebGPU ${gpu.profile.webgpuFeatureLevel ?? "core"})` : ""}.`,
+      );
     } finally {
       await gpu.close();
     }

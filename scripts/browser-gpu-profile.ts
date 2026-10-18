@@ -5,16 +5,19 @@ import * as json from "./json-shape.ts";
 import { gpuLaunchArgs, virtualDisplayEnvironment, webgpuSetting } from "./browser-gpu.ts";
 
 export type GraphicsApi = "webgl" | "webgl2" | "webgpu";
+export type WebGpuFeatureLevel = "core" | "compatibility";
 export type BrowserTarget = { executablePath: string } | { channel: string };
 type Backend = "default" | "gl" | "vulkan" | "wsl-d3d12";
 export interface GpuProfile {
   browser: BrowserTarget;
   backend: Backend;
   apis: GraphicsApi[];
+  webgpuFeatureLevel?: WebGpuFeatureLevel;
   display?: string;
 }
 
 export function requiredApis(env: Readonly<NodeJS.ProcessEnv>): GraphicsApi[] {
+  webgpuFeatureLevel(env); // Validate even when discovery will not launch a browser.
   const values = env.BROWSER_GPU_APIS?.split(",").map((api) => api.trim());
   if (values === undefined)
     return webgpuSetting(env) === "required" ? ["webgl", "webgpu"] : ["webgl"];
@@ -27,6 +30,13 @@ export function requiredApis(env: Readonly<NodeJS.ProcessEnv>): GraphicsApi[] {
   }
   if (webgpuSetting(env) === "required" && !apis.includes("webgpu")) apis.push("webgpu");
   return apis;
+}
+
+export function webgpuFeatureLevel(env: Readonly<NodeJS.ProcessEnv>): WebGpuFeatureLevel {
+  const level = env.BROWSER_WEBGPU_FEATURE_LEVEL ?? "core";
+  if (level !== "core" && level !== "compatibility")
+    throw new Error("BROWSER_WEBGPU_FEATURE_LEVEL must be core or compatibility.");
+  return level;
 }
 
 export function browserCandidates(
@@ -97,7 +107,13 @@ export function candidateProfiles(
   const apis = requiredApis(env);
   const profiles: GpuProfile[] = [];
   for (const browser of browsers) {
-    for (const backend of backends) profiles.push({ browser, backend, apis });
+    for (const backend of backends)
+      profiles.push({
+        browser,
+        backend,
+        apis,
+        ...(apis.includes("webgpu") ? { webgpuFeatureLevel: webgpuFeatureLevel(env) } : {}),
+      });
   }
   return profiles;
 }
@@ -117,6 +133,9 @@ export function profileLaunchOptions(
       "--ozone-platform=x11",
       "--disable-software-rasterizer",
     );
+    // Dawn's WebGPU backend is independent of ANGLE's WebGL backend above.
+    if (profile.webgpuFeatureLevel === "compatibility" && profile.apis.includes("webgpu"))
+      args.push("--use-webgpu-adapter=opengles", "--enable-webgpu-developer-features");
   }
   const browserEnv = virtualDisplayEnvironment(env, profile.display ?? env.DISPLAY ?? "");
   if (profile.backend === "wsl-d3d12") browserEnv.MESA_LOADER_DRIVER_OVERRIDE = "d3d12";
@@ -137,6 +156,7 @@ export function readProfile(text: string): GpuProfile {
       channel: json.optional(json.string),
       backend: json.string,
       apis: json.array(json.string),
+      webgpuFeatureLevel: json.optional(json.string),
       display: json.optional(json.string),
     }),
     "BROWSER_GPU_PROFILE",
@@ -160,6 +180,13 @@ export function readProfile(text: string): GpuProfile {
     browser,
     backend,
     apis,
+    ...(parsed.webgpuFeatureLevel === undefined
+      ? {}
+      : {
+          webgpuFeatureLevel: webgpuFeatureLevel({
+            BROWSER_WEBGPU_FEATURE_LEVEL: parsed.webgpuFeatureLevel,
+          }),
+        }),
     ...(parsed.display === undefined ? {} : { display: parsed.display }),
   };
 }
@@ -169,6 +196,9 @@ export function writeProfile(profile: GpuProfile): string {
     ...profile.browser,
     backend: profile.backend,
     apis: profile.apis,
+    ...(profile.webgpuFeatureLevel === undefined
+      ? {}
+      : { webgpuFeatureLevel: profile.webgpuFeatureLevel }),
     ...(profile.display === undefined ? {} : { display: profile.display }),
   });
 }

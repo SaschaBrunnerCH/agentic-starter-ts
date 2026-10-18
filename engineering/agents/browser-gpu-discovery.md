@@ -15,6 +15,49 @@ pnpm test:browser --api webgl2 --project mobile-chrome
 
 `--api` is repeatable and overrides `BROWSER_GPU_APIS` for this invocation. A phone project emulates a viewport and touch on this machine; it does not use a phone GPU.
 
+## WebGPU core and compatibility
+
+WebGPU has two feature levels. Declare the one the application requests; discovery
+does not change application code or automatically downgrade a core requirement.
+
+| Requirement             | Command                                                                 | Meaning of a hardware pass                                                       |
+| ----------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Core, the default       | `pnpm browser:doctor --api webgpu`                                      | A core adapter with successful submission and pixel readback                     |
+| Compatibility, explicit | `pnpm browser:doctor --api webgpu --webgpu-feature-level compatibility` | An adapter usable under compatibility limits, with the same work/readback checks |
+
+Both `browser:doctor` and `test:browser` accept `--webgpu-feature-level core|compatibility`.
+The equivalent environment setting is `BROWSER_WEBGPU_FEATURE_LEVEL`. CLI values
+override that setting; omitted values and older saved profiles mean core. The
+selected feature level is retained in profiles and reports, so `--profile` reproduces
+the same requirement. Use `--profile` alone, without feature-level overrides.
+
+If core fails, follow the printed compatibility diagnostic before concluding that
+WebGPU hardware is unavailable. For example, WSL can expose hardware OpenGL through
+Mesa D3D12 while its Vulkan loader exposes only a CPU device. An OpenGL ES WebGPU
+compatibility candidate may still work. For the Linux OpenGL/D3D12 candidates,
+explicit compatibility selects Dawn's OpenGL ES backend and enables extended adapter
+information with Chrome's developer-features flag, scoped to the disposable test
+browser. Native Windows/macOS retain their platform backend. Masked identity,
+software/fallback adapters and failed readback still cannot pass.
+
+Only an application designed for compatibility should run:
+
+```sh
+pnpm build
+pnpm test:browser --api webgpu --webgpu-feature-level compatibility
+```
+
+Its own adapter request must use `featureLevel: "compatibility"`; enabling this
+diagnostic does not inject that option into application requests. Compatibility
+has different limits; shader compilation or pipeline creation alone establishes
+neither work/readback nor a correctly painted application frame. Record translated
+WSL rendering separately from native performance. Other machine/API combinations
+remain unverified until exercised there.
+
+See [Chrome's feature-level explanation](https://developer.chrome.com/blog/new-in-webgpu-146),
+[Chromium's Linux OpenGL ES backend](https://chromium.googlesource.com/chromium/src/+/dfe22492ac40b7561e51e27060ba9e74ee068a71%5E%21/)
+and [extended adapter information](https://developer.chrome.com/docs/web-platform/webgpu/developer-features#extended-adapter-information).
+
 `BROWSER_GPU_EXECUTABLE` chooses one installed Chromium-based browser exclusively. Without it, discovery inventories installed Chrome, Chromium and Edge paths appropriate to the OS; missing optional browsers and tools require no automatic installation. `BROWSER_GPU_APIS` accepts `webgl`, `webgl2`, `webgpu`, or a comma-separated combination. WebGL 1 is the default. Legacy `BROWSER_WEBGPU=required` adds WebGPU; an explicit `webgpu` API alone has no WebGL dependency.
 
 ## What runs
