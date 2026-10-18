@@ -92,7 +92,7 @@ Working with coding agents fails in ways that working alone does not. This page 
 
 **Looks like:** hours of full browser suites for a one-line fix; a full rerun after a small correction; product work stalled behind evidence.
 
-**Handled by:** the push gate is fast and browser-free; the PR build runs one browser; other browsers and devices are run on demand and reported with `pnpm test:devices`. [CI minutes](../operations/ci-minutes.md) lists the cost of each run.
+**Handled by:** the push gate and PR build run the code/build checks without browser journeys. Routine browser acceptance runs locally in Chrome on a verified GPU and is reported on the PR. Broader engines, systems and devices run only when the owner explicitly requests them; `pnpm test:devices` reports that coverage. [CI minutes](../operations/ci-minutes.md) lists the cost of each run.
 
 **Left to people:** decide per change what evidence it needs, say so in the pull request, and do not rerun what already passed on the same commit.
 
@@ -134,7 +134,7 @@ Working with coding agents fails in ways that working alone does not. This page 
 
 **Looks like:** the monthly Actions budget is used up mid-month and every pull request waits.
 
-**Handled by:** the push hook fails a push before CI does; jobs are few and on Linux; extra browsers and devices run locally and are reported on the pull request. See [CI minutes](../operations/ci-minutes.md).
+**Handled by:** the push hook fails a push before CI does; jobs are few and on Linux; explicitly requested extra browser and device runs are reported on the pull request. See [CI minutes](../operations/ci-minutes.md).
 
 ## The tools themselves
 

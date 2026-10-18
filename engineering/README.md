@@ -17,7 +17,9 @@ flowchart LR
   issue["Issue<br/>pnpm issue"] --> task["Worktree<br/>pnpm task start"]
   task --> commit["Commit hook<br/>format, lint, secrets"]
   commit --> push["Push gate<br/>all checks"]
-  push --> pr["PR build<br/>checks; browser tests if switched on"]
+  push --> pr["PR build<br/>code/build gate"]
+  task -->|browser changes| browser["Local Chrome<br/>verified GPU; report on PR"]
+  browser --> pr
   pr --> preview["Preview<br/>per pull request"]
   pr --> merge["Merge<br/>owner's yes"]
   merge --> deploy["Deploy<br/>Pages and smoke test"]
@@ -40,7 +42,7 @@ Consult the guides below when their topic applies. For browser changes, start wi
 | [Triage labels](agents/triage-labels.md)                       | Label vocabulary                                                             |
 | [Local verification](agents/local-verification.md)             | What runs at commit, at push and in CI                                       |
 | [Review by a second agent](agents/review.md)                   | When to ask for one, how to brief it, what it establishes                    |
-| [Browser testing](agents/browser-testing.md)                   | Browser tests locally, in the PR build and on a testing farm                 |
+| [Browser testing](agents/browser-testing.md)                   | Local GPU acceptance and explicitly requested wider coverage                 |
 | [Browser GPU discovery](agents/browser-gpu-discovery.md)       | Find and verify a hardware launch profile across operating systems           |
 | [Device coverage](agents/browser-device-coverage.md)           | Matrix, tablet emulation, wired/wireless phones and tablets, farm limits     |
 | [Dependency automation](agents/dependency-automation.md)       | Dependabot and the weekly audit                                              |
