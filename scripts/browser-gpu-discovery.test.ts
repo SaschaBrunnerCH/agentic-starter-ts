@@ -38,6 +38,7 @@ const fixture = vi.hoisted(() => {
     kills: 0,
     killDelayMs: 0,
     taskkillArguments: [] as string[],
+    exitsBeforeTaskkill: false,
     browserExited: () => {},
     probeAbort: () => {},
     abort: () => {},
@@ -60,7 +61,8 @@ vi.mock("node:child_process", async (original) => {
       child.once("close", () => options.signal?.removeEventListener("abort", aborted));
       if (!fixture.killHangs)
         setTimeout(() => {
-          if (!fixture.killFails && !fixture.killLeavesAlive) fixture.browserExited();
+          if (fixture.exitsBeforeTaskkill || (!fixture.killFails && !fixture.killLeavesAlive))
+            fixture.browserExited();
           const code = fixture.killFails ? 1 : 0;
           Object.defineProperty(child, "exitCode", { value: code });
           child.emit("close", code, null);
@@ -172,6 +174,7 @@ beforeEach(async () => {
     closes: 0,
     kills: 0,
     killDelayMs: 0,
+    exitsBeforeTaskkill: false,
     browserExited: () => {},
     probeAbort: () => {},
     abort: () => {},
@@ -483,4 +486,26 @@ describe("discovery ownership and failure paths", () => {
     expect(fixture.closes).toBe(1);
     expect(existsSync(lock)).toBe(false);
   });
+  it.each([false, true])(
+    "accepts a failed Windows taskkill only if its browser already exited: %s",
+    async (exited) => {
+      fixture.closeHangs = true;
+      fixture.killFails = true;
+      fixture.exitsBeforeTaskkill = exited;
+      const gpu = await commands.discoverGpu(
+        { BROWSER_GPU_EXECUTABLE: "/chosen" },
+        new AbortController().signal,
+      );
+      Object.defineProperty(process, "platform", { value: "win32" });
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
+      const outcome = gpu.close().then(
+        () => "closed",
+        (error: unknown) => String(error),
+      );
+      await vi.advanceTimersByTimeAsync(5_000);
+      if (exited) expect(await outcome).toBe("closed");
+      else expect(await outcome).toContain("Owned process termination exited 1");
+      expect(existsSync(lock)).toBe(!exited);
+    },
+  );
 });

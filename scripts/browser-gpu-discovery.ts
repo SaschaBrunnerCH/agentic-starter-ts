@@ -116,9 +116,12 @@ async function stopWindowsBrowser(
     });
     await new Promise<void>((accept, reject) => {
       command.once("error", reject);
-      command.once("close", (code) =>
-        code === 0 ? accept() : reject(new Error(`Owned process termination exited ${code}`)),
-      );
+      command.once("close", (code) => {
+        // Graceful shutdown may finish while taskkill starts. The observed child
+        // exit and the profile check below, rather than taskkill's status, prove cleanup.
+        if (code === 0 || child.exitCode !== null || child.signalCode !== null) accept();
+        else reject(new Error(`Owned process termination exited ${code}`));
+      });
     });
   }
   // Playwright removes its disposable profile after the child process closes.
