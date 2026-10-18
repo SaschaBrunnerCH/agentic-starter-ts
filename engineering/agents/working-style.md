@@ -34,4 +34,21 @@ Several sessions, and other projects, often share one machine.
 
 The owner can ask for local-only work: "draft it, do not create it" or "do not push". Then leave changes uncommitted or unpushed as asked, write drafts of issues and pull-request text to files, and make no remote write. Preparing something locally never implies permission to publish it.
 
-Scratch files of a task, such as logs, screenshots and drafts, go under `.local/` in the primary checkout. Git ignores the directory, and cleanup of a task's worktree does not touch it.
+## Local artifacts
+
+Keep scratch artifacts in the **primary checkout's `.local/`**, so task-worktree cleanup leaves them intact. This includes logs, screenshots, reports and standalone Markdown drafts or notes when the user gives no destination. An explicit destination or maintained repository documentation takes precedence.
+
+Run `pnpm local:init` once from any checkout to create its ignored `.local/README.md`; repeating it preserves existing content. The complete directory is ignored, including the README. Downstream projects that prefer an untracked exclusion can use `pnpm local:init --exclude`: it uses Git's shared `info/exclude`, including from linked worktrees, without editing `.gitignore`. Initialization refuses tracked `.local` files; review those explicitly rather than silently untracking them.
+
+Use UTC timestamps (`YYYYMMDD-HHMM`), lowercase hyphen-separated slugs and GitHub numbers padded to at least four digits:
+
+| Folder under `.local/`                  | Use                                                          |
+| --------------------------------------- | ------------------------------------------------------------ |
+| `gh-issue-0055-local-artifacts/`        | Task artifacts; dated activity subfolders when useful        |
+| `gh-pr-0056-local-artifacts/`           | PR-specific review evidence                                  |
+| `sessions/20261018-1430_browser-check/` | One-off work without an issue or PR                          |
+| `topics/browser-testing/`               | Optional continuing topic, with dated activities when useful |
+
+Keep each artifact in one canonical location; link related issue/PR folders from their READMEs rather than copying reports. Dates belong inside stable issue/PR folders, not in their names. Record completed or merged status in a README or optional index; keep paths stable. Existing folders remain valid: do not migrate or rename them automatically.
+
+Tool-owned build/test output keeps its existing paths. Copy wanted evidence here before worktree cleanup. Git-common-directory handoffs keep the location documented in [task lifecycle](task-lifecycle.md#handoff-with-unfinished-work). Do not put credentials or personal data in artifacts; see [data handling](data-handling.md).
