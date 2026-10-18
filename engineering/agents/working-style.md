@@ -40,12 +40,12 @@ Keep scratch artifacts in the **primary checkout's `.local/`**, so task-worktree
 
 Run `pnpm local:init` once from any checkout to create its ignored `.local/README.md`; repeating it preserves existing content. The complete directory is ignored, including the README. Downstream projects that prefer an untracked exclusion can use `pnpm local:init --exclude`: it uses Git's shared `info/exclude`, including from linked worktrees, without editing `.gitignore`. Initialization refuses tracked `.local` files; review those explicitly rather than silently untracking them.
 
-Use UTC timestamps (`YYYYMMDD-HHMM`), lowercase hyphen-separated slugs and GitHub numbers padded to at least four digits. `<title>` means the actual GitHub issue or PR title converted to a portable lowercase hyphen-separated slug:
+Use UTC timestamps (`YYYYMMDD-HHMM`), lowercase hyphen-separated slugs and GitHub numbers padded to five digits before the type (`gh-<five-digit-id>-issue-<title>/` or `gh-<five-digit-id>-pr-<title>/`). Issues and PRs share GitHub’s number sequence, so these folders sort in creation order. `<title>` means the actual GitHub issue or PR title converted to a portable lowercase hyphen-separated slug:
 
 | Folder under `.local/`         | Use                                                           |
 | ------------------------------ | ------------------------------------------------------------- |
-| `gh-issue-0055-<title>/`       | Task artifacts; dated activity subfolders when useful         |
-| `gh-pr-0056-<title>/`          | PR-specific review evidence                                   |
+| `gh-00055-issue-<title>/`      | Task artifacts; dated activity subfolders when useful         |
+| `gh-00057-pr-<title>/`         | PR-specific review evidence                                   |
 | `20261018-1430_browser-check/` | One-off work directly under `.local/`, without an issue or PR |
 | `topics/browser-testing/`      | Optional continuing topic, with dated activities when useful  |
 

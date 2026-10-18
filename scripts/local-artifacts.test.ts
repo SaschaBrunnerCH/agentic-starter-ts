@@ -44,22 +44,24 @@ describe("local artifacts", () => {
     const directory = initializeLocalArtifacts(task);
     expect(directory).toBe(join(primary, ".local"));
     const readme = readFileSync(join(directory, "README.md"), "utf8");
-    expect(readme).toContain("gh-issue-0055-<title>");
-    expect(readme).toContain("gh-pr-0056-<title>");
+    expect(readme).toContain("gh-00055-issue-<title>");
+    expect(readme).toContain("gh-00057-pr-<title>");
     expect(readme).toContain("UTC");
     expect(readme).toContain("20261018-1430_browser-check/");
     expect(readme).not.toContain("sessions/");
-    mkdirSync(join(directory, "gh-issue-0055-example-task", "20261018-1430_review"), {
+    expect(readme).not.toContain("gh-issue-");
+    expect(readme).not.toContain("gh-pr-");
+    mkdirSync(join(directory, "gh-00055-issue-example-task", "20261018-1430_review"), {
       recursive: true,
     });
     writeFileSync(
-      join(directory, "gh-issue-0055-example-task", "20261018-1430_review", "notes.md"),
+      join(directory, "gh-00055-issue-example-task", "20261018-1430_review", "notes.md"),
       "Retain me",
     );
     for (const checkout of [primary, task]) {
       expect(isIgnored(checkout, ".local/README.md")).toBe(true);
       expect(
-        isIgnored(checkout, ".local/gh-issue-0055-example-task/20261018-1430_review/notes.md"),
+        isIgnored(checkout, ".local/gh-00055-issue-example-task/20261018-1430_review/notes.md"),
       ).toBe(true);
     }
     expect(existsSync(join(task, ".local"))).toBe(false);
@@ -67,7 +69,7 @@ describe("local artifacts", () => {
     git(primary, "worktree", "remove", task);
     expect(
       readFileSync(
-        join(directory, "gh-issue-0055-example-task", "20261018-1430_review", "notes.md"),
+        join(directory, "gh-00055-issue-example-task", "20261018-1430_review", "notes.md"),
         "utf8",
       ),
     ).toBe("Retain me");

@@ -15,14 +15,15 @@ This entire directory is ignored, including this README. Keep credentials and
 personal data out of artifacts. Canonical guidance: [working style](../engineering/agents/working-style.md#local-artifacts).
 
 Use UTC timestamps, YYYYMMDD-HHMM, and lowercase hyphen-separated topic slugs.
-Pad GitHub numbers to at least four digits (0055, 0123, 10000).
+Pad GitHub numbers to five digits (00055, 00123, 10000), before issue/pr.
+Issues and PRs share GitHub’s number sequence, so these folders sort in creation order.
 For \`<title>\`, use the actual GitHub issue or PR title converted to a portable
 lowercase hyphen-separated slug.
 
 | Folder | Content |
 | --- | --- |
-| \`gh-issue-0055-<title>/\` | Task work, with dated activity subfolders when useful |
-| \`gh-pr-0056-<title>/\` | PR-specific reviews; link to the issue folder instead of copying reports |
+| \`gh-00055-issue-<title>/\` | Task work, with dated activity subfolders when useful |
+| \`gh-00057-pr-<title>/\` | PR-specific reviews; link to the issue folder instead of copying reports |
 | \`20261018-1430_browser-check/\` | One-off work without a GitHub issue or PR |
 | \`topics/browser-testing/\` | Optional continuing topic, with dated activities when useful |
 
