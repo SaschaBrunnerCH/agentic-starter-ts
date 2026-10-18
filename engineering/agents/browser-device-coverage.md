@@ -345,12 +345,13 @@ physical-device results, not an independent hardware audit or performance study.
 | TestingBot   | Galaxy S25 (SM-S931B), Android 15     | Chrome 149.0.7827.159                                     | WebGL2 Adreno 830; WebGPU `qualcomm adreno-8xx`, both requested modes passed   | 2026-10-18     |
 | TestingBot   | Galaxy Tab S11 (SM-X730), Android 16  | Chrome 150.0.7871.189                                     | WebGL2 Mali-G925; WebGPU `arm gen-5` readback passed, classifier finding below | 2026-10-18     |
 | TestingBot   | iPhone 17 Pro, iOS 26.5               | Safari 26.5                                               | Apple GPU WebGL2 and WebGPU, both requested modes passed                       | 2026-10-18     |
+| TestingBot   | iPad (9th generation), iPadOS 26.6    | Safari 26.6                                               | Apple GPU WebGL2 and WebGPU, both requested modes passed                       | 2026-10-18     |
 | BrowserStack | Galaxy S25 (SM-S931B), Android 15     | Chrome 152 (reduced user agent; full version unavailable) | WebGL2 Adreno 830; WebGPU `qualcomm adreno-8xx`, both requested modes passed   | 2026-10-18     |
 | BrowserStack | Galaxy Tab S11 (SM-X736B), Android 16 | Chrome 152 (reduced user agent; full version unavailable) | WebGL2 Mali-G925; WebGPU `arm gen-5` readback passed, classifier finding below | 2026-10-18     |
 | BrowserStack | iPhone 17 Pro, iOS 26.6               | Safari 26.6                                               | Apple GPU WebGL2 and WebGPU, both requested modes passed                       | 2026-10-18     |
 | BrowserStack | iPad Air 13 2025, iPadOS 26.6         | Safari 26.6.1                                             | Apple GPU WebGL2 and WebGPU, both requested modes passed                       | 2026-10-18     |
 
-All seven samples passed the built application's greeting/input interaction,
+All eight samples passed the built application's greeting/input interaction,
 changed-screenshot check, axe with zero violations, landscape rotation with the
 application retained, and deliberate wrong-pixel rejection for working APIs.
 Both core and compatibility WebGPU requests were exercised; this does not prove
@@ -360,11 +361,12 @@ returned to zero running/queued sessions. Input used WebDriver click/clear/send
 keys, not human multitouch. The starter has no application GPU scene, so API
 readback is separate from its UI paint evidence.
 
-TestingBot's physical iPad (9th generation) with iPadOS 26.6 remained unavailable
-across the bounded recheck on 2026-10-18; **current TestingBot iPad coverage is
-unverified**. An earlier iOS 15 diagnostic is retained as historical local
-evidence and does not satisfy this current-iPad sample. BrowserStack's newer iPad
-row above is the executed current-iPad result.
+TestingBot's physical iPad (9th generation) with iPadOS 26.6 became available
+during continued read-only availability checks on 2026-10-18. Its subsequent
+bounded test passed, with one active physical allocation and zero VM allocations
+reported during the session, followed by confirmed completion and an idle account.
+An earlier iOS 15 diagnostic is historical local evidence only and is not counted
+among these eight current-device samples.
 
 At the tested harness revision `32f00b1`, both Tab S11 sessions returned working
 non-fallback WebGPU with identity `arm gen-5`, which the classifier left unknown.
@@ -378,8 +380,12 @@ matching device name, while its summary `os` was `TAHOE`; that summary is not th
 phone's OS. User agents can also be frozen or use desktop mode. Use returned device
 capabilities and device-specific provider metadata, preserve disagreements, and
 leave missing fields unverified. The driver for these runs was WSL Linux, not the
-Android/iOS rendering device. Harness revision and deployed index/assets were
-byte-matched before and after the batch; the observations are scoped to that build.
+Android/iOS rendering device. The iPad also reported a desktop-mode `MacIntel`
+platform, which does not change its established iPadOS identity. The initial seven
+current-device samples used clean harness revision `32f00b1`; the subsequent
+TestingBot current-iPad run used `cc678f2`. Each run's deployed index/assets were
+byte-matched to its harness checkout before and after testing; the observations
+are scoped to those builds.
 
 Keep account access separate from this public overview. Authentication and a
 catalog entry establish neither access to every row nor successful
