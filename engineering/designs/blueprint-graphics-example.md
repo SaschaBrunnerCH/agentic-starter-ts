@@ -16,7 +16,7 @@ Each panel explains missing APIs, a missing adapter, initialization/rendering fa
 
 `src/graphics/scene.ts` owns projections, shared colored line triangles, the rotation clock and pixel classification. Both APIs consume those exact vertices. CPU projection keeps the shader examples short; it is not a recommendation for large production datasets. `renderers.ts` owns shader compilation, buffers, canvas drawing/readback and resource destruction. `GraphicsLab.tsx` owns controls, canvas sizing, frame scheduling and readable status. `webgpu.d.ts` supplements the platform DOM library's missing canvas overload and runtime constants, without another package.
 
-The two API implementations are intentionally separate. A general engine abstraction or separate package is unnecessary for an example that adopters can remove as one folder. The README lists the removal steps. Styling belongs to `src/app.css`; there are no remote fonts or assets.
+The two API implementations are intentionally separate. WebGPU uses a four-sample attachment resolved into the canvas so thin lines remain comparable with WebGL2's antialiasing; resizing and disposal destroy that attachment. Async initialization checks cancellation before configuring a canvas, so an old React StrictMode effect cannot overwrite its replacement. WebGL cleanup deletes the owned resources without deliberately losing the reusable canvas context. A general engine abstraction or separate package is unnecessary for an example that adopters can remove as one folder. The README lists the removal steps. Styling belongs to `src/app.css`; there are no remote fonts or assets.
 
 ## Verification contract
 
