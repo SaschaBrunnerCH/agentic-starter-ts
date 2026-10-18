@@ -70,7 +70,7 @@ The application uses React. A library such as an SDK, or an application with ano
 1. `pnpm remove react react-dom @vitejs/plugin-react @types/react @types/react-dom`
 2. Remove the graphics example as above. Delete `src/App.tsx` and `src/App.test.tsx`, rename `src/main.tsx` to `src/main.ts` and write it without JSX; point `index.html`, `vite.config.ts` (the coverage exclusion) at the new name.
 3. Remove `react()` and its import from `vite.config.ts`, `"jsx"` from `tsconfig.app.json`, and `react`, `jsx-a11y` and the `react/*` rules from `.oxlintrc.json`.
-4. Rewrite `e2e/smoke.spec.ts` for the new page; it checks the React heading and name field, and runs in `pnpm test:browser` (and in the PR build when its browser tests are switched on), not in the gate.
+4. Rewrite `e2e/smoke.spec.ts` for the new page; it checks the React heading and name field, and runs locally in Chrome on a verified GPU with `pnpm test:browser`; report the results on the PR. The PR build runs the code/build gate without browser journeys.
 5. Run `pnpm check:push` and `pnpm test:browser`; `check:unused` names anything left over.
 
 ## Working with an agent
