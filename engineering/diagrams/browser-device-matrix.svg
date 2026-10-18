@@ -127,12 +127,12 @@
 <text font-size="16" fill="#4a5e73" font-weight="400"><tspan x="66" y="1957.12">Protocols and device/OS support differ</tspan></text>
 <rect x="506" y="1725" width="428" height="260" rx="15" fill="white" stroke="#d9e2eb"/>
 <text font-size="19" fill="#14283f" font-weight="700"><tspan x="528" y="1762.58">MANAGED BROWSERS</tspan></text>
-<text font-size="19" fill="#14283f" font-weight="400"><tspan x="528" y="1800.58">Browserless: Chromium / Firefox / WebKit</tspan><tspan x="528" y="1826.23">Kernel: Chromium</tspan><tspan x="528" y="1851.88"></tspan><tspan x="528" y="1877.53">GPU options depend on deployment / plan</tspan></text>
+<text font-size="19" fill="#14283f" font-weight="400"><tspan x="528" y="1800.58">Browserless: Chromium / Firefox / WebKit</tspan><tspan x="528" y="1826.23">Kernel: Chromium</tspan><tspan x="528" y="1851.88"></tspan><tspan x="528" y="1877.53">GPU options depend on configuration</tspan></text>
 <text font-size="16" fill="#4a5e73" font-weight="400"><tspan x="528" y="1957.12">Emulation does not supply a real phone</tspan></text>
 <rect x="968" y="1725" width="428" height="260" rx="15" fill="white" stroke="#d9e2eb"/>
-<text font-size="19" fill="#14283f" font-weight="700"><tspan x="990" y="1762.58">A FULL GPU CHECKOUT</tspan></text>
-<text font-size="19" fill="#14283f" font-weight="400"><tspan x="990" y="1800.58">Runpod: Linux GPU container</tspan><tspan x="990" y="1826.23"></tspan><tspan x="990" y="1851.88">SSH → existing package commands</tspan><tspan x="990" y="1877.53">Verify adapter, API work and app paint</tspan></text>
-<text font-size="16" fill="#4a5e73" font-weight="400"><tspan x="990" y="1957.12">No Windows / Mac / real-mobile target</tspan></text>
+<text font-size="18" fill="#14283f" font-weight="700"><tspan x="990" y="1761.76">A FULL CHECKOUT ON A REMOTE HOST</tspan></text>
+<text font-size="18" fill="#14283f" font-weight="400"><tspan x="990" y="1799.76">GPU VM / container or a remote Mac</tspan><tspan x="990" y="1824.06">Run the existing package commands</tspan><tspan x="990" y="1848.36">Verify adapter, API work and app paint</tspan><tspan x="990" y="1872.66">Provider options → Markdown tables</tspan></text>
+<text font-size="16" fill="#4a5e73" font-weight="400"><tspan x="990" y="1957.12">SSH checkout; verify each host / GPU</tspan></text>
 <text font-size="19" fill="#14283f" font-weight="700"><tspan x="46" y="2028.58">Provider snapshot checked 2026-10-18 (UTC) · Availability is not tested acceptance.</tspan></text>
 <text font-size="18" fill="#4a5e73" font-weight="400"><tspan x="46" y="2063.76">See the dated provider tables for sources, connection limits and separately dated observations.</tspan></text>
 </svg>

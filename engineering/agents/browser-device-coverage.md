@@ -263,6 +263,8 @@ before selecting a label from its catalog:
 
 ### Provider comparison
 
+Detailed options live in the Markdown tables; the graphic remains an overview.
+
 **Snapshot checked 2026-10-18 (UTC).** Each row dates its linked documentation or
 catalog check, not future availability. This is a selection of providers, not an
 exhaustive catalog or a ranking. C = Chromium (Chrome/Edge where offered),
@@ -280,13 +282,39 @@ with this starter's endpoint connector.
 | [Perfecto](https://help.perfecto.io/perfecto-help/content/Perfecto/automation-testing/playwright.htm) | Windows Chrome/Edge; macOS C/F/W                                                                                                                                                                         | Android Chrome/WebView; iOS Safari Playwright beta with a specific client version                                                                                                               | Provider capabilities/endpoints need validation. Source version statements differ; confirm the supported client before selecting it                                                                                                          | 2026-10-18 · docs only            |
 | [AWS Device Farm](https://docs.aws.amazon.com/devicefarm/latest/developerguide/welcome.html)          | [Desktop TestGrid](https://docs.aws.amazon.com/devicefarm/latest/testgrid/techref-support.html): Windows Chrome/Edge/Firefox via WebDriver                                                               | Real Android/iOS mobile devices; select device pools and supported test framework                                                                                                               | AWS test uploads/Appium or desktop WebDriver need a separate integration; no plain Playwright endpoint assumed                                                                                                                               | 2026-10-18 · docs only            |
 
-Managed browsers and a rented GPU host serve different needs from device farms:
+Managed browser services offer remote browser endpoints:
 
-| Provider / service                                                  | Browser or host coverage                                                                                             | GPU and full-checkout limits                                                                                                                                                                            | Connection and starter fit                                                                         | Last checked / basis                       |
-| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| [Browserless](https://docs.browserless.io/overview/connection-urls) | Hosted C/F/W endpoints; emulation does not supply physical mobile devices                                            | [GPU infrastructure](https://docs.browserless.io/enterprise/private-deployment/performance) is a private-deployment option. Shared endpoints establish neither GPU access nor a full developer checkout | Choose a Playwright-protocol endpoint for the connector; Chrome CDP needs a separate adapter       | 2026-10-18 · docs; prior shared Chrome run |
-| [Kernel](https://www.kernel.sh/browsers)                            | Managed Chromium sessions, not a three-engine/device farm                                                            | [GPU browsers use virtual GPUs](https://www.kernel.sh/blog/gpu); verify entitlement/configuration. No physical-workstation or full-checkout acceptance inferred                                         | Documented Playwright-over-CDP path needs session lifecycle code; no general CDP adapter here      | 2026-10-18 · docs; GPU run not performed   |
-| [Runpod Pods](https://docs.runpod.io/pods/overview)                 | Rented Linux GPU container; install required browsers. This path supplies no Windows/macOS or physical mobile target | Full checkout/build/discovery on the host GPU; verify libraries, adapter and each API. Container results do not establish bare-metal desktop behavior                                                   | SSH to the host and use existing package commands; no provider SDK/provisioning integration needed | 2026-10-18 · docs + Linux GPU checkout     |
+| Provider / service                                                  | Browser or host coverage                                                  | GPU and full-checkout limits                                                                                                                                                                            | Connection and starter fit                                                                    | Last checked / basis                       |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| [Browserless](https://docs.browserless.io/overview/connection-urls) | Hosted C/F/W endpoints; emulation does not supply physical mobile devices | [GPU infrastructure](https://docs.browserless.io/enterprise/private-deployment/performance) is a private-deployment option. Shared endpoints establish neither GPU access nor a full developer checkout | Choose a Playwright-protocol endpoint for the connector; Chrome CDP needs a separate adapter  | 2026-10-18 · docs; prior shared Chrome run |
+| [Kernel](https://www.kernel.sh/browsers)                            | Managed Chromium sessions, not a three-engine/device farm                 | [GPU browsers use virtual GPUs](https://www.kernel.sh/blog/gpu); verify GPU configuration and access. No physical-workstation or full-checkout acceptance inferred                                      | Documented Playwright-over-CDP path needs session lifecycle code; no general CDP adapter here | 2026-10-18 · docs; GPU run not performed   |
+
+### GPU hosts and remote Macs
+
+Runpod is one example of a host where the full repository checkout can run.
+The options below provide compute or Mac access; they are not preconfigured
+browser/device farms. Install the required Node/browser tooling and test on the
+rendering host with the existing package commands. No provider adapter is needed
+for an ordinary SSH checkout. All additional options are **documentation-only**;
+only the recorded Runpod configuration has passed this repository's host checks.
+
+| Provider                                                                                    | Technical options                                                                                                                                                                                                                          | Access and graphics limits                                                                                                                                                                                | Last checked / basis                   |
+| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| [Runpod Pods](https://docs.runpod.io/pods/overview)                                         | Linux GPU containers; select a GPU and container image, then install required browsers                                                                                                                                                     | SSH/full checkout. Tested NVIDIA WebGL2/core WebGPU; no Windows/macOS or physical mobile target supplied by this path                                                                                     | 2026-10-18 · docs + Linux GPU checkout |
+| [Infomaniak Public Cloud](https://docs.infomaniak.cloud/compute/instances/flavors/)         | GPU VMs; documented NVIDIA L4, A2, T4, L40S and A100 flavors, depending on cluster                                                                                                                                                         | Full VM checkout; GPU flavors require project enablement. Select OS image and compatible graphics drivers; model availability alone is not browser acceptance                                             | 2026-10-18 · docs only; untested       |
+| [Vast.ai](https://docs.vast.ai/guides/instances/connect/ssh)                                | Marketplace GPU instances with container/host configuration chosen per offer                                                                                                                                                               | SSH checkout. Hardware, driver exposure, image and networking vary by offer; establish container/VM status and actual graphics API support                                                                | 2026-10-18 · docs only; untested       |
+| [Lambda Cloud](https://docs.lambda.ai/public-cloud/on-demand/connecting-instance/)          | Linux GPU instances with SSH access and a preconfigured compute stack                                                                                                                                                                      | Full instance checkout. Compute/CUDA tooling does not establish a browser graphics stack or usable WebGL2/WebGPU; verify the selected hardware and drivers                                                | 2026-10-18 · docs only; untested       |
+| [Vultr Cloud GPU](https://docs.vultr.com/products/compute/instances/cloud-gpu/provisioning) | GPU VMs with selectable image and GPU configuration                                                                                                                                                                                        | Full VM checkout. Distinguish dedicated from [vGPU configurations](https://docs.vultr.com/how-to-manage-vgpu-on-vultr-cloud-gpu-instances); verify graphics drivers/API readback on the selected instance | 2026-10-18 · docs only; untested       |
+| AWS EC2                                                                                     | [G6 NVIDIA L4 GPU instances](https://aws.amazon.com/ec2/instance-types/g6/) for graphics workloads; [EC2 Mac](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-mac-instances.html) for a macOS checkout on Apple dedicated hardware | Separate GPU-VM and Mac host routes, with OS/image/driver setup for each. EC2 Mac supplies no physically connected iPhone/iPad; no farm endpoint assumed                                                  | 2026-10-18 · docs only; untested       |
+| [Scaleway Apple silicon](https://www.scaleway.com/en/docs/apple-silicon/quickstart/)        | Dedicated Apple Mac mini hardware for a macOS checkout; model/OS choices follow the current catalog                                                                                                                                        | SSH/remote access, install local tooling and verify Metal/API work and application paint. A remote Mac does not establish access to physical phones/tablets                                               | 2026-10-18 · docs only; untested       |
+| [MacStadium](https://macstadium.com/bare-metal-mac)                                         | Dedicated Apple hardware or [Orka virtualized Mac environments](https://macstadium.com/orka); choose the host type explicitly                                                                                                              | Full Mac environment rather than a browser-only session. Virtualized and dedicated routes need separate GPU/Metal acceptance; no physical iPhone/iPad inferred                                            | 2026-10-18 · docs only; untested       |
+
+GPU compute/CUDA availability does not establish graphics-capable device/driver
+access, usable OpenGL/Vulkan/Metal, WebGPU support or correct application paint.
+Choose the host type and architecture explicitly, then record each API's actual
+work/readback, adapter and cleanup. A Linux GPU VM/container, remote Mac, native
+Windows workstation and WSL environment remain different acceptance targets.
+This technical comparison intentionally excludes plans and pricing.
 
 ### Dated observations
 
@@ -305,9 +333,9 @@ physical cloud mobile run.
 | Runpod Linux GPU container      | NVIDIA WebGL2/core WebGPU work/readback; full checkout and bounded cleanup passed  | Application and axe passed; no bare-metal/performance claim                                     | 2026-10-18     |
 
 Keep account access separate from this public overview. Authentication and a
-catalog entry establish neither entitlement to every row nor successful
+catalog entry establish neither access to every row nor successful
 allocation, device availability, protocol compatibility or GPU acceptance.
-Recheck linked catalogs and version/plan restrictions before each selection;
+Recheck linked catalogs and version/access restrictions before each selection;
 record actual device/browser/adapter and cleanup in that run's evidence. Update
 only rows rechecked, with their date and source, when offerings change. Do not
 renew an old test's date after merely rereading a provider's documentation.
@@ -315,10 +343,10 @@ renew an old test's date after merely rereading a provider's documentation.
 Prefer the available local machine/device first. Add a farm for a missing browser
 or real device, or a full GPU host for checkout/discovery acceptance. Keep
 [focused PR checks and the full declared release inventory](browser-testing.md#as-the-suite-grows)
-unchanged. No account, SDK, paid plan or default matrix expansion is required by
+unchanged. No account, SDK or default matrix expansion is required by
 this overview.
 
-Check the live device catalog, plan access and returned OS/browser/device identity.
+Check the live device catalog, authorized access and returned OS/browser/device identity.
 Do not accept a substituted VM or emulator as the requested real-device row.
 Use an exact identifiable deployed build or an owned tunnel; remote `localhost`
 belongs to the rendering host. Provider tunnel rules differ:
