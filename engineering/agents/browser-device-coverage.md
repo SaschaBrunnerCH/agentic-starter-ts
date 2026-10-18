@@ -54,6 +54,42 @@ visible as **unverified**, with the missing machine/tool or failure reason.
 The starter's enforced release smoke remains Chromium at root/nested paths; it
 does not enforce a derived application's complete supported matrix.
 
+## Install and launch on Windows and WSL separately
+
+Use native Windows Node.js/pnpm in a Windows checkout for Windows browser results,
+and Linux Node.js/pnpm in a WSL checkout for WSL results. Check `node -p "process.platform"`:
+expect `win32` or `linux`, respectively. Install dependencies in each checkout;
+do not reuse the other platform's `node_modules` or downloaded browser binaries.
+The [shared browser cache](browser-testing.md#on-your-machine) separates platforms
+automatically. Microsoft's [filesystem guidance](https://learn.microsoft.com/en-us/windows/wsl/filesystems)
+explains why a Windows-drive checkout suits Windows tools and a Linux-filesystem
+checkout suits Linux tools.
+
+After installing the [repository prerequisites](../../README.md#prerequisites),
+run in each environment:
+
+```sh
+pnpm install --frozen-lockfile
+pnpm test:browser:install
+pnpm browser:cli install firefox
+pnpm browser:check firefox
+pnpm build
+```
+
+The install command supplies bundled Chromium; verified GPU discovery also needs
+an installed Chrome, Chromium or Edge. Use `pnpm test:browser` for routine local
+Chromium GPU acceptance, or `pnpm test:devices --project firefox` for functional
+Firefox coverage. Follow the [GPU guide](browser-gpu-discovery.md) for API requirements.
+The full repository gate runs in WSL on Windows. These setup commands do not add
+visible or parallel runs to routine acceptance.
+
+If Node/pnpm or a PowerShell launcher fails before Playwright starts, repair that
+host's tool installation first. For layout checks, use Playwright's supported
+viewport settings; arbitrary browser startup arguments can be interpreted as URLs.
+The [dated setup investigation](../research/2026-10-18-browser-device-setup.md)
+records the tested versions, successful paths and failures, including a Firefox
+window-size argument that opened an unintended address.
+
 ## Reach a real device from a laptop
 
 Use an available local phone or tablet as a first-class acceptance target. Follow
@@ -101,6 +137,20 @@ the phone unlocked and Chrome open while connecting. Attach to an owned test tab
 and preserve existing tabs and browser data; do not reset a personal browser to
 make automation connect.
 
+If the project still is not visible, wake and unlock the phone, then explicitly
+open Chrome on the intended HTTPS page. For the installed Google Chrome app, the
+following launch worked in the [setup investigation](../research/2026-10-18-browser-device-setup.md).
+Replace `SERIAL` and `HTTPS_TEST_URL`; the latter must be your reachable test URL:
+
+```text
+adb -s SERIAL shell input keyevent KEYCODE_WAKEUP
+adb -s SERIAL shell am start -W --user current -n com.android.chrome/com.google.android.apps.chrome.Main -a android.intent.action.VIEW -d HTTPS_TEST_URL --ez create_new_tab true
+```
+
+Confirm the page on the physical screen and in the inspector before proceeding;
+an accepted launch request alone is insufficient. This Chrome component is not
+a launcher for other Android browsers.
+
 With Windows ADB and a WSL server, prove Windows can reach that server first;
 reverse forwarding reaches Windows. Keep one ADB host in charge. Alternatively,
 explicit [USB attachment to WSL](https://learn.microsoft.com/en-us/windows/wsl/connect-usb)
@@ -119,6 +169,13 @@ shown by the device: `adb connect DEVICE_IP:CONNECTION_PORT`. Pairing and connec
 ports can differ; newer ADB Wi-Fi versions also change discovery behavior.
 Select that connection with `adb -s SERIAL`, establish the required reverse mapping,
 unplug USB, and repeat the page and inspection checks to prove the wireless path.
+
+A scanned pairing QR code is not confirmation of a connection. If discovery
+stalls, check the pairing/connection addresses on the phone and use the explicit
+commands above. With several network adapters, verify the workstation and device
+are on the intended network before changing settings; mDNS discovery can fail
+independently of the browser. The [dated investigation](../research/2026-10-18-browser-device-setup.md)
+did not establish Android wireless control; its working fallback was USB.
 
 After either path, remove only the owned mapping with
 `adb -s SERIAL reverse --remove tcp:4173`. For Wi-Fi, `adb disconnect DEVICE_IP:CONNECTION_PORT`
@@ -155,6 +212,25 @@ tool's prerequisites. JavaScript, screenshots and graphics readback alone do not
 establish native touch or keyboard automation. Use a normal Safari tab for the
 manual input journey and record it separately. Signed native automation
 and provider-specific iOS automation are separate integrations.
+
+For optional Windows USB inspection, the [dated setup recipe](../research/2026-10-18-browser-device-setup.md#optional-windows-to-ipad-usb-path)
+records an isolated, pinned `pymobiledevice3` launch. Follow its
+[Windows installation prerequisites](https://github.com/doronz88/pymobiledevice3/blob/master/docs/installation.md)
+for Apple's device service; this is separate host tooling, not a repository
+dependency or a built-in Playwright project. Keep the device unlocked and the
+intended browser/page in the foreground before attaching. Chrome on iPad also
+has its own **Settings → Content Settings → Web Inspector** switch; enable it
+and relaunch Chrome, as [Chrome's guide](https://developer.chrome.com/blog/debugging-chrome-on-ios)
+describes. Safari's switch alone did not make the Chrome page inspectable in
+the session.
+
+USB inspection worked in that session; Wi-Fi device management connected but
+browser inspection did not. Recheck the browser service after unplugging instead
+of inferring wireless support from pairing, an IP address or a successful device
+query. Keep any screen-awake override temporary, record its previous value and
+restore it before disconnecting. If a device disconnects first, report cleanup
+as pending and reconnect to verify restoration; stopping a host helper alone
+does not establish that page activity or device settings stopped.
 
 Close owned inspection sessions/tabs, stop the test server, disable wireless
 debugging/inspection when finished and unpair where appropriate. Apple's
