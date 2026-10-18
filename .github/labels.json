@@ -1,0 +1,72 @@
+[
+  {
+    "name": "needs-triage",
+    "color": "fbca04",
+    "description": "The owner needs to evaluate this issue; a temporary fallback"
+  },
+  {
+    "name": "needs-info",
+    "color": "d876e3",
+    "description": "Waiting on the reporter for more information"
+  },
+  {
+    "name": "ready-for-agent",
+    "color": "0e8a16",
+    "description": "Fully specified; an agent can do it unattended"
+  },
+  {
+    "name": "ready-for-human",
+    "color": "1d76db",
+    "description": "Needs a human to implement or decide in person"
+  },
+  {
+    "name": "wontfix",
+    "color": "ffffff",
+    "description": "Will not be actioned"
+  },
+  {
+    "name": "bug",
+    "color": "d73a4a",
+    "description": "Existing behaviour is wrong"
+  },
+  {
+    "name": "enhancement",
+    "color": "a2eeef",
+    "description": "New or changed behaviour, tooling or structure"
+  },
+  {
+    "name": "documentation",
+    "color": "0075ca",
+    "description": "The outcome is a document"
+  },
+  {
+    "name": "investigation",
+    "color": "c5def5",
+    "description": "Bounded research or measurement that ends with evidence, conclusions and unknowns"
+  },
+  {
+    "name": "verification",
+    "color": "bfd4f2",
+    "description": "Dedicated acceptance or verification work; feature issues keep their own checks"
+  },
+  {
+    "name": "epic",
+    "color": "5319e7",
+    "description": "A larger outcome delivered through sub-issues"
+  },
+  {
+    "name": "decision-needed",
+    "color": "b60205",
+    "description": "The owner must decide before the work can finish"
+  },
+  {
+    "name": "area:app",
+    "color": "ededed",
+    "description": "Application code and behaviour"
+  },
+  {
+    "name": "area:engineering",
+    "color": "ededed",
+    "description": "Tooling, checks, workflow and documentation"
+  }
+]

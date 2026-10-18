@@ -9,6 +9,7 @@ import {
   quote,
   root,
 } from "../shared/github.ts";
+import { labelChanges, loadProjectLabels } from "./project-labels.ts";
 import { missingScopes } from "./token-scopes.ts";
 import * as json from "../shared/json-shape.ts";
 import {
@@ -27,30 +28,8 @@ const reason = (error: unknown) => (error instanceof Error ? error.message.trim(
 // run reports no changes. It needs `gh` with the `repo` and `project` scopes
 // (`gh auth refresh -s project`) and administrator rights on the repository.
 
-const labels: readonly (readonly [name: string, color: string, description: string])[] = [
-  ["needs-triage", "fbca04", "The owner needs to evaluate this issue; a temporary fallback"],
-  ["needs-info", "d876e3", "Waiting on the reporter for more information"],
-  ["ready-for-agent", "0e8a16", "Fully specified; an agent can do it unattended"],
-  ["ready-for-human", "1d76db", "Needs a human to implement or decide in person"],
-  ["wontfix", "ffffff", "Will not be actioned"],
-  ["bug", "d73a4a", "Existing behaviour is wrong"],
-  ["enhancement", "a2eeef", "New or changed behaviour, tooling or structure"],
-  ["documentation", "0075ca", "The outcome is a document"],
-  [
-    "investigation",
-    "c5def5",
-    "Bounded research or measurement that ends with evidence, conclusions and unknowns",
-  ],
-  [
-    "verification",
-    "bfd4f2",
-    "Dedicated acceptance or verification work; feature issues keep their own checks",
-  ],
-  ["epic", "5319e7", "A larger outcome delivered through sub-issues"],
-  ["decision-needed", "b60205", "The owner must decide before the work can finish"],
-  ["area:app", "ededed", "Application code and behaviour"],
-  ["area:engineering", "ededed", "Tooling, checks, workflow and documentation"],
-];
+// Validate all project data before any GitHub call, including reads.
+const labels = loadProjectLabels(join(root, ".github/labels.json"));
 
 type Option = Readonly<{ name: string; color: string; description: string }>;
 
@@ -158,17 +137,22 @@ if (missing.length > 0) {
 }
 
 // Labels
-const existingLabels = new Map(
-  ghJson(
-    ["label", "list", "--limit", "500", "--json", "name,color,description"],
-    json.array(json.object({ name: json.string, color: json.string, description: json.string })),
-  ).map((label) => [label.name, label]),
+const existingLabels = ghJson(
+  ["label", "list", "--limit", "500", "--json", "name,color,description"],
+  json.array(json.object({ name: json.string, color: json.string, description: json.string })),
 );
-for (const [name, color, description] of labels) {
-  const existing = existingLabels.get(name);
-  if (existing?.color.toLowerCase() === color && existing.description === description) continue;
-  gh(["label", "create", name, "--color", color, "--description", description, "--force"]);
-  changes.push(`label ${name} ${existing === undefined ? "created" : "updated"}`);
+for (const { label, exists } of labelChanges(labels, existingLabels)) {
+  gh([
+    "label",
+    "create",
+    label.name,
+    "--color",
+    label.color,
+    "--description",
+    label.description,
+    "--force",
+  ]);
+  changes.push(`label ${label.name} ${exists ? "updated" : "created"}`);
 }
 
 // Merge settings: squash only, branch removed after merge.
