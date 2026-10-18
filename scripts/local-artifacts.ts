@@ -16,7 +16,8 @@ personal data out of artifacts. Canonical guidance: [working style](../engineeri
 
 Use UTC timestamps, YYYYMMDD-HHMM, and lowercase hyphen-separated topic slugs.
 Pad GitHub numbers to five digits (00055, 00123, 10000), before issue/pr.
-Issues and PRs share GitHub’s number sequence, so these folders sort in creation order.
+Never truncate larger IDs. Issues and PRs share GitHub’s number sequence; these
+folders sort in creation order through 99,999.
 For \`<title>\`, use the actual GitHub issue or PR title converted to a portable
 lowercase hyphen-separated slug.
 
