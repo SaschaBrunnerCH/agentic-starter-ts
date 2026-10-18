@@ -77,6 +77,22 @@ describe("the workflows of this repository", () => {
     expect(source).not.toContain("BROWSER_TESTS_IN_CI");
   });
 
+  it("waits for hosted Pages initialization without weakening manual deploy or downstream isolation", () => {
+    const jobs = workflowJobs(read("deploy.yml"));
+    const build = jobs.find((job) => job.id === "build");
+    const deploy = jobs.find((job) => job.id === "deploy");
+    const smoke = jobs.find((job) => job.id === "smoke");
+    expect(build?.lines).toContain(
+      "    if: vars.PAGES_DEPLOYMENT_ENABLED == 'true' || github.event_name == 'workflow_dispatch'",
+    );
+    expect(build?.lines.join("\n")).toContain('git merge-base --is-ancestor "$commit" origin/main');
+    expect(deploy?.lines).toContain("    needs: [build]");
+    expect(deploy?.lines).toContain("      name: github-pages");
+    expect(deploy?.lines.join("\n")).not.toMatch(/checkout@|run:/u);
+    expect(smoke?.lines).toContain("    needs: [build, deploy]");
+    expect(smoke?.lines).toContain("        run: pnpm test:browser");
+  });
+
   it("keep browser acceptance out of the PR build", () => {
     const build = workflowJobs(read("pr-build.yml")).find((job) => job.id === "pr-build");
     expect(build).toBeDefined();

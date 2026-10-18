@@ -30,6 +30,7 @@
     "check:bundle": "node scripts/checks/check-bundle.ts",
     "check:hooks": "node scripts/git/install-hooks.ts --check",
     "check:audit": "pnpm audit --prod --audit-level high",
+    "check:adoption": "node scripts/checks/check-adoption.ts",
     "check:push": "node scripts/checks/run-local-checks.ts",
     "setup:github": "node scripts/setup/setup-github.ts",
     "setup:previews": "node scripts/setup/setup-previews.ts",

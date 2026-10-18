@@ -22,6 +22,8 @@ These settings live on GitHub, not in files, and a repository created from the t
 | Ruleset **Release tags**   | From `.github/rulesets/release-tags.json`: `v*` tags cannot be updated or deleted                                                                                                                                              |
 | Immutable releases         | On: a published release cannot change; see [releases](releases.md)                                                                                                                                                             |
 
+Automatic Pages deployment is initialized last through `PAGES_DEPLOYMENT_ENABLED=true` only after successful Pages/main-only-environment setup and no unapplied settings. Existing choices are retained. Run `gh workflow run deploy.yml --ref main` after successful first setup; see [deployment initialization](deployment.md#initialization).
+
 ## The rulesets
 
 **Main integrity** applies to everyone, with no bypass: `main` cannot be deleted or force-pushed, and a merge requires the `PR build` status on a branch that is current with `main`.

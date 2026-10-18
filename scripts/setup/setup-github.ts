@@ -10,6 +10,7 @@ import {
   root,
 } from "../shared/github.ts";
 import { labelChanges, loadProjectLabels } from "./project-labels.ts";
+import { pagesInitializationNeeded } from "./pages-initialization.ts";
 import { missingScopes } from "./token-scopes.ts";
 import * as json from "../shared/json-shape.ts";
 import {
@@ -377,6 +378,8 @@ if (
 
 // GitHub Pages, deployed by .github/workflows/deploy.yml, and its environment:
 // only main may deploy. See engineering/operations/deployment.md.
+let pagesConfigured = false;
+let pagesMainOnly = false;
 const pages = answers(["api", `${repositoryPath}/pages`]);
 try {
   if (pages === undefined) {
@@ -392,6 +395,9 @@ try {
     gh(["api", "-X", "PUT", `${repositoryPath}/pages`, "-f", "build_type=workflow"]);
     changes.push("GitHub Pages switched to deploys from workflows");
   }
+  pagesConfigured =
+    ghJson(["api", `${repositoryPath}/pages`], json.object({ build_type: json.string }))
+      .build_type === "workflow";
 } catch (error) {
   unavailable.push(
     `GitHub Pages (a private repository needs a paid plan); disable the Deploy workflow until it is available: ${reason(error)}`,
@@ -403,6 +409,7 @@ for (const name of ["github-pages", "browser-farm"]) {
   try {
     const environment = limitEnvironmentToMain(repositoryPath, name);
     changes.push(...environment.changes);
+    if (name === "github-pages") pagesMainOnly = environment.others.length === 0;
     if (environment.others.length > 0) {
       notApplied.push(
         `environment ${name} also allows ${environment.others.join(", ")}; remove them unless they are wanted`,
@@ -488,6 +495,41 @@ for (const file of hostedRulesets === undefined ? [] : rulesetFiles) {
   } catch (error) {
     notApplied.push(`ruleset "${wanted.name}": ${reason(error)}`);
   }
+}
+
+// The opt-in is repository state, never copied by GitHub's template operation.
+// Set it last, and never overwrite an owner's explicit false/true choice.
+try {
+  const variables = ghJson(
+    ["api", `${repositoryPath}/actions/variables?per_page=100`, "--paginate", "--slurp"],
+    json.array(
+      json.object({
+        variables: json.array(json.object({ name: json.string, value: json.string })),
+      }),
+    ),
+  ).flatMap((page) => page.variables);
+  const existing = variables.find(
+    (variable) => variable.name === "PAGES_DEPLOYMENT_ENABLED",
+  )?.value;
+  if (
+    pagesInitializationNeeded(existing, pagesConfigured, pagesMainOnly, notApplied.length === 0)
+  ) {
+    gh(["variable", "set", "PAGES_DEPLOYMENT_ENABLED", "--body", "true"]);
+    const saved = ghJson(
+      ["api", `${repositoryPath}/actions/variables/PAGES_DEPLOYMENT_ENABLED`],
+      json.object({ value: json.string }),
+    );
+    if (saved.value !== "true") throw new Error("Pages initialization readback did not match true");
+    changes.push(
+      "automatic Pages deployment initialized; run gh workflow run deploy.yml --ref main for the first deploy",
+    );
+  } else if (existing !== "true") {
+    console.log(
+      "Automatic Pages deployment is not enabled; complete hosted setup or review PAGES_DEPLOYMENT_ENABLED.",
+    );
+  }
+} catch (error) {
+  notApplied.push(`Pages initialization: ${reason(error)}`);
 }
 
 console.log(

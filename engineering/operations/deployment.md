@@ -1,6 +1,16 @@
 # Deployment
 
-Every merge to `main` deploys the application to GitHub Pages and then tests the deployed site. The workflow is `.github/workflows/deploy.yml`; `pnpm setup:github` enables Pages and limits the `github-pages` environment to `main`.
+After hosted setup, every merge to `main` deploys the application to GitHub Pages and then tests the deployed site. The workflow is `.github/workflows/deploy.yml`; `pnpm setup:github` enables Pages and limits the `github-pages` environment to `main`.
+
+## Initialization
+
+Initialization state lives in hosted configuration because template files cannot establish hosting readiness. Keeping setup after the personalized first push allows it to protect `main` for all subsequent work and gives build jobs no deployment credentials.
+
+A fresh template copy has no `PAGES_DEPLOYMENT_ENABLED` repository variable. Automatic push runs skip the build/deploy chain until it is exactly `true`; this is an uninitialized hosting state, not a failed deployment. `pnpm setup:github` sets it last only when Pages reads back as workflow-based, its environment is limited to main, and no setup errors remain. Existing variable values are preserved, including an owner's explicit `false`.
+
+After successful setup, run `gh workflow run deploy.yml --ref main` for the initial deployment. Later merges deploy automatically. A manual deployment intentionally bypasses only the initialization switch: main-ancestry checks, credential isolation, environment restrictions and deployed-site smoke tests still apply. Missing/broken hosting then fails visibly. Once initialized, an automatic deployment failure also stays red; the switch is not reset to hide it.
+
+Existing adopters upgrading to this workflow must complete setup or, after verifying Pages and the main-only environment, set `gh variable set PAGES_DEPLOYMENT_ENABLED --body true`. Set it to `false` to suspend automatic deploys; manual deployment remains explicit. Local adoption fixtures do not provision hosting. Unit truth-table and workflow contract controls verify the initialization boundary; an existing site's deployment does not prove first-time hosted provisioning in a fresh repository.
 
 ## What a deploy does
 
@@ -43,7 +53,7 @@ The workflow builds that commit again, deploys it and tests it. It refuses a com
 
 ## The application under a sub-path
 
-Pages serves a project site below `/<repository>/`. The build uses relative asset paths (`base: "./"` in `vite.config.ts`), so the same build works there and at the root of a domain. When its browser checks are enabled, the PR build tests the build under `/app/` as well as at the root. [Release verification](releases.md) always runs both checks against the tagged build. An application with client-side routing needs its router's base set from `import.meta.env.BASE_URL` or the deployed path.
+Pages serves a project site below `/<repository>/`. The build uses relative asset paths (`base: "./"` in `vite.config.ts`), so the same build works there and at the root of a domain. PR browser acceptance runs locally on the verified GPU and is reported on the PR, including relevant sub-path coverage. [Release verification](releases.md) always runs both checks against the tagged build. An application with client-side routing needs its router's base set from `import.meta.env.BASE_URL` or the deployed path.
 
 ## Choosing another target
 
