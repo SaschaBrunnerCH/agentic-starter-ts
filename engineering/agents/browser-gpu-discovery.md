@@ -60,6 +60,10 @@ and [extended adapter information](https://developer.chrome.com/docs/web-platfor
 
 `BROWSER_GPU_EXECUTABLE` chooses one installed Chromium-based browser exclusively. Without it, discovery inventories installed Chrome, Chromium and Edge paths appropriate to the OS; missing optional browsers and tools require no automatic installation. `BROWSER_GPU_APIS` accepts `webgl`, `webgl2`, `webgpu`, or a comma-separated combination. WebGL 1 is the default. Legacy `BROWSER_WEBGPU=required` adds WebGPU; an explicit `webgpu` API alone has no WebGL dependency.
 
+Bundled-browser commands use the [repository browser cache](browser-testing.md#on-your-machine).
+Use `pnpm test:browser:install` for downloads and `pnpm browser:check` for cache diagnostics;
+installed Chrome/Edge discovery is unchanged.
+
 ## What runs
 
 The doctor and tests use the same resolver. It explores a short list sequentially, with a 12-second browser-launch bound, an eight-second API probe bound, a 20-second attempt watchdog and a search budget below three minutes including normal cleanup. Linux tries the browser's default, ANGLE/OpenGL and Vulkan backends. WSL additionally tries scoped Mesa D3D12. Only after headless candidates fail does Linux try a task-owned Xvfb display, if installed. Windows and macOS keep the browser's default platform backend. Wayland session variables are removed from candidate browser processes; driver overrides apply to that candidate only.

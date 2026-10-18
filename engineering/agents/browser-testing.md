@@ -44,7 +44,28 @@ pnpm build
 pnpm test:browser           # Chromium on the GPU; see below
 ```
 
-`pnpm install --frozen-lockfile` does not download browsers. The tests run against the production build, so build first; a stale `dist/` tests old code. A failure leaves a trace under `test-results/`; open it with `pnpm exec playwright show-trace <trace.zip>`. Ordinary task cleanup retains worktrees containing `test-results/` or `playwright-report/`. Follow the [evidence copy step](task-lifecycle.md#preserve-browser-diagnostics) before explicitly discarding them. A later browser run can overwrite these directories; cleanup protection does not preserve earlier attempts automatically.
+`pnpm install --frozen-lockfile` does not download browsers. The tests run against the production build, so build first; a stale `dist/` tests old code. A failure leaves a trace under `test-results/`; open it with `pnpm browser:cli show-trace <trace.zip>`. Ordinary task cleanup retains worktrees containing `test-results/` or `playwright-report/`. Follow the [evidence copy step](task-lifecycle.md#preserve-browser-diagnostics) before explicitly discarding them. A later browser run can overwrite these directories; cleanup protection does not preserve earlier attempts automatically.
+
+Bundled browsers live in `<git-common-dir>/playwright-browsers/<platform>-<arch>`,
+shared by this repository's checkouts and retained when a worktree is removed.
+Other repositories and Windows/WSL architectures use separate caches. An explicit
+`PLAYWRIGHT_BROWSERS_PATH` wins, including `0` for Playwright's hermetic mode;
+CI/container paths remain supported. This setting does not move installed Chrome
+or Edge. Normal Playwright garbage collection still applies within a chosen cache.
+
+Use `pnpm test:browser:install` for the default Chromium setup, or
+`pnpm browser:cli install firefox webkit` for just those engines. Both use the
+same cache initializer; `pnpm browser:cli` also handles other CLI operations. These commands, tests,
+device runs and the doctor initialize the cache before Playwright loads; avoid
+raw `pnpm exec playwright install/test` commands. System-library installation
+(`install-deps`, or the setup command's existing `--with-deps`) is separate from
+cache isolation.
+
+`pnpm browser:check` prints the cache and checks Chromium's build directories;
+add `firefox webkit` to inspect those engines instead. It downloads/launches
+nothing and does not verify system libraries, rendering or hardware. A missing
+build can follow a Playwright update or cleanup of a shared cache; rerun setup.
+The ordinary push gate still needs no downloaded browsers.
 
 The local server uses a port derived from the worktree's directory, so two worktrees can test at the same time; set `BROWSER_TEST_PORT` to choose one. A busy port fails the run instead of testing whatever answers there.
 
@@ -80,7 +101,7 @@ Browsers come from three engines: Chromium (Chrome and Edge), Gecko (Firefox) an
 `playwright.config.ts` has five projects. `pnpm test:browser` defaults to `chromium`. `mobile-chrome` shares its verified launch profile. Other engines use Playwright's browsers and their renderer remains unverified; those runs check function:
 
 ```sh
-pnpm exec playwright install --with-deps firefox webkit
+pnpm browser:cli install --with-deps firefox webkit
 pnpm test:browser --project firefox
 pnpm test:browser --project webkit          # the engine of Safari
 pnpm test:browser --project mobile-chrome   # a Pixel 7 screen, touch and user agent

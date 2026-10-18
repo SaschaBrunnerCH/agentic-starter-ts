@@ -18,9 +18,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run --coverage",
-    "test:browser": "node scripts/browser-test.ts",
-    "test:browser:install": "playwright install --with-deps chromium",
-    "test:devices": "node scripts/test-devices.ts",
+    "test:browser": "node --import ./scripts/playwright-browsers-env.ts scripts/browser-test.ts",
+    "test:browser:install": "node --import ./scripts/playwright-browsers-env.ts scripts/browser-test-cli.ts install --with-deps chromium",
+    "test:devices": "node --import ./scripts/playwright-browsers-env.ts scripts/test-devices.ts",
     "check:unused": "node scripts/check-unused.ts",
     "check:secrets": "node scripts/check-secrets.ts",
     "check:workflows": "node scripts/check-workflows.ts",
@@ -37,7 +37,9 @@
     "local:init": "node scripts/init-local-artifacts.ts",
     "task": "node scripts/task.ts",
     "release": "node scripts/release.ts",
-    "browser:doctor": "node scripts/browser-doctor.ts"
+    "browser:doctor": "node --import ./scripts/playwright-browsers-env.ts scripts/browser-doctor.ts",
+    "browser:cli": "node --import ./scripts/playwright-browsers-env.ts scripts/browser-test-cli.ts",
+    "browser:check": "node --import ./scripts/playwright-browsers-env.ts scripts/check-browser-environment.ts"
   },
   "lint-staged": {
     "*.{cjs,cts,js,jsx,mjs,mts,ts,tsx}": "oxlint --fix --deny-warnings",

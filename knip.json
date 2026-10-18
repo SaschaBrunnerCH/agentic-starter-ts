@@ -5,7 +5,8 @@
     "src/**/*.test.{ts,tsx}",
     "scripts/**/*.test.ts",
     "scripts/{issue,task,release,setup-github,setup-previews,install-hooks,init-local-artifacts,pre-push,run-local-checks,test-devices}.ts",
-    "scripts/check-*.ts"
+    "scripts/check-*.ts",
+    "scripts/playwright-browsers-env.ts"
   ],
   "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts", "e2e/**/*.ts"],
   "ignoreDependencies": ["@secretlint/secretlint-rule-preset-recommend"],

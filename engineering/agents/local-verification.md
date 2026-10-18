@@ -52,6 +52,16 @@ touch scratch.txt && git push --dry-run origin HEAD:refs/heads/hook-check; rm sc
 
 Keep retained logs, reports and verification notes under the primary checkout's ignored `.local/`, following the [artifact naming guidance](working-style.md#local-artifacts). Tool-owned `coverage/`, `test-results/` and reports keep their existing paths; copy wanted evidence before removing a task worktree.
 
+Bundled Playwright browsers are shared by worktrees under the Git common directory,
+in `playwright-browsers/<platform>-<arch>`; explicit `PLAYWRIGHT_BROWSERS_PATH` overrides win.
+Install through `pnpm test:browser:install` or `pnpm browser:cli install <engines>`,
+not a raw Playwright install.
+`pnpm browser:check` reports the inspected cache and missing build directories; it
+is on demand, so the ordinary gate does not require browser downloads.
+`scripts/playwright-browsers-contract.test.ts` guards supported command/workflow
+entrypoints. See [browser setup](browser-testing.md#on-your-machine) for overrides
+and system-library requirements.
+
 Browser tests run on demand locally, optionally in the PR build, and unconditionally for a release; see [browser testing](browser-testing.md).
 
 ## Typechecking

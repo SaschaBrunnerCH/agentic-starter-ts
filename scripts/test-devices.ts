@@ -33,7 +33,7 @@ Run on this machine (Windows, WSL, Linux or macOS); no GitHub login needed witho
   pnpm test:devices --project firefox --project webkit
   pnpm test:devices --project mobile-chrome         phone emulation on this machine
 
-Install selected Playwright browsers first: pnpm exec playwright install firefox webkit
+Install selected Playwright browsers first: pnpm browser:cli install firefox webkit
 Chromium hardware tests discover installed Chrome, Chromium or Edge automatically.
 Emulation does not connect a physical phone/tablet. For a real device, open a
 reachable build and follow engineering/agents/browser-device-coverage.md:
