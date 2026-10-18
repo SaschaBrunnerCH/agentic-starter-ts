@@ -37,6 +37,7 @@ const runShape = json.object({
   remote: json.boolean,
   /** BROWSER_TEST_BASE_URL: a deployment, not necessarily the commit; absent for its build. */
   target: json.optional(json.string),
+  /** Node's test-driver OS/architecture; does not establish a remote rendering device's OS. */
   platform: json.string,
   gpuProfile: json.optional(json.string),
   gpuReport: json.optional(json.string),
@@ -132,7 +133,10 @@ export function evidenceMarkdown(run: BrowserRun): string {
   );
   return [
     evidenceMarker(run.commit),
-    `**Browser tests** on \`${run.commit.slice(0, 7)}\`, ${run.platform}, finished ${run.finishedAt}: ${run.status}.`,
+    `**Browser tests** on \`${run.commit.slice(0, 7)}\`, finished ${run.finishedAt}: ${run.status}.`,
+    "",
+    `Driver platform: ${run.platform}.`,
+    ...(run.remote ? ["Rendering OS/device: not established by this remote run record."] : []),
     "",
     `Application: ${application}.`,
     "",

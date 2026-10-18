@@ -85,7 +85,8 @@ describe("evidenceMarkdown", () => {
   it("names the commit, the renderer and the counts, with a marker per commit", () => {
     const text = evidenceMarkdown(run());
     expect(text.startsWith(evidenceMarker(head))).toBe(true);
-    expect(text).toContain("on `aaaaaaa`, linux x64");
+    expect(text).toContain("on `aaaaaaa`, finished");
+    expect(text).toContain("Driver platform: linux x64.");
     expect(text).toContain("UHD Graphics 630)) (hardware, headless)");
     expect(text).toContain("| chromium | 3 | 0 | 1 | 0 |");
   });
@@ -97,6 +98,14 @@ describe("evidenceMarkdown", () => {
     expect(text).toContain(
       "Renderer (Chromium's GPU check): not checked (BROWSER_GPU=off, remote browser).",
     );
+  });
+
+  it("does not present the driver platform as a remote browser's OS or device", () => {
+    const text = evidenceMarkdown(run({ remote: true, platform: "linux x64" }));
+    expect(text).toContain("Driver platform: linux x64.");
+    expect(text).toContain("Rendering OS/device: not established by this remote run record.");
+    expect(text).not.toContain("on `aaaaaaa`, linux x64");
+    expect(evidenceMarkdown(run())).not.toContain("Rendering OS/device:");
   });
 
   it("names the application tested: the local build, or a deployment", () => {

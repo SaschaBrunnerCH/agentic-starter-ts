@@ -42,8 +42,9 @@ export type RendererKind = "hardware" | "software" | "unknown";
 // lavapipe, and Windows' Basic Render Driver.
 const SOFTWARE_RENDERER =
   /swiftshader|subzero|llvmpipe|softpipe|swrast|lavapipe|basic render|software|\bcpu\b|\bwarp\b/iu;
+// Dawn exposes ARM's Gen5 GPU architecture as "gen-5"; generic ARM CPU names stay unknown.
 const HARDWARE_RENDERER =
-  /nvidia|intel|amd|radeon|apple|adreno|qualcomm|mali|powervr|virtio|virgl|vmware|parallels/iu;
+  /nvidia|intel|amd|radeon|apple|adreno|qualcomm|mali|powervr|virtio|virgl|vmware|parallels|^arm gen-5$/iu;
 
 export function classifyRenderer(renderer: string | null | undefined): RendererKind {
   const text = renderer?.trim() ?? "";
