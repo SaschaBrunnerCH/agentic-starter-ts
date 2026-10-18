@@ -33,6 +33,6 @@ export function missingBrowserMessage(cache: string, missing: readonly string[])
     `Playwright browser cache checked: ${cache}`,
     `Missing browser builds: ${missing.join(", ")}.`,
     "A Playwright update may require new builds, or another install may have removed them from a shared cache.",
-    "Run pnpm test:browser:install (add firefox webkit to install those engines too).",
+    "Run pnpm test:browser:install (other engines: pnpm browser:cli install firefox webkit).",
   ].join("\n");
 }

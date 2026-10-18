@@ -53,8 +53,9 @@ Other repositories and Windows/WSL architectures use separate caches. An explici
 CI/container paths remain supported. This setting does not move installed Chrome
 or Edge. Normal Playwright garbage collection still applies within a chosen cache.
 
-Use `pnpm test:browser:install` for downloads, adding `firefox webkit` for those
-engines. Use `pnpm browser:cli` for other CLI operations. These commands, tests,
+Use `pnpm test:browser:install` for the default Chromium setup, or
+`pnpm browser:cli install firefox webkit` for just those engines. Both use the
+same cache initializer; `pnpm browser:cli` also handles other CLI operations. These commands, tests,
 device runs and the doctor initialize the cache before Playwright loads; avoid
 raw `pnpm exec playwright install/test` commands. System-library installation
 (`install-deps`, or the setup command's existing `--with-deps`) is separate from
@@ -100,7 +101,7 @@ Browsers come from three engines: Chromium (Chrome and Edge), Gecko (Firefox) an
 `playwright.config.ts` has five projects. `pnpm test:browser` defaults to `chromium`. `mobile-chrome` shares its verified launch profile. Other engines use Playwright's browsers and their renderer remains unverified; those runs check function:
 
 ```sh
-pnpm test:browser:install firefox webkit
+pnpm browser:cli install --with-deps firefox webkit
 pnpm test:browser --project firefox
 pnpm test:browser --project webkit          # the engine of Safari
 pnpm test:browser --project mobile-chrome   # a Pixel 7 screen, touch and user agent

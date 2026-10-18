@@ -52,7 +52,8 @@ touch scratch.txt && git push --dry-run origin HEAD:refs/heads/hook-check; rm sc
 
 Bundled Playwright browsers are shared by worktrees under the Git common directory,
 in `playwright-browsers/<platform>-<arch>`; explicit `PLAYWRIGHT_BROWSERS_PATH` overrides win.
-Run installation through `pnpm test:browser:install`, not a raw Playwright install.
+Install through `pnpm test:browser:install` or `pnpm browser:cli install <engines>`,
+not a raw Playwright install.
 `pnpm browser:check` reports the inspected cache and missing build directories; it
 is on demand, so the ordinary gate does not require browser downloads.
 `scripts/playwright-browsers-contract.test.ts` guards supported command/workflow

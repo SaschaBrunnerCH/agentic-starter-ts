@@ -217,7 +217,7 @@ try {
 }
 ```
 
-Install WebKit with `pnpm test:browser:install webkit`, then `pnpm build` and
+Install WebKit with `pnpm browser:cli install webkit`, then `pnpm build` and
 `pnpm preview --host 127.0.0.1 --port 4173 --strictPort`. In another terminal run
 `node .local/emulation-check.mjs`. Stop that owned preview afterwards. Follow the
 [shared-machine rules](browser-testing.md#what-an-agent-never-does) before this
