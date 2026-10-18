@@ -39,8 +39,14 @@ export async function assertPainted(canvas: Locator) {
     },
     [...screenshot],
   );
-  assert.ok(painted.grid > 100, "Painted canvas must contain graticule ink");
-  assert.ok(painted.coast > 30, "Painted canvas must contain coastline ink");
+  assert.ok(
+    painted.grid > 100,
+    `Painted canvas must contain graticule ink (found ${painted.grid})`,
+  );
+  assert.ok(
+    painted.coast > 30,
+    `Painted canvas must contain coastline ink (found ${painted.coast})`,
+  );
   return {
     painted,
     renderer: await canvas.getAttribute("data-renderer"),

@@ -194,7 +194,7 @@ test("blank-frame control fails the same output assertions for both APIs", async
       }
     });
     await expect(assertPainted(canvas)).rejects.toThrow(
-      "Painted canvas must contain graticule ink",
+      /Painted canvas must contain (graticule|coastline) ink/u,
     );
   }
 });
