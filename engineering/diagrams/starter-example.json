@@ -1,6 +1,6 @@
 {
-  "capturedAt": "2026-10-18T16:41:03.470Z",
-  "commit": "5427c698c61dd85bb1bc01187f9cfc8ae595f9bf",
+  "capturedAt": "2026-10-18T16:58:34.026Z",
+  "commit": "e44ae6f6f022032810a41c88ff13878da02271be",
   "workingTreeDirty": false,
   "command": "node engineering/diagrams/capture-starter.mjs <preview-url>",
   "target": "Production build served by a local Vite preview",
@@ -44,6 +44,6 @@
       "fallback": "false"
     }
   ],
-  "discoveryReport": ".local/browser-gpu/236e1dfd-f5ca-4c5c-81bd-c8fc0e2feade/report.json",
+  "discoveryReport": ".local/browser-gpu/0efe12d9-bbc8-45e1-9928-2757b8656cac/report.json",
   "limits": "Application readback and compositor pixels checked. Driver OS recorded; WSL browser results are translated, not native Windows. No performance or cross-browser claim."
 }
