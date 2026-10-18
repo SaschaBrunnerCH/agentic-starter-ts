@@ -185,6 +185,17 @@ test("blank-frame control fails the same output assertions for both APIs", async
   for (const canvas of await page.locator("canvas").all()) {
     await expect(assertPainted(canvas)).rejects.toThrow();
     expect(Number(await canvas.getAttribute("data-coast"))).toBe(0);
+    // Even forged readiness/readback evidence cannot hide an empty painted image.
+    await canvas.evaluate((element) => {
+      if (element instanceof HTMLCanvasElement) {
+        element.dataset.state = "ready";
+        element.dataset.grid = "1000";
+        element.dataset.coast = "1000";
+      }
+    });
+    await expect(assertPainted(canvas)).rejects.toThrow(
+      "Painted canvas must contain graticule ink",
+    );
   }
 });
 
