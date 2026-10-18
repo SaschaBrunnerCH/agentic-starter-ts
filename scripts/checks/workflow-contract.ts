@@ -66,7 +66,11 @@ export function requiredStatusProblems(
 export function browserStepProblems(job: WorkflowJob): string[] {
   return steps(job).flatMap((step) => {
     const text = step.join("\n");
-    if (!/pnpm (?:run )?(?:test:browser|browser:cli)|playwright (?:test|install)/u.test(text))
+    if (
+      !/pnpm (?:run )?(?:test:browser|test:devices|browser:cli|browser:doctor)|playwright (?:test|install)|scripts\/browser\/(?:browser-test(?:-cli)?|test-devices|browser-doctor)\.ts/u.test(
+        text,
+      )
+    )
       return [];
     const name = /- name: (.+)$/u.exec(step[0] ?? "")?.[1] ?? "unnamed step";
     return [

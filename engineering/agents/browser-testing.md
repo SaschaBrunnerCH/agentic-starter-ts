@@ -4,7 +4,7 @@ Unit tests check modules. Browser tests check that the built application works i
 
 Routine PR browser acceptance runs locally in Chrome on a verified GPU. Report the clean tested commit, command, browser version, actual application renderer and results on the PR using the existing evidence tooling. Broader engine, operating-system or device coverage runs only when the owner explicitly requests it. A software renderer cannot satisfy GPU acceptance.
 
-The PR build runs the code/build gate without browser installation or journeys, including manual workflow runs. There is no PR CI browser override. Setup no longer creates `BROWSER_TESTS_IN_CI`; a legacy variable is ignored. Workflow contract controls reject browser commands added to the PR build, even behind that former switch.
+The PR build runs the code/build gate without browser installation or journeys, including manual workflow runs. Hosted runners do not establish the application's local GPU acceptance; running the journeys there also duplicates that required local work. There is no PR CI browser override. Setup no longer creates `BROWSER_TESTS_IN_CI`; a legacy variable is ignored. Workflow contract controls reject browser commands added to the PR build, even behind that former switch.
 
 `BROWSER_GPU` defaults to `required` locally; see [On the GPU](#on-the-gpu). Explicit [release verification](../operations/releases.md), deployment checks and owner-requested testing-farm runs have separate procedures. Their functional results do not replace local GPU evidence.
 

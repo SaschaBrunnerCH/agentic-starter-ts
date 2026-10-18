@@ -99,6 +99,9 @@ describe("the rules", () => {
     "pnpm test:browser:install",
     "pnpm browser:cli install chromium",
     "pnpm exec playwright test",
+    "pnpm test:devices --project chromium",
+    "pnpm browser:doctor --api webgl2",
+    "node scripts/browser/browser-test.ts",
   ])("reject %s even behind the former CI switch", (command) => {
     const jobs = workflowJobs(
       [
