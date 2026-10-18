@@ -53,4 +53,11 @@ Common terms and what this repository calls the same thing. Use the name in the 
 
 ## Product terms
 
-Replace this line with the product's own terms as they appear.
+These terms belong to the replaceable example; replace them with the product's own vocabulary when adopting the template.
+
+| Term           | Meaning                                                                                                      |
+| -------------- | ------------------------------------------------------------------------------------------------------------ |
+| Graphics Lab   | The starter's one-page native graphics example below the editable greeting.                                  |
+| Graphics panel | A labelled canvas, renderer status, details and report link for one browser graphics API.                    |
+| Blueprint      | The example's navy background, cyan graticule and simplified original world outlines; not cartographic data. |
+| Projection     | The shared choice of orthographic Globe or equirectangular Flat map in both graphics panels.                 |
