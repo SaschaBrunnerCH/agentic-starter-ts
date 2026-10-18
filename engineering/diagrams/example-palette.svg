@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="448" height="650" viewBox="0 0 448 650" role="img" aria-labelledby="title desc" font-family="Arial, Helvetica, sans-serif">
+<title id="title">Optional example palette</title><desc id="desc">Eight labelled swatches with roles and copyable hexadecimal colours; projects can choose their own palette.</desc>
+<rect width="448" height="650" fill="#FFFFFF"/>
+<text x="16" y="36" font-size="25" fill="#0F172A">Optional example palette</text>
+<rect x="16" y="66" width="200" height="126" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+<rect x="28" y="78" width="176" height="40" rx="5" fill="#F8FAFC" stroke="#CBD5E1"/>
+<text x="28" y="146" font-size="18" fill="#0F172A">Canvas</text>
+<text x="28" y="172" font-size="17" fill="#475569">#F8FAFC</text>
+<rect x="232" y="66" width="200" height="126" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+<rect x="244" y="78" width="176" height="40" rx="5" fill="#0F172A" stroke="#CBD5E1"/>
+<text x="244" y="146" font-size="18" fill="#0F172A">Main text</text>
+<text x="244" y="172" font-size="17" fill="#475569">#0F172A</text>
+<rect x="16" y="208" width="200" height="126" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+<rect x="28" y="220" width="176" height="40" rx="5" fill="#475569" stroke="#CBD5E1"/>
+<text x="28" y="288" font-size="18" fill="#0F172A">Secondary text</text>
+<text x="28" y="314" font-size="17" fill="#475569">#475569</text>
+<rect x="232" y="208" width="200" height="126" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+<rect x="244" y="220" width="176" height="40" rx="5" fill="#1971C2" stroke="#CBD5E1"/>
+<text x="244" y="288" font-size="18" fill="#0F172A">Agent work</text>
+<text x="244" y="314" font-size="17" fill="#475569">#1971C2</text>
+<rect x="16" y="350" width="200" height="126" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+<rect x="28" y="362" width="176" height="40" rx="5" fill="#2F9E44" stroke="#CBD5E1"/>
+<text x="28" y="430" font-size="18" fill="#0F172A">Verification</text>
+<text x="28" y="456" font-size="17" fill="#475569">#2F9E44</text>
+<rect x="232" y="350" width="200" height="126" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+<rect x="244" y="362" width="176" height="40" rx="5" fill="#C05621" stroke="#CBD5E1"/>
+<text x="244" y="430" font-size="18" fill="#0F172A">Owner approval</text>
+<text x="244" y="456" font-size="17" fill="#475569">#C05621</text>
+<rect x="16" y="492" width="200" height="126" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+<rect x="28" y="504" width="176" height="40" rx="5" fill="#0F766E" stroke="#CBD5E1"/>
+<text x="28" y="572" font-size="18" fill="#0F172A">Hardware routes</text>
+<text x="28" y="598" font-size="17" fill="#475569">#0F766E</text>
+<rect x="232" y="492" width="200" height="126" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+<rect x="244" y="504" width="176" height="40" rx="5" fill="#7C3AED" stroke="#CBD5E1"/>
+<text x="244" y="572" font-size="18" fill="#0F172A">App foundation</text>
+<text x="244" y="598" font-size="17" fill="#475569">#7C3AED</text>
+</svg>
