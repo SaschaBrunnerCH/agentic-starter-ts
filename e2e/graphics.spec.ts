@@ -4,6 +4,7 @@ import { requiredApis } from "../scripts/browser/browser-gpu-profile.ts";
 import { assertPainted } from "./graphics-evidence.ts";
 
 async function settled(page: Page) {
+  await expect(page.locator("canvas")).toHaveCount(2);
   for (const canvas of await page.locator("canvas").all()) {
     await expect(canvas).toHaveAttribute("data-state", /^(ready|unavailable)$/u);
   }
@@ -138,6 +139,26 @@ test("hidden pages freeze frames and reduced motion prevents automatic resume", 
     document.dispatchEvent(new Event("visibilitychange"));
   });
   await expect(page.getByRole("button", { name: "Resume rotation" })).toBeVisible();
+});
+
+test("a globe loaded in a hidden tab starts rotating when first shown", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.addInitScript(() => {
+    Object.defineProperty(document, "hidden", { value: true, configurable: true });
+  });
+  await page.goto("./");
+  await expect(page.getByRole("button", { name: "Resume rotation" })).toBeVisible();
+  const canvas = page.getByRole("region", { name: "WebGL2", exact: true }).locator("canvas");
+  await expect(canvas).toHaveAttribute("data-renderer", /./u);
+  await expect(canvas).not.toHaveAttribute("data-frames");
+  await page.evaluate(() => {
+    Object.defineProperty(document, "hidden", { value: false, configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(page.getByRole("button", { name: "Pause rotation" })).toBeVisible();
+  await settled(page);
+  const frames = await canvas.getAttribute("data-frames");
+  await expect.poll(() => canvas.getAttribute("data-frames")).not.toBe(frames);
 });
 
 test("a denied WebGPU adapter is reported without a pretend graphic", async ({ page }) => {

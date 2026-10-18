@@ -12,7 +12,10 @@ export function App() {
       <header className="intro">
         <p className="eyebrow">
           <span aria-hidden="true">◎</span> AGENTIC STARTER{" "}
-          <span className="eyebrow-divider">/</span> GRAPHICS LAB
+          <span className="eyebrow-divider" aria-hidden="true">
+            /
+          </span>{" "}
+          GRAPHICS LAB
         </p>
         <h1>{greeting(name)}</h1>
         <p className="intro-copy">A small starting point. A world of possibilities.</p>

@@ -4,6 +4,7 @@ import "../../scripts/browser/playwright-browsers-env.ts";
 import { execFileSync } from "node:child_process";
 import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+import { relative } from "node:path";
 import { discoverGpu } from "../../scripts/browser/browser-gpu-discovery.ts";
 import { assertPainted } from "../../e2e/graphics-evidence.ts";
 
@@ -39,7 +40,12 @@ try {
         "ready",
       api,
     );
-    evidence.push({ api, ...(await assertPainted(canvas)) });
+    evidence.push({
+      api,
+      state: await canvas.getAttribute("data-state"),
+      projection: await canvas.getAttribute("data-projection"),
+      ...(await assertPainted(canvas)),
+    });
   }
   await page.screenshot({
     path: fileURLToPath(new URL("starter-example.png", import.meta.url)),
@@ -60,7 +66,7 @@ try {
         deviceScaleFactor: 1,
         state: "Initial greeting; both blueprint globes paused for reduced motion",
         graphics: evidence,
-        discoveryReport: gpu.report,
+        discoveryReport: relative(root, gpu.report).replaceAll("\\", "/"),
         limits:
           "Application readback and compositor pixels checked. Driver OS recorded; WSL browser results are translated, not native Windows. No performance or cross-browser claim.",
       },

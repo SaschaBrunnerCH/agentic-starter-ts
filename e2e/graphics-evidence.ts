@@ -4,14 +4,12 @@ import type { Locator } from "@playwright/test";
 /** Check both API readback and the browser compositor's actual painted canvas. */
 export async function assertPainted(canvas: Locator) {
   assert.equal(await canvas.getAttribute("data-state"), "ready");
-  assert.ok(
-    Number(await canvas.getAttribute("data-grid")) > 100,
-    "Native readback must contain graticule ink",
-  );
-  assert.ok(
-    Number(await canvas.getAttribute("data-coast")) > 30,
-    "Native readback must contain coastline ink",
-  );
+  const readback = {
+    grid: Number(await canvas.getAttribute("data-grid")),
+    coast: Number(await canvas.getAttribute("data-coast")),
+  };
+  assert.ok(readback.grid > 100, "Native readback must contain graticule ink");
+  assert.ok(readback.coast > 30, "Native readback must contain coastline ink");
   const screenshot = await canvas.screenshot();
   const painted = await canvas.evaluate(
     async (element, bytes) => {
@@ -48,6 +46,7 @@ export async function assertPainted(canvas: Locator) {
     `Painted canvas must contain coastline ink (found ${painted.coast})`,
   );
   return {
+    readback,
     painted,
     renderer: await canvas.getAttribute("data-renderer"),
     fallback: await canvas.getAttribute("data-fallback"),

@@ -194,7 +194,7 @@ export function GraphicsLab() {
   }));
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let resume = false;
+    let resume = !media.matches;
     const reduce = () => {
       if (media.matches) {
         resume = false;
