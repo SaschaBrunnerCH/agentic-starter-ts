@@ -100,19 +100,56 @@ async function bounded<T>(promise: Promise<T>, milliseconds: number, message: st
 
 class CleanupUnproved extends Error {}
 
-async function closeBrowser(browser: BrowserServer): Promise<void> {
+async function closeBrowser(
+  browser: BrowserServer,
+  directory: string,
+  probeError?: Error,
+): Promise<void> {
+  const started = performance.now();
+  const child = browser.process();
+  const profile = child.spawnargs
+    .find((arg) => arg.startsWith("--user-data-dir="))
+    ?.slice("--user-data-dir=".length);
+  let forced = false;
+  let gracefulError: string | null = null;
+  let gracefulMs = 0;
+  let failure: Error | undefined;
   try {
-    await bounded(browser.close(), 5_000, "Browser cleanup timed out");
-    const child = browser.process();
-    const profile = child.spawnargs
-      .find((arg) => arg.startsWith("--user-data-dir="))
-      ?.slice("--user-data-dir=".length);
+    try {
+      // Reserve time to terminate this owned process; do not extend the five-second budget.
+      await bounded(browser.close(), 3_000, "Graceful browser close timed out");
+    } catch (error) {
+      gracefulError = String(error);
+      gracefulMs = performance.now() - started;
+      forced = true;
+      await bounded(browser.kill(), Math.max(0, 5_000 - gracefulMs), "Browser cleanup timed out");
+    }
+    if (!forced) gracefulMs = performance.now() - started;
     if (child.exitCode === null && child.signalCode === null)
       throw new Error("Owned browser process is still running");
     if (profile !== undefined && existsSync(profile))
       throw new Error("Owned browser profile still exists");
   } catch (error) {
-    throw new CleanupUnproved(String(error));
+    failure = error instanceof Error ? error : new Error(String(error));
+  }
+  const elapsedMs = performance.now() - started;
+  try {
+    writeFileSync(
+      join(directory, "cleanup.json"),
+      `${JSON.stringify({ browserPid: child.pid, forced, gracefulError, gracefulMs: Math.round(gracefulMs), forcedMs: forced ? Math.round(elapsedMs - gracefulMs) : 0, elapsedMs: Math.round(elapsedMs), processExited: child.exitCode !== null || child.signalCode !== null, profileRemoved: profile === undefined ? null : !existsSync(profile), error: failure === undefined ? null : String(failure) }, null, 2)}\n`,
+    );
+  } catch (error) {
+    failure ??= error instanceof Error ? error : new Error(String(error));
+  }
+  if (failure !== undefined) {
+    const cause =
+      probeError === undefined
+        ? failure
+        : new AggregateError(
+            [probeError, failure],
+            `${probeError.message}; cleanup failed: ${failure.message}`,
+          );
+    throw new CleanupUnproved(cause.message, { cause });
   }
 }
 
@@ -189,6 +226,7 @@ async function probe(
   };
   signal.addEventListener("abort", interrupt, { once: true });
   let complete = false;
+  let probeError: Error | undefined;
   try {
     const result = await bounded(
       (async () => {
@@ -254,11 +292,15 @@ async function probe(
     );
     complete = true;
     return result;
+  } catch (error) {
+    probeError = error instanceof Error ? error : new Error(String(error));
+    throw error;
   } finally {
     signal.removeEventListener("abort", interrupt);
     try {
-      if (serverBrowser !== undefined && (!complete || !keepBrowser))
-        await closeBrowser(serverBrowser);
+      if (serverBrowser !== undefined && (!complete || !keepBrowser)) {
+        await closeBrowser(serverBrowser, directory, probeError);
+      }
     } finally {
       server.closeAllConnections();
       await new Promise<void>((accept) => server.close(() => accept()));
@@ -312,7 +354,7 @@ export async function discoverGpu(
   const directory = resolve(".local", "browser-gpu", randomUUID());
   let display: { child: ChildProcess; display: string } | undefined;
   let cleanupProved = true;
-  let acceptedServer: BrowserServer | undefined;
+  let acceptedBrowser: { server: BrowserServer; directory: string } | undefined;
   let closed = false;
   let lockReleased = false;
   const attempts: unknown[] = [];
@@ -345,9 +387,9 @@ export async function discoverGpu(
   const close = async () => {
     if (closed) return;
     closed = true;
-    if (acceptedServer !== undefined) {
+    if (acceptedBrowser !== undefined) {
       try {
-        await closeBrowser(acceptedServer);
+        await closeBrowser(acceptedBrowser.server, acceptedBrowser.directory);
       } catch (error) {
         cleanupProved = false;
         save("cleanup-unproved");
@@ -363,8 +405,10 @@ export async function discoverGpu(
         throw error;
       }
     }
-    if (!cleanupProved)
+    if (!cleanupProved) {
+      save("cleanup-unproved");
       throw new CleanupUnproved(`Cleanup unproved; retain ${lockFile} and inspect ${report}`);
+    }
     try {
       unlock();
     } catch (error) {
@@ -410,7 +454,7 @@ export async function discoverGpu(
         try {
           const result = await probe(profile, env, attemptDirectory, signal);
           const accepted = usable(result.results, profile.apis);
-          if (accepted) acceptedServer = result.server;
+          if (accepted) acceptedBrowser = { server: result.server, directory: attemptDirectory };
           attempts.push({ profile, version: result.version, results: result.results });
           save("discovering");
           console.log(
@@ -445,7 +489,7 @@ export async function discoverGpu(
             cleanupProved = false;
             throw error;
           }
-          if (acceptedServer !== undefined) throw error;
+          if (acceptedBrowser !== undefined) throw error;
         }
       }
     }

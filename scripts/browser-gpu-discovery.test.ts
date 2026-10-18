@@ -1,4 +1,12 @@
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -13,11 +21,18 @@ const fixture = vi.hoisted(() => {
     work: true,
     fallback: false,
     cleanupFails: false,
+    closeHangs: false,
+    killFails: false,
+    killHangs: false,
+    killLeavesAlive: false,
+    profile: "",
+    probeFails: false,
     firstBrowserFails: false,
     onlyCompatibility: false,
     requestedLevels: [] as string[],
     launches,
     closes: 0,
+    kills: 0,
     abort: () => {},
   };
 });
@@ -35,12 +50,27 @@ vi.mock("@playwright/test", () => ({
         /google-chrome$|chrome\.exe$/u.test(options.executablePath ?? "")
       )
         throw new Error("First browser cannot launch");
+      let exitCode: number | null = fixture.closeHangs ? null : 0;
       return {
-        process: () => ({ pid: 123, spawnargs: [], exitCode: 0, signalCode: null }),
+        process: () => ({
+          pid: 123,
+          spawnargs: fixture.profile ? [`--user-data-dir=${fixture.profile}`] : [],
+          get exitCode() {
+            return exitCode;
+          },
+          signalCode: null,
+        }),
         wsEndpoint: () => "ws://owned-server",
         close: async () => {
           fixture.closes += 1;
+          if (fixture.closeHangs) await new Promise<void>(() => {});
           if (fixture.cleanupFails) throw new Error("Owned browser did not close");
+        },
+        kill: async () => {
+          fixture.kills += 1;
+          if (fixture.killHangs) await new Promise<void>(() => {});
+          if (fixture.killFails) throw new Error("Owned browser did not terminate");
+          if (!fixture.killLeavesAlive) exitCode = 0;
         },
       };
     },
@@ -52,6 +82,7 @@ vi.mock("@playwright/test", () => ({
         goto: async () => {},
         evaluate: async (script: string) => {
           if (!script.includes("const results")) return "GPU diagnostic text";
+          if (fixture.probeFails) throw new Error("Graphics context lost during probe");
           const { apis, webgpuFeatureLevel } = json.parseJson(
             script.slice(script.lastIndexOf(")(") + 2, -1),
             json.object({ apis: json.array(json.string), webgpuFeatureLevel: json.string }),
@@ -96,9 +127,16 @@ beforeEach(async () => {
     work: true,
     fallback: false,
     cleanupFails: false,
+    closeHangs: false,
+    killFails: false,
+    killHangs: false,
+    killLeavesAlive: false,
+    profile: "",
+    probeFails: false,
     firstBrowserFails: false,
     onlyCompatibility: false,
     closes: 0,
+    kills: 0,
     abort: () => {},
   });
   fixture.launches.length = 0;
@@ -108,6 +146,7 @@ beforeEach(async () => {
   commands = await import("./browser-gpu-discovery.ts");
 });
 afterEach(() => {
+  vi.useRealTimers();
   process.chdir(cwd);
   rmSync(home, { recursive: true, force: true });
   vi.restoreAllMocks();
@@ -271,11 +310,94 @@ describe("discovery ownership and failure paths", () => {
   );
   it("stops after unproved cleanup and retains the ownership barrier", async () => {
     fixture.cleanupFails = true;
+    fixture.killFails = true;
     fixture.identity = "SwiftShader";
     await expect(
       commands.discoverGpu({ BROWSER_GPU_EXECUTABLE: "/chosen" }, new AbortController().signal),
     ).rejects.toThrow("Cleanup unproved");
     expect(fixture.launches).toHaveLength(1);
+    expect(existsSync(lock)).toBe(true);
+    const [run] = readdirSync(join(home, ".local", "browser-gpu"));
+    expect(
+      readFileSync(join(home, ".local", "browser-gpu", run ?? "", "report.json"), "utf8"),
+    ).toContain('"status": "cleanup-unproved"');
+  });
+  it("terminates its stalled browser within the existing cleanup budget before releasing ownership", async () => {
+    fixture.closeHangs = true;
+    const gpu = await commands.discoverGpu(
+      { BROWSER_GPU_EXECUTABLE: "/chosen" },
+      new AbortController().signal,
+    );
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
+    const outcome = gpu.close().then(
+      () => "closed",
+      (error: unknown) => String(error),
+    );
+    await vi.advanceTimersByTimeAsync(2_999);
+    expect(fixture.kills).toBe(0);
+    expect(existsSync(lock)).toBe(true);
+    await vi.advanceTimersByTimeAsync(2_001);
+    expect(await outcome).toBe("closed");
+    expect(fixture.kills).toBe(1);
+    expect(existsSync(lock)).toBe(false);
+    expect(readFileSync(join(gpu.report, "..", "1", "cleanup.json"), "utf8")).toContain(
+      '"forced": true',
+    );
+  });
+  it("retains ownership when forced termination cannot prove process exit", async () => {
+    fixture.closeHangs = true;
+    fixture.killLeavesAlive = true;
+    const gpu = await commands.discoverGpu(
+      { BROWSER_GPU_EXECUTABLE: "/chosen" },
+      new AbortController().signal,
+    );
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
+    const outcome = gpu.close().then(
+      () => "closed",
+      (error: unknown) => String(error),
+    );
+    await vi.advanceTimersByTimeAsync(5_000);
+    expect(await outcome).toContain("Owned browser process is still running");
+    expect(existsSync(lock)).toBe(true);
+    expect(readFileSync(gpu.report, "utf8")).toContain('"status": "cleanup-unproved"');
+  });
+  it("preserves the original probe error alongside terminal cleanup failure", async () => {
+    fixture.probeFails = true;
+    fixture.cleanupFails = true;
+    fixture.killFails = true;
+    await expect(
+      commands.discoverGpu({ BROWSER_GPU_EXECUTABLE: "/chosen" }, new AbortController().signal),
+    ).rejects.toThrow(/Graphics context lost during probe.*cleanup failed/su);
+    expect(fixture.launches).toHaveLength(1);
+    expect(existsSync(lock)).toBe(true);
+  });
+  it("keeps the five-second bound and lock when forced termination also stalls", async () => {
+    fixture.closeHangs = true;
+    fixture.killHangs = true;
+    const gpu = await commands.discoverGpu(
+      { BROWSER_GPU_EXECUTABLE: "/chosen" },
+      new AbortController().signal,
+    );
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
+    const outcome = gpu.close().then(
+      () => "closed",
+      (error: unknown) => String(error),
+    );
+    await vi.advanceTimersByTimeAsync(5_000);
+    expect(await outcome).toContain("Browser cleanup timed out");
+    expect(fixture.kills).toBe(1);
+    expect(existsSync(lock)).toBe(true);
+    expect(readFileSync(gpu.report, "utf8")).toContain('"status": "cleanup-unproved"');
+  });
+  it("retains ownership until the disposable profile is gone even after process exit", async () => {
+    fixture.profile = join(home, "owned-browser-profile");
+    mkdirSync(fixture.profile);
+    const gpu = await commands.discoverGpu(
+      { BROWSER_GPU_EXECUTABLE: "/chosen" },
+      new AbortController().signal,
+    );
+    await expect(gpu.close()).rejects.toThrow("Owned browser profile still exists");
+    expect(existsSync(fixture.profile)).toBe(true);
     expect(existsSync(lock)).toBe(true);
   });
   it("cancels discovery, closes its browser and releases the lock", async () => {
