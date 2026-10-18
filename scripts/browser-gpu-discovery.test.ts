@@ -12,6 +12,9 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as json from "./json-shape.ts";
 import type { LaunchOptions } from "@playwright/test";
+import type { SpawnOptions } from "node:child_process";
+
+const originalPlatform = process.platform;
 
 const fixture = vi.hoisted(() => {
   const launches: LaunchOptions[] = [];
@@ -33,6 +36,10 @@ const fixture = vi.hoisted(() => {
     launches,
     closes: 0,
     kills: 0,
+    killDelayMs: 0,
+    taskkillArguments: [] as string[],
+    browserExited: () => {},
+    probeAbort: () => {},
     abort: () => {},
   };
 });
@@ -40,6 +47,28 @@ vi.mock("node:os", async (original) => ({
   ...(await original<typeof import("node:os")>()),
   homedir: () => fixture.directory,
 }));
+vi.mock("node:child_process", async (original) => {
+  const actual = await original<typeof import("node:child_process")>();
+  return {
+    ...actual,
+    spawn: vi.fn((_command: string, args: string[], options: SpawnOptions) => {
+      fixture.taskkillArguments = args;
+      fixture.kills += 1;
+      const child = new actual.ChildProcess();
+      const aborted = () => child.emit("error", new Error("Termination command aborted"));
+      options.signal?.addEventListener("abort", aborted, { once: true });
+      child.once("close", () => options.signal?.removeEventListener("abort", aborted));
+      if (!fixture.killHangs)
+        setTimeout(() => {
+          if (!fixture.killFails && !fixture.killLeavesAlive) fixture.browserExited();
+          const code = fixture.killFails ? 1 : 0;
+          Object.defineProperty(child, "exitCode", { value: code });
+          child.emit("close", code, null);
+        }, fixture.killDelayMs);
+      return child;
+    }),
+  };
+});
 vi.mock("@playwright/test", () => ({
   chromium: {
     launchServer: async (options: LaunchOptions) => {
@@ -50,7 +79,10 @@ vi.mock("@playwright/test", () => ({
         /google-chrome$|chrome\.exe$/u.test(options.executablePath ?? "")
       )
         throw new Error("First browser cannot launch");
-      let exitCode: number | null = fixture.closeHangs ? null : 0;
+      let exitCode: number | null = fixture.closeHangs || fixture.cleanupFails ? null : 0;
+      fixture.browserExited = () => {
+        exitCode = 0;
+      };
       return {
         process: () => ({
           pid: 123,
@@ -68,6 +100,7 @@ vi.mock("@playwright/test", () => ({
         },
         kill: async () => {
           fixture.kills += 1;
+          if (fixture.killDelayMs) vi.advanceTimersByTime(fixture.killDelayMs);
           if (fixture.killHangs) await new Promise<void>(() => {});
           if (fixture.killFails) throw new Error("Owned browser did not terminate");
           if (!fixture.killLeavesAlive) exitCode = 0;
@@ -82,6 +115,7 @@ vi.mock("@playwright/test", () => ({
         goto: async () => {},
         evaluate: async (script: string) => {
           if (!script.includes("const results")) return "GPU diagnostic text";
+          fixture.probeAbort();
           if (fixture.probeFails) throw new Error("Graphics context lost during probe");
           const { apis, webgpuFeatureLevel } = json.parseJson(
             script.slice(script.lastIndexOf(")(") + 2, -1),
@@ -137,15 +171,20 @@ beforeEach(async () => {
     onlyCompatibility: false,
     closes: 0,
     kills: 0,
+    killDelayMs: 0,
+    browserExited: () => {},
+    probeAbort: () => {},
     abort: () => {},
   });
   fixture.launches.length = 0;
   fixture.requestedLevels.length = 0;
+  fixture.taskkillArguments = [];
   lock = join(home, ".cache", "browser-gpu-tests", "lock");
   vi.spyOn(console, "log").mockImplementation(() => {});
   commands = await import("./browser-gpu-discovery.ts");
 });
 afterEach(() => {
+  Object.defineProperty(process, "platform", { value: originalPlatform });
   vi.useRealTimers();
   process.chdir(cwd);
   rmSync(home, { recursive: true, force: true });
@@ -333,10 +372,11 @@ describe("discovery ownership and failure paths", () => {
       () => "closed",
       (error: unknown) => String(error),
     );
-    await vi.advanceTimersByTimeAsync(2_999);
+    const gracefulBudget = process.platform === "win32" ? 1_000 : 3_000;
+    await vi.advanceTimersByTimeAsync(gracefulBudget - 1);
     expect(fixture.kills).toBe(0);
     expect(existsSync(lock)).toBe(true);
-    await vi.advanceTimersByTimeAsync(2_001);
+    await vi.advanceTimersByTimeAsync(5_001 - gracefulBudget);
     expect(await outcome).toBe("closed");
     expect(fixture.kills).toBe(1);
     expect(existsSync(lock)).toBe(false);
@@ -400,6 +440,30 @@ describe("discovery ownership and failure paths", () => {
     expect(existsSync(fixture.profile)).toBe(true);
     expect(existsSync(lock)).toBe(true);
   });
+  it("keeps Windows tree termination asynchronous within the five-second budget", async () => {
+    fixture.closeHangs = true;
+    fixture.killDelayMs = 3_000;
+    const gpu = await commands.discoverGpu(
+      { BROWSER_GPU_EXECUTABLE: "/chosen" },
+      new AbortController().signal,
+    );
+    Object.defineProperty(process, "platform", { value: "win32" });
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
+    const outcome = gpu.close().then(
+      () => "closed",
+      (error: unknown) => String(error),
+    );
+    await vi.advanceTimersByTimeAsync(5_000);
+    expect(await outcome).toBe("closed");
+    const evidence = json.parseJson(
+      readFileSync(join(gpu.report, "..", "1", "cleanup.json"), "utf8"),
+      json.object({ elapsedMs: json.number }),
+      "Windows cleanup",
+    );
+    expect(evidence.elapsedMs).toBeLessThanOrEqual(5_000);
+    expect(fixture.taskkillArguments).toEqual(["/pid", "123", "/T", "/F"]);
+    expect(existsSync(lock)).toBe(false);
+  });
   it("cancels discovery, closes its browser and releases the lock", async () => {
     const controller = new AbortController();
     fixture.abort = () => controller.abort(new Error("cancelled by control"));
@@ -407,6 +471,15 @@ describe("discovery ownership and failure paths", () => {
       commands.discoverGpu({ BROWSER_GPU_EXECUTABLE: "/chosen" }, controller.signal),
     ).rejects.toThrow();
     expect(fixture.launches).toHaveLength(1);
+    expect(fixture.closes).toBe(1);
+    expect(existsSync(lock)).toBe(false);
+  });
+  it("shares one owned shutdown between cancellation and probe finalization", async () => {
+    const controller = new AbortController();
+    fixture.probeAbort = () => controller.abort(new Error("cancelled in probe"));
+    await expect(
+      commands.discoverGpu({ BROWSER_GPU_EXECUTABLE: "/chosen" }, controller.signal),
+    ).rejects.toThrow();
     expect(fixture.closes).toBe(1);
     expect(existsSync(lock)).toBe(false);
   });
