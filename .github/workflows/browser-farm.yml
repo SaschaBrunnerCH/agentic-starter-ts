@@ -63,7 +63,7 @@ jobs:
             case "$name" in ''|'#'*) continue;; esac
             echo "::group::$name ($project)"
             if REMOTE_BROWSER_WS_ENDPOINT="$endpoint" \
-              pnpm exec playwright test --project "$project" --output "test-results/$name" < /dev/null; then
+              pnpm test:browser --project "$project" --output "test-results/$name" < /dev/null; then
               echo "PASS · $name ($project)" >> "$GITHUB_STEP_SUMMARY"
             else
               echo "FAIL · $name ($project)" >> "$GITHUB_STEP_SUMMARY"
