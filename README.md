@@ -1,10 +1,10 @@
 # agentic-starter-ts
 
-A repository template for agent-driven TypeScript development. A repository created from it is independent of the template and starts with defined workflows and working gates, whichever agent does the work: GitHub Copilot, Codex, Claude Code, Gemini CLI, Pi, Hermes Agent or another that reads `AGENTS.md`.
+A repository template for agent-driven TypeScript development, including graphics applications. The replaceable example draws a blueprint world with native WebGL2 and WebGPU. A repository created from it is independent of the template and starts with defined workflows and working gates, whichever agent does the work: GitHub Copilot, Codex, Claude Code, Gemini CLI, Pi, Hermes Agent or another that reads `AGENTS.md`.
 
 ## Six highlights
 
-- **Start with a small app.** React, TypeScript and Vite, with a name field and working unit/browser tests; [adapt it to your project](#start-a-new-repository).
+- **Start with a small app.** React, TypeScript and Vite, with an editable greeting, native WebGL2/WebGPU globe and flat-map examples, and unit/browser tests; [adapt it to your project](#start-a-new-repository).
 - **Keep agents on track.** One [instruction source](AGENTS.md), checkable issues, isolated worktrees and resumable handoffs.
 - **Catch mistakes early.** The same [verification gate](engineering/agents/local-verification.md) runs locally before pushing and in the PR build.
 - **Test real hardware.** [Playwright browser tests](engineering/agents/browser-testing.md), GPU discovery and optional desktop, phone, tablet and farm coverage, with evidence that distinguishes actual hardware from emulation.
@@ -51,12 +51,22 @@ The order matters: step 6 protects `main`, so everything before it is pushed dir
 
 9. **Start working.** Give an agent the task, for example "work on issue #2", or follow "How to work here" in [AGENTS.md](AGENTS.md) yourself.
 
+### Replace the example
+
+The one-page example keeps the greeting above two matching blueprint canvases. Globe and Flat map control both panels; globe rotation is optional and starts paused for reduced motion. Each panel explains unavailable APIs and links to [WebGL2 Report](https://webglreport.com/?v=2) or [WebGPU Report](https://webgpureport.org). It uses original schematic outlines, no map service, textures, graphics library or added runtime dependency. It is not a cartographic product or performance benchmark.
+
+![The starter greeting and two blueprint globe panels, drawn through WebGL2 and WebGPU.](engineering/diagrams/starter-example.png)
+
+The [capture metadata and procedure](engineering/diagrams/README.md#actual-ui-capture) identify what was actually rendered. The [example design](engineering/designs/blueprint-graphics-example.md) explains its code and evidence limits.
+
+Replace `src/App.tsx` and `src/app.css` with your first screen; remove `src/graphics/`, `e2e/graphics.spec.ts` and `e2e/graphics-evidence.ts`, and remove the graphics coverage exclusion in `vite.config.ts`. Update `src/App.test.tsx`, the greeting files and `e2e/smoke.spec.ts` for the product. Replace or remove this example screenshot, its metadata and `engineering/diagrams/capture-starter.mjs` together. Keep the general browser/GPU tooling only where your product needs it. Run the gate and relevant browser tests after replacement.
+
 ### Without React
 
 The application uses React. A library such as an SDK, or an application with another framework, removes it before the first commit:
 
 1. `pnpm remove react react-dom @vitejs/plugin-react @types/react @types/react-dom`
-2. Delete `src/App.tsx` and `src/App.test.tsx`, rename `src/main.tsx` to `src/main.ts` and write it without JSX; point `index.html`, `vite.config.ts` (the coverage exclusion) at the new name.
+2. Remove the graphics example as above. Delete `src/App.tsx` and `src/App.test.tsx`, rename `src/main.tsx` to `src/main.ts` and write it without JSX; point `index.html`, `vite.config.ts` (the coverage exclusion) at the new name.
 3. Remove `react()` and its import from `vite.config.ts`, `"jsx"` from `tsconfig.app.json`, and `react`, `jsx-a11y` and the `react/*` rules from `.oxlintrc.json`.
 4. Rewrite `e2e/smoke.spec.ts` for the new page; it checks the React heading and name field, and runs in `pnpm test:browser` (and in the PR build when its browser tests are switched on), not in the gate.
 5. Run `pnpm check:push` and `pnpm test:browser`; `check:unused` names anything left over.
