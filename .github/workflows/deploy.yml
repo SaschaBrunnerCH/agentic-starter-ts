@@ -23,6 +23,9 @@ concurrency:
 
 jobs:
   build:
+    # A new template copy has no hosted initialization state yet. Explicit manual
+    # deployments still run and fail visibly when hosting is misconfigured.
+    if: vars.PAGES_DEPLOYMENT_ENABLED == 'true' || github.event_name == 'workflow_dispatch'
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 10
