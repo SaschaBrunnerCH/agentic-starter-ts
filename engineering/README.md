@@ -35,6 +35,7 @@ Consult the guides below when their topic applies. For browser changes, start wi
 | [Task lifecycle](agents/task-lifecycle.md)                     | Starting, resuming, completing and handing off a task                        |
 | [Decision workflow](agents/decision-workflow.md)               | Goal to merge, knowledge ownership and portability review                    |
 | [Working style](agents/working-style.md)                       | How much to change, how to write, local-only work                            |
+| [Engineering scripts](../scripts/README.md)                    | Tooling responsibilities, command entry points and lifecycle                 |
 | [Issue tracker](agents/issue-tracker.md)                       | Issue metadata, the Project's statuses and priorities                        |
 | [Triage labels](agents/triage-labels.md)                       | Label vocabulary                                                             |
 | [Local verification](agents/local-verification.md)             | What runs at commit, at push and in CI                                       |

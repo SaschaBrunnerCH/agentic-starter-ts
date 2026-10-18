@@ -15,7 +15,7 @@ The shared vocabulary of this repository. Code, issues, pull requests and docume
 | Portability review | Reading tracked records without issue or PR links to check that essential engineering knowledge remains understandable.      |
 | Done when          | The checklist in an issue that says how completion is verified.                                                              |
 | Guardrail          | A rule in the `AGENTS.md` table, with the mechanism that enforces it.                                                        |
-| Gate               | The list of checks in `scripts/run-local-checks.ts`, run before push and by the PR build.                                    |
+| Gate               | The list of checks in `scripts/checks/run-local-checks.ts`, run before push and by the PR build.                             |
 | Current base       | A branch is on a current base when it contains the latest commit of `main`.                                                  |
 | Native parent      | GitHub's sub-issue relation between two issues, as opposed to a "Part of #..." line in the text.                             |
 | Native blocker     | GitHub's "blocked by" relation between two issues, as opposed to a mention in the text.                                      |

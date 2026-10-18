@@ -43,7 +43,7 @@ Start with the linter the gate already runs. Oxlint's `no-restricted-imports`, s
 
 With Oxlint 1.88, `import { Button } from "../ui/button"` in `src/domain/route.ts` then fails `pnpm lint` with "'../ui/button' import is restricted from being used by a pattern. help: The domain layer does not depend on the UI.", while `src/ui/view.ts` may still import the domain.
 
-When rules span the whole graph, such as no cycles, nothing reachable from an entry point may reach a module, or type-only imports count too, a lint rule per file is not enough. Then use a dependency checker that reads the whole import graph (for example dependency-cruiser), or a small script in `scripts/` that walks the graph from each entry point, and run it from `scripts/run-local-checks.ts` so it is part of the gate and the `PR build`.
+When rules span the whole graph, such as no cycles, nothing reachable from an entry point may reach a module, or type-only imports count too, a lint rule per file is not enough. Then use a dependency checker that reads the whole import graph (for example dependency-cruiser), or a small script in `scripts/` that walks the graph from each entry point, and run it from `scripts/checks/run-local-checks.ts` so it is part of the gate and the `PR build`.
 
 ## Make it a guardrail
 

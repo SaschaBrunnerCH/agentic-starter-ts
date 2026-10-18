@@ -1,2 +1,2 @@
 #!/bin/sh
-node scripts/pre-push.ts
+node scripts/git/pre-push.ts

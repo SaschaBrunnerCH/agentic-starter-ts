@@ -56,7 +56,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # The same list the pre-push hook runs; see scripts/run-local-checks.ts.
+      # The same list the pre-push hook runs; see scripts/checks/run-local-checks.ts.
       - name: Run all checks
         run: pnpm check:push
 

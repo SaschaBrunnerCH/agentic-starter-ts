@@ -76,7 +76,7 @@ Working with coding agents fails in ways that working alone does not. This page 
 
 **Looks like:** a stale build output hides a type error; a check runs on part of the projects; a local package manager writes a lockfile CI rejects; a missing local tool makes a check pass that fails in CI.
 
-**Handled by:** the push hook and the PR build run one list (`scripts/run-local-checks.ts`); the hook refuses a dirty tree or another commit and checks again after the checks; pnpm's version is pinned and recorded in the lockfile; actionlint and zizmor are downloaded at pinned versions with checksums.
+**Handled by:** the push hook and the PR build run one list (`scripts/checks/run-local-checks.ts`); the hook refuses a dirty tree or another commit and checks again after the checks; pnpm's version is pinned and recorded in the lockfile; actionlint and zizmor are downloaded at pinned versions with checksums.
 
 **Left to people:** install what [local verification](local-verification.md) names, such as `shellcheck`, so local runs find what CI finds.
 

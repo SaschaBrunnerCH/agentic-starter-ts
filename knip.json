@@ -4,9 +4,11 @@
     "index.html",
     "src/**/*.test.{ts,tsx}",
     "scripts/**/*.test.ts",
-    "scripts/{issue,task,release,setup-github,setup-previews,install-hooks,init-local-artifacts,pre-push,run-local-checks,test-devices}.ts",
-    "scripts/check-*.ts",
-    "scripts/playwright-browsers-env.ts"
+    "scripts/workflow/{issue,task,init-local-artifacts}.ts",
+    "scripts/setup/{setup-github,setup-previews}.ts",
+    "scripts/git/{install-hooks,pre-push,check-commit-message}.ts",
+    "scripts/checks/{run-local-checks,check-*}.ts",
+    "scripts/browser/{test-devices,check-browser-environment}.ts"
   ],
   "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts", "e2e/**/*.ts"],
   "ignoreDependencies": ["@secretlint/secretlint-rule-preset-recommend"],
