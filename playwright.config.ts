@@ -72,7 +72,7 @@ export default defineConfig({
     ...connectOptions,
   },
   // pnpm test:browser runs chromium; the others run with --project after
-  // pnpm exec playwright install firefox webkit, or on a farm.
+  // pnpm browser:cli install firefox webkit, or on a farm.
   projects: [
     { name: "chromium", use: chromiumUse },
     { name: "firefox", use: { ...devices["Desktop Firefox"] } },
