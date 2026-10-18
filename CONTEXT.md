@@ -4,22 +4,25 @@ The shared vocabulary of this repository. Code, issues, pull requests and docume
 
 ## Workflow terms
 
-| Term           | Meaning                                                                                                             |
-| -------------- | ------------------------------------------------------------------------------------------------------------------- |
-| Owner          | The person who sets priorities, makes product decisions and authorizes each merge. In `.github/CODEOWNERS`.         |
-| Session        | One run of an agent or one sitting of a contributor on a task. Several sessions may work in the repository at once. |
-| Epic           | An issue that holds the requirements for one larger outcome and is delivered through sub-issues.                    |
-| Design note    | Options, evidence and a recommendation for one question, written before the owner decides.                          |
-| Done when      | The checklist in an issue that says how completion is verified.                                                     |
-| Guardrail      | A rule in the `AGENTS.md` table, with the mechanism that enforces it.                                               |
-| Gate           | The list of checks in `scripts/run-local-checks.ts`, run before push and by the PR build.                           |
-| Current base   | A branch is on a current base when it contains the latest commit of `main`.                                         |
-| Native parent  | GitHub's sub-issue relation between two issues, as opposed to a "Part of #..." line in the text.                    |
-| Native blocker | GitHub's "blocked by" relation between two issues, as opposed to a mention in the text.                             |
-| Readback       | Fetching what was just written (labels, parent, Project fields) and comparing it with what was intended.            |
-| Slice          | A part of an issue that is delivered by its own pull request. Each slice gets its own sub-issue.                    |
-| Handoff        | The record a session leaves so that another session can resume its unfinished work.                                 |
-| Tolerance      | The allowed deviation in a test's assertion, for example a pixel or timing threshold.                               |
+| Term               | Meaning                                                                                                                      |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| Owner              | The person who sets priorities, makes product decisions and authorizes each merge. In `.github/CODEOWNERS`.                  |
+| Session            | One run of an agent or one sitting of a contributor on a task. Several sessions may work in the repository at once.          |
+| Epic               | An issue that holds the requirements for one larger outcome and is delivered through sub-issues.                             |
+| Design note        | Options, evidence and a recommendation for one question, written before the owner decides.                                   |
+| Research record    | Dated findings, methods, evidence and uncertainty in `engineering/research/`; useful without a selected solution.            |
+| ADR                | An accepted decision that constrains later work, with context, reasons, alternatives and consequences in `engineering/adr/`. |
+| Portability review | Reading tracked records without issue or PR links to check that essential engineering knowledge remains understandable.      |
+| Done when          | The checklist in an issue that says how completion is verified.                                                              |
+| Guardrail          | A rule in the `AGENTS.md` table, with the mechanism that enforces it.                                                        |
+| Gate               | The list of checks in `scripts/run-local-checks.ts`, run before push and by the PR build.                                    |
+| Current base       | A branch is on a current base when it contains the latest commit of `main`.                                                  |
+| Native parent      | GitHub's sub-issue relation between two issues, as opposed to a "Part of #..." line in the text.                             |
+| Native blocker     | GitHub's "blocked by" relation between two issues, as opposed to a mention in the text.                                      |
+| Readback           | Fetching what was just written (labels, parent, Project fields) and comparing it with what was intended.                     |
+| Slice              | A part of an issue that is delivered by its own pull request. Each slice gets its own sub-issue.                             |
+| Handoff            | The record a session leaves so that another session can resume its unfinished work.                                          |
+| Tolerance          | The allowed deviation in a test's assertion, for example a pixel or timing threshold.                                        |
 
 ## Terms you may know
 

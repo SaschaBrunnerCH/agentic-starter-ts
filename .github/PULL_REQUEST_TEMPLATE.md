@@ -14,6 +14,8 @@ Issue: <!-- `Closes #<number>` when this pull request completes the issue's acce
 
 <!-- Pages updated in this pull request, or why none needs an update. -->
 
+<!-- Lasting findings or decisions: link their canonical tracked records and report the manual portability review from engineering/agents/decision-workflow.md#portability-review (who, when, commit, records, expected/actual result and gaps). Ignore issue/PR links when checking that the essential knowledge is understandable. Otherwise say why this does not apply. -->
+
 ## Guardrails
 
 <!-- Guardrails added, changed or relaxed, with the decision that allows it. The table in AGENTS.md changes in this pull request. Write "unchanged" otherwise. -->

@@ -2,14 +2,15 @@
 
 [AGENTS.md](AGENTS.md) holds the rules of this repository. They apply to people and to coding agents alike; "How to work here" in that file is the sequence for every change.
 
-| You want to                      | Read                                                                |
-| -------------------------------- | ------------------------------------------------------------------- |
-| Understand this way of working   | [Getting started with agentic work](engineering/getting-started.md) |
-| Start, resume or hand off a task | [Task lifecycle](engineering/agents/task-lifecycle.md)              |
-| File or triage an issue          | [Issue tracker](engineering/agents/issue-tracker.md)                |
-| Know what is checked, and when   | [Local verification](engineering/agents/local-verification.md)      |
-| Get a pull request merged        | [Decision workflow](engineering/agents/decision-workflow.md)        |
-| Find everything else             | [Engineering](engineering/README.md)                                |
+| You want to                      | Read                                                                               |
+| -------------------------------- | ---------------------------------------------------------------------------------- |
+| Understand this way of working   | [Getting started with agentic work](engineering/getting-started.md)                |
+| Start, resume or hand off a task | [Task lifecycle](engineering/agents/task-lifecycle.md)                             |
+| File or triage an issue          | [Issue tracker](engineering/agents/issue-tracker.md)                               |
+| Know what is checked, and when   | [Local verification](engineering/agents/local-verification.md)                     |
+| Get a pull request merged        | [Decision workflow](engineering/agents/decision-workflow.md)                       |
+| Preserve research and rationale  | [Knowledge ownership](engineering/agents/decision-workflow.md#knowledge-ownership) |
+| Find everything else             | [Engineering](engineering/README.md)                                               |
 
 ## AI-assisted contributions
 

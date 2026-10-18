@@ -34,6 +34,8 @@ assignees: ""
 
 <!-- Decisions and limits the work must respect: ADRs, design notes, deadlines, dependencies. -->
 
+<!-- Link canonical research, design and decision records in the checkout. Essential findings and rationale must remain understandable without issue or PR access; see engineering/agents/decision-workflow.md#knowledge-ownership. -->
+
 ## Open questions
 
 <!-- What the owner still has to decide. Add the decision-needed label while this list is not empty. -->
