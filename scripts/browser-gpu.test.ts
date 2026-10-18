@@ -42,6 +42,7 @@ describe("classifyRenderer", () => {
     "ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 Direct3D11 vs_5_0 ps_5_0, D3D11)",
     "ANGLE (Apple, ANGLE Metal Renderer: Apple M2, Unspecified Version)",
     "Mesa Intel(R) UHD Graphics 630 (CFL GT2)",
+    "arm gen-5",
   ])("counts %s as hardware", (renderer) => {
     expect(classifyRenderer(renderer)).toBe("hardware");
   });
@@ -53,6 +54,9 @@ describe("classifyRenderer", () => {
     "ANGLE (Mesa, lavapipe, Vulkan 1.3)",
     "ANGLE (Microsoft, Microsoft Basic Render Driver Direct3D11 vs_5_0 ps_5_0, D3D11)",
     "Google SwiftShader",
+    "arm gen-5 SwiftShader",
+    "arm gen-5 CPU",
+    "ARMv8 CPU",
   ])("counts %s as software", (renderer) => {
     expect(classifyRenderer(renderer)).toBe("software");
   });
@@ -65,6 +69,13 @@ describe("classifyRenderer", () => {
     expect(classifyRenderer("ANGLE generic renderer")).toBe("unknown");
     expect(classifyRenderer("NVIDIA WARP CPU")).toBe("software");
   });
+
+  it.each(["arm", "arm64", "arm unknown", "arm gen-50", "arm gen-5-generic", "generic arm gen-5"])(
+    "does not infer an ARM GPU from %s",
+    (renderer) => {
+      expect(classifyRenderer(renderer)).toBe("unknown");
+    },
+  );
 });
 
 describe("gpuLaunchArgs", () => {
