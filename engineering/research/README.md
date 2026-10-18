@@ -16,3 +16,7 @@ Where reproduction matters, link safe, shareable scripts, fixtures or examples c
 A record is not rewritten when a later investigation disagrees; the later record names the earlier one. Proposed solutions go in a [design note](../designs/README.md); accepted decisions that constrain later work become an [ADR](../adr/README.md). Link these records instead of duplicating their explanations. Apply the [portability review](../agents/decision-workflow.md#portability-review) before delivering findings.
 
 [Knowledge-retention audit](2026-10-18-knowledge-retention-audit.md) is a source-review example with reproducible commands and explicit limits.
+
+[Browser and device setup findings](2026-10-18-browser-device-setup.md) records
+Windows/WSL installation boundaries and measured Android/iPad USB and wireless
+inspection outcomes, with reproduction steps and limits.
