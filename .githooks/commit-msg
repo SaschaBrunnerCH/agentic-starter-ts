@@ -1,2 +1,2 @@
 #!/bin/sh
-node scripts/check-commit-message.ts "$1"
+node scripts/git/check-commit-message.ts "$1"

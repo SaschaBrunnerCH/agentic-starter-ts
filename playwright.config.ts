@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { defineConfig, devices } from "@playwright/test";
-import { gpuSetting } from "./scripts/browser-gpu.ts";
+import { gpuSetting } from "./scripts/browser/browser-gpu.ts";
 
 // These settings choose where and how the tests run; see engineering/agents/browser-testing.md.
 //
@@ -55,14 +55,14 @@ export default defineConfig({
   // No retries: a test that passes on the second attempt is a bug to report, not a pass.
   retries: 0,
   // Discovery and its lease belong to browser-test.ts; setup guards direct invocation.
-  globalSetup: "./scripts/browser-gpu-setup.ts",
+  globalSetup: "./scripts/browser/browser-gpu-setup.ts",
   // On the GPU one page at a time, so the run shares the machine with what else runs.
   ...(gpu ? { workers: 1 } : {}),
   // Each local run is also recorded for the pull request; see browser-evidence-reporter.ts.
   reporter: [
     ...(process.env.CI === "true" ? [["github"] as const] : []),
     ["list"],
-    ["./scripts/browser-evidence-reporter.ts"],
+    ["./scripts/browser/browser-evidence-reporter.ts"],
   ],
   use: {
     baseURL: baseURL ?? `http://localhost:${localPort}/`,

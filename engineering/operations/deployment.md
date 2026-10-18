@@ -54,7 +54,7 @@ Pages fits a static application. For another target, keep the structure and repl
 - Prefer short-lived credentials through OpenID Connect (`id-token: write`) over stored keys, where the target supports it.
 - Keep the test after the deploy and the rollback by commit.
 
-Remove the Pages section from `scripts/setup-github.ts` and the deploy workflow when the repository does not deploy at all.
+Remove the Pages section from `scripts/setup/setup-github.ts` and the deploy workflow when the repository does not deploy at all.
 
 ## When Pages is not available
 

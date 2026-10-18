@@ -2,11 +2,11 @@
 
 Checks run at three points. Each later point repeats the code checks of the earlier ones, so those do not depend on a hook having run. The commit-message check is the exception: it runs at commit, and again over a pull request's commits in `pnpm task ready`.
 
-| Point        | Runs                                                                                                  | Defined in                                                                      |
-| ------------ | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| Commit       | Prettier and Secretlint on staged files, Oxlint with fixes on staged source; the commit-message check | `lint-staged` in `package.json`, `.githooks/pre-commit`, `.githooks/commit-msg` |
-| Push         | A clean working tree at the pushed commit, then the whole gate: `pnpm check:push`                     | `.githooks/pre-push`, `scripts/pre-push.ts`, `scripts/run-local-checks.ts`      |
-| Pull request | The same gate and optional browser tests, in the `PR build` workflow                                  | `.github/workflows/pr-build.yml`                                                |
+| Point        | Runs                                                                                                  | Defined in                                                                            |
+| ------------ | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Commit       | Prettier and Secretlint on staged files, Oxlint with fixes on staged source; the commit-message check | `lint-staged` in `package.json`, `.githooks/pre-commit`, `.githooks/commit-msg`       |
+| Push         | A clean working tree at the pushed commit, then the whole gate: `pnpm check:push`                     | `.githooks/pre-push`, `scripts/git/pre-push.ts`, `scripts/checks/run-local-checks.ts` |
+| Pull request | The same gate and optional browser tests, in the `PR build` workflow                                  | `.github/workflows/pr-build.yml`                                                      |
 
 The gate runs these in order and reports every failure, not only the first: `format:check`, `lint`, `typecheck`, `check:unused`, `check:secrets`, `check:workflows`, `check:agents`, `check:links`, `check:dependencies`, `check:hooks`, `test`, `build` and `check:bundle`.
 
@@ -14,7 +14,7 @@ An explicit [release](../operations/releases.md) repeats the gate at the tagged 
 
 `check:unused` runs knip twice: as on a developer's machine and with `CI=true`, as the `PR build` runs it. knip loads tool configurations such as `playwright.config.ts` to find what they use, and a configuration may differ in CI, for example a reporter registered only for local runs. A file used only one way is then reported before the push instead of in the `PR build`.
 
-`lint` runs Oxlint with its type-aware rules, which need the `oxlint-tsgolint` package: an unawaited promise or a value of the wrong type in a template string fails it. The commit hook lints staged files without types, for speed. No rule is switched off except `react/react-in-jsx-scope`, which belongs to the JSX transform before React 17; React 19 and Vite use the automatic one. The React plugin adds the rules of hooks and missing effect dependencies; the `jsx-a11y` plugin adds accessibility rules for JSX. A type assertion is refused, so JSON that a script reads, from `gh` or from a file, is checked with a shape from `scripts/json-shape.ts`; a missing or wrongly typed field then fails where it is read, with its path.
+`lint` runs Oxlint with its type-aware rules, which need the `oxlint-tsgolint` package: an unawaited promise or a value of the wrong type in a template string fails it. The commit hook lints staged files without types, for speed. No rule is switched off except `react/react-in-jsx-scope`, which belongs to the JSX transform before React 17; React 19 and Vite use the automatic one. The React plugin adds the rules of hooks and missing effect dependencies; the `jsx-a11y` plugin adds accessibility rules for JSX. A type assertion is refused, so JSON that a script reads, from `gh` or from a file, is checked with a shape from `scripts/shared/json-shape.ts`; a missing or wrongly typed field then fails where it is read, with its path.
 
 `test` measures coverage and fails below the floor in `vite.config.ts`: 95% of statements, functions and lines and 90% of branches. The measured files are `src/` and `scripts/` without tests, the browser entry point and the commands that run `git`, `gh` or the network; the rules those commands apply live in separate modules, which are measured. A new command file is added to that exclusion list; a new rule module is not. Components that render only in a browser, such as a WebGL map, can be excluded the same way with the reason in `vite.config.ts`, when the browser tests cover them and their logic lives in plain modules that are measured. The floor is a lower bound, not a goal: raise it when coverage rises, and lower it only as a changed guardrail, with the owner's decision. The HTML report is written to `coverage/`.
 
@@ -30,7 +30,7 @@ The pre-push hook first refuses a push whose checks would not describe it: a wor
 
 The hooks are tracked files under `.githooks`. `pnpm install --frozen-lockfile` points Git at them once for the whole repository, so every worktree uses them; each worktree still needs its own `pnpm install --frozen-lockfile` for the tools the hooks call. `check:hooks` fails when the hooks are not active, or when a hook Git would run from this worktree is missing or not executable; it helps when the gate is run by hand, since an inactive hook cannot report itself.
 
-**Hooks in task worktrees.** Task worktrees run the same Git hooks as the main checkout: Git resolves the relative `core.hooksPath` against each worktree, so the hooks tracked in its own checkout run. Agent tools have been reported to skip their own hooks (for example hooks in a tool's settings file) inside worktrees; this repository relies on Git hooks only, which are not affected. `scripts/git-hooks.test.ts` builds a repository with a worktree and proves that a commit there runs the tracked hook. A test that runs `git` must leave out the `GIT_*` environment variables: inside a hook in a worktree, Git sets `GIT_DIR` (and in the commit hooks `GIT_INDEX_FILE`), and a test the pre-push hook runs would otherwise commit into this repository instead of its scratch one. To repeat the check in a real task worktree:
+**Hooks in task worktrees.** Task worktrees run the same Git hooks as the main checkout: Git resolves the relative `core.hooksPath` against each worktree, so the hooks tracked in its own checkout run. Agent tools have been reported to skip their own hooks (for example hooks in a tool's settings file) inside worktrees; this repository relies on Git hooks only, which are not affected. `scripts/git/git-hooks.test.ts` builds a repository with a worktree and proves that a commit there runs the tracked hook. A test that runs `git` must leave out the `GIT_*` environment variables: inside a hook in a worktree, Git sets `GIT_DIR` (and in the commit hooks `GIT_INDEX_FILE`), and a test the pre-push hook runs would otherwise commit into this repository instead of its scratch one. To repeat the check in a real task worktree:
 
 ```sh
 pnpm check:hooks                                    # PASS · Git hooks active in <worktree>/.githooks
@@ -58,7 +58,7 @@ Install through `pnpm test:browser:install` or `pnpm browser:cli install <engine
 not a raw Playwright install.
 `pnpm browser:check` reports the inspected cache and missing build directories; it
 is on demand, so the ordinary gate does not require browser downloads.
-`scripts/playwright-browsers-contract.test.ts` guards supported command/workflow
+`scripts/browser/playwright-browsers-contract.test.ts` guards supported command/workflow
 entrypoints. See [browser setup](browser-testing.md#on-your-machine) for overrides
 and system-library requirements.
 
@@ -70,7 +70,7 @@ Four TypeScript projects separate the environments: `tsconfig.app.json` covers a
 
 ## Adding a check
 
-1. Add the script to `package.json` and its name to the list in `scripts/run-local-checks.ts`. The PR build picks it up from there.
+1. Add the script to `package.json` and its name to the list in `scripts/checks/run-local-checks.ts`. The PR build picks it up from there.
 2. Add or update the row in the `AGENTS.md` guardrail table, naming the script. `pnpm check:agents` rejects a row whose script or file does not exist.
-3. Prove that the check can fail: a test, or a control inside the check, gives it a deliberate violation and expects a rejection. `scripts/workflow-contract.test.ts` and `scripts/check-secrets.test.ts` are examples. A check that was never seen to fail proves nothing.
-4. If the check needs its own CI job, add the job to `pr-build.yml` and its job name to the required status checks in `.github/rulesets/main-integrity.json`. Every PR-build job must be directly required; `scripts/workflow-contract.test.ts` checks this and pins the expected status list, which must be updated deliberately. Give the job a timeout, disable checkout credentials and set artifact retention where applicable. Apply the matching hosted-ruleset change through the procedure in [GitHub hosted settings](../operations/github-hosted-settings.md#the-rulesets), recording its readback. Adding a step to the existing job needs no new required status.
+3. Prove that the check can fail: a test, or a control inside the check, gives it a deliberate violation and expects a rejection. `scripts/checks/workflow-contract.test.ts` and `scripts/checks/check-secrets.test.ts` are examples. A check that was never seen to fail proves nothing.
+4. If the check needs its own CI job, add the job to `pr-build.yml` and its job name to the required status checks in `.github/rulesets/main-integrity.json`. Every PR-build job must be directly required; `scripts/checks/workflow-contract.test.ts` checks this and pins the expected status list, which must be updated deliberately. Give the job a timeout, disable checkout credentials and set artifact retention where applicable. Apply the matching hosted-ruleset change through the procedure in [GitHub hosted settings](../operations/github-hosted-settings.md#the-rulesets), recording its readback. Adding a step to the existing job needs no new required status.

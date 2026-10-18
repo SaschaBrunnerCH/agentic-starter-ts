@@ -1,6 +1,6 @@
 /// <reference types="node" />
 // Optional example; start the freshly built app's preview before running this file.
-import "../../scripts/playwright-browsers-env.ts";
+import "../../scripts/browser/playwright-browsers-env.ts";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { writeFile } from "node:fs/promises";

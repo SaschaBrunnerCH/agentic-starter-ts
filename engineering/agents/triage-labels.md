@@ -1,6 +1,6 @@
 # Triage labels
 
-`pnpm setup:github` creates these labels. Change the list in `scripts/setup-github.ts` and this page together.
+`pnpm setup:github` creates these labels. Change the list in `scripts/setup/setup-github.ts` and this page together.
 
 ## Readiness and triage
 

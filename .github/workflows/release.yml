@@ -62,7 +62,7 @@ jobs:
         run: pnpm test:browser:install
 
       - name: Verify the release at the root
-        run: pnpm test:browser --forbid-only --reporter=list,./scripts/release-browser-reporter.ts
+        run: pnpm test:browser --forbid-only --reporter=list,./scripts/release/release-browser-reporter.ts
 
       - name: Verify the release under a sub-path
         run: |
@@ -81,7 +81,7 @@ jobs:
             echo "::error::The preview server did not start."
             exit 1
           fi
-          BROWSER_TEST_BASE_URL=http://127.0.0.1:4180/app/ pnpm test:browser --forbid-only --reporter=list,./scripts/release-browser-reporter.ts
+          BROWSER_TEST_BASE_URL=http://127.0.0.1:4180/app/ pnpm test:browser --forbid-only --reporter=list,./scripts/release/release-browser-reporter.ts
 
       - name: Package the build, its SBOM and checksums
         run: |

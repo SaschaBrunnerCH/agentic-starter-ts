@@ -219,7 +219,7 @@ try {
 
 Install WebKit with `pnpm browser:cli install webkit`, then `pnpm build` and
 `pnpm preview --host 127.0.0.1 --port 4173 --strictPort`. In another terminal run
-`node --import ./scripts/playwright-browsers-env.ts .local/emulation-check.mjs`. Stop that owned preview afterwards. Follow the
+`node --import ./scripts/browser/playwright-browsers-env.ts .local/emulation-check.mjs`. Stop that owned preview afterwards. Follow the
 [shared-machine rules](browser-testing.md#what-an-agent-never-does) before this
 standalone example; it does not acquire discovery's lock. This is a
 functional example, with no GPU assertion. For a derived application, put its

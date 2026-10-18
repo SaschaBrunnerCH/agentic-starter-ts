@@ -18,8 +18,13 @@ export default defineConfig({
         "src/main.tsx", // The browser entry point; the browser tests cover it.
         // Commands that run git, gh, the network or a browser. Their decisions live in the
         // rule modules beside them, which are measured.
-        "scripts/{issue,task,release,github,setup-github,setup-previews,install-hooks,init-local-artifacts,pre-push,run-local-checks,test-devices,browser-gpu-setup,browser-gpu-discovery,browser-test,browser-test-cli,browser-doctor,playwright-browsers-env}.ts",
-        "scripts/check-*.ts",
+        "scripts/workflow/{issue,task,init-local-artifacts}.ts",
+        "scripts/setup/{setup-github,setup-previews}.ts",
+        "scripts/release/release.ts",
+        "scripts/shared/github.ts",
+        "scripts/git/{install-hooks,pre-push,check-commit-message}.ts",
+        "scripts/checks/{run-local-checks,check-*}.ts",
+        "scripts/browser/{test-devices,browser-gpu-setup,browser-gpu-discovery,browser-test,browser-test-cli,browser-doctor,playwright-browsers-env,check-browser-environment}.ts",
       ],
       // A floor, not a target: raise it when coverage rises, and lower it only
       // with a reason in the pull request.
