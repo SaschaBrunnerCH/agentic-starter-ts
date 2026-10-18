@@ -10,6 +10,8 @@ After the [repository setup](../README.md#start-a-new-repository):
 2. [Task lifecycle](agents/task-lifecycle.md) and [working style](agents/working-style.md): start isolated work, keep changes focused and leave a handoff.
 3. [Local verification](agents/local-verification.md): understand the gate and the evidence it provides.
 
+When investigating a question or proposing a decision, use [knowledge ownership](agents/decision-workflow.md#knowledge-ownership) to choose its tracked home and review its portability.
+
 ```mermaid
 flowchart LR
   issue["Issue<br/>pnpm issue"] --> task["Worktree<br/>pnpm task start"]
@@ -31,7 +33,7 @@ Consult the guides below when their topic applies. For browser changes, start wi
 | [Getting started with agentic work](getting-started.md)        | A first session for people new to this way of working                        |
 | [Problems in agentic work](agents/agentic-problems.md)         | What goes wrong with agents and what handles each problem                    |
 | [Task lifecycle](agents/task-lifecycle.md)                     | Starting, resuming, completing and handing off a task                        |
-| [Decision workflow](agents/decision-workflow.md)               | The steps from a goal to a merged pull request                               |
+| [Decision workflow](agents/decision-workflow.md)               | Goal to merge, knowledge ownership and portability review                    |
 | [Working style](agents/working-style.md)                       | How much to change, how to write, local-only work                            |
 | [Issue tracker](agents/issue-tracker.md)                       | Issue metadata, the Project's statuses and priorities                        |
 | [Triage labels](agents/triage-labels.md)                       | Label vocabulary                                                             |

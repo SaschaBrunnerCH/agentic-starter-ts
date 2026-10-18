@@ -16,6 +16,8 @@ assignees: ""
 
 <!-- The observable result. Name exclusions, dependencies and the ADR or design note that constrains it. -->
 
+<!-- Link canonical tracked records for lasting findings and rationale; see engineering/agents/decision-workflow.md#knowledge-ownership. An investigation may finish with findings and open questions without selecting or authorizing an implementation. -->
+
 ## Touches
 
 <!-- Optional: the files or folders this work will change, one glob pattern per line, for example `src/routes/**`. `pnpm issue claim` warns when an issue In progress or In review touches the same. -->

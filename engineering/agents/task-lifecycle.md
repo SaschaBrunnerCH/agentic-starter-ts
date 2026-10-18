@@ -55,7 +55,7 @@ Include:
 - Running processes or shared resources the task owns.
 - The next action, the applicable merge authorization or its conditions, and retained cleanup items.
 
-Keep durable decisions in the issue or an ADR. Keep private transcripts, credentials and transient process details out of tracked documentation and pull-request text. On resume, verify the handoff against live state before acting; it is a record, not proof that an approval or check is still current.
+Keep lasting findings and decisions in the tracked records named by [knowledge ownership](decision-workflow.md#knowledge-ownership); link them from the issue and handoff. Keep private transcripts, credentials and transient process details out of tracked documentation and pull-request text. On resume, verify the handoff against live state before acting; it is a record, not proof that an approval or check is still current.
 
 ## Other situations
 

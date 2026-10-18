@@ -40,6 +40,8 @@ An epic holds the requirements for one outcome and uses the [Epic template](../.
 
 A pull request names its issue. Use `Closes #<number>` when the pull request completes that issue's "Done when" criteria; use `Part of #<number>` for a slice of a larger issue. When an issue is delivered in slices, create one sub-issue per slice before starting it.
 
+Issues and PRs own coordination and review. Keep substantive research, evolving designs and accepted rationale in the tracked records defined by [knowledge ownership](decision-workflow.md#knowledge-ownership), and link them from the issue. An investigation's acceptance criteria can require useful findings and open questions without selecting a solution or authorizing implementation.
+
 ## Picking and claiming work
 
 An issue is claimed when it is assigned to someone and its Status is In progress. `pnpm issue claim <number>` does both and refuses when the issue may not be started.
@@ -69,7 +71,7 @@ A Markdown reference in the body, `![Alt text](./screenshot.png)`, is replaced w
 
 The Project linked to this repository is its live planning and execution view. `pnpm setup:github` creates it and prints its URL; it is also listed on the repository's Projects tab.
 
-- GitHub Issues are the source of truth for specifications, acceptance criteria, discussion and closure.
+- GitHub Issues are the source of truth for task scope, acceptance criteria, discussion and closure. Link maintained design specifications and lasting findings in tracked records.
 - The Project's **Status** and **Priority** fields are the source of truth for execution state and order.
 - Native issue blockers define required order. Do not infer dependencies from priority.
 - Parent issues describe outcomes and report progress. Their child issues are the executable work.

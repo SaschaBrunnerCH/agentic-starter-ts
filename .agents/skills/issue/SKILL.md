@@ -13,7 +13,8 @@ Read [the decision workflow](../../../engineering/agents/decision-workflow.md),
 the rules, and this skill only orders the steps.
 
 1. **Look for what exists.** Search open and closed issues with
-   `gh issue list --state all --search "<words>"`, and `engineering/adr/`. Reuse or extend an
+   `gh issue list --state all --search "<words>"`, and `engineering/adr/`,
+   `engineering/research/` and `engineering/designs/`. Reuse or extend an
    existing issue instead of duplicating it, and name any decision that already constrains the goal.
    Given an epic number, read it with `gh issue view <epic> --comments`, its design note or ADR,
    and its children, open and closed; extend a child that already covers part of it instead of
@@ -43,6 +44,10 @@ the rules, and this skill only orders the steps.
    work-type label, an `area:*` label, the parent epic, `ready-for-agent` or `ready-for-human`,
    and propose a Priority, with Status Ready only for an issue without an open blocker or
    decision.
+   Link canonical tracked records for substantive findings and rationale following
+   [knowledge ownership](../../../engineering/agents/decision-workflow.md#knowledge-ownership).
+   An investigation may deliver a research record with open questions and no selected
+   solution; its completion does not authorize implementation.
 5. **Show the drafts and wait.** For several tasks, first a table: order, title, blocked by,
    touches, Status, Priority, agent or human, and which can run in parallel. Then titles,
    labels, parent and bodies. Ask the owner what to change. Create nothing before the owner

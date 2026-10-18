@@ -12,17 +12,19 @@ How to write and how much to change. These rules keep pull requests small enough
 
 ## Before proposing something new
 
-Search before proposing an optimisation, a new tool or a second attempt at something: the ADRs in `engineering/adr/`, the records in `engineering/research/`, and closed issues. If it was decided or tried before, say what has changed since; another run of the same experiment does not overturn a recorded result.
+Search before proposing an optimisation, a new tool or a second attempt at something: the ADRs in `engineering/adr/`, the records in `engineering/research/`, the notes in `engineering/designs/`, and closed issues. If it was decided or tried before, say what has changed since; another run of the same experiment does not overturn a recorded result.
 
 ## Writing
 
-- Lead with the result, then the reasons. Use the shortest text that is complete.
+- Lead with the result, then the reasons. Use the shortest text that is complete; preserve material evidence, alternatives and limitations without a fixed word or page target.
 - Keep technical names, numbers, negations and uncertainty exactly. Say "not verified" where that is the case.
 - An issue states the problem, the expected outcome and acceptance criteria that can be observed.
 - A pull request states the change and its reason, the verification, and what is not covered.
 - Use the terms of `CONTEXT.md`.
 
 Use the [visual documentation guide](../diagrams/README.md) when a table, diagram, chart or real screenshot makes an explanation easier to understand. Choose the format for the reader, keep its editable source and text equivalent, and label measured evidence with its provenance.
+
+For lasting findings and rationale, follow [knowledge ownership](decision-workflow.md#knowledge-ownership) and its portability review. Research, proposals and accepted decisions have distinct tracked homes; issues and pull requests coordinate the work.
 
 ## Sharing the machine
 
@@ -39,6 +41,8 @@ The owner can ask for local-only work: "draft it, do not create it" or "do not p
 ## Local artifacts
 
 Keep scratch artifacts in the **primary checkout's `.local/`**, so task-worktree cleanup leaves them intact. This includes logs, screenshots, reports and standalone Markdown drafts or notes when the user gives no destination. An explicit destination or maintained repository documentation takes precedence.
+
+When scratch work produces findings or rationale useful to future contributors, curate them into the appropriate tracked record under [knowledge ownership](decision-workflow.md#knowledge-ownership). Keep private inputs and transient output local or restricted, and state reproduction limits in the record. Local retention alone does not preserve essential engineering knowledge for a checkout.
 
 Run `pnpm local:init` once from any checkout to create its ignored `.local/README.md`; repeating it preserves existing content. The complete directory is ignored, including the README. Downstream projects that prefer an untracked exclusion can use `pnpm local:init --exclude`: it uses Git's shared `info/exclude`, including from linked worktrees, without editing `.gitignore`. Initialization refuses tracked `.local` files; review those explicitly rather than silently untracking them.
 

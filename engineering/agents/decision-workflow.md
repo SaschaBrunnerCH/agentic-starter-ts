@@ -1,17 +1,47 @@
 # Decision workflow
 
-A change moves from a goal to a merged pull request through ten steps. Each step names the page that owns its details; this page only orders them. Small changes skip steps 2 to 4.
+A change moves from a goal to a merged pull request through ten steps. Each step names the page that owns its details; this page orders the steps and defines shared knowledge ownership. Small changes skip steps 2 to 4.
 
 1. **Goal.** The owner states the goal and its constraints. It is recorded as an epic, using the [Epic template](../../.github/ISSUE_TEMPLATE/epic.md): problem, users, goals, non-goals and success measures. See [the issue tracker](issue-tracker.md).
-2. **Design note.** The contributor researches the question and writes a design note with options, a recommendation and open questions, stored in [`engineering/designs/`](../designs/README.md).
+2. **Research and design.** Retain useful investigation findings in a [research record](../research/README.md), even when no solution is selected. When proposing a solution, write a [design note](../designs/README.md) with options, a recommendation and open questions. Research may finish here; completing it does not authorize implementation.
 3. **Decision.** The owner answers each open question. The answers are added to the design note. An issue that waits for such an answer carries `decision-needed`.
 4. **ADR.** Decisions that constrain later work become an Architecture Decision Record in [`engineering/adr/`](../adr/README.md).
 5. **Issues.** Each decision maps to an issue with a problem, an expected outcome and "Done when" criteria. Where an issue and a later ADR disagree, the ADR wins, and the pull request says so.
-6. **Implementation.** Each issue gets its own worktree and branch; see [the task lifecycle](task-lifecycle.md). Documentation changes in the same pull request as the behaviour it describes.
-7. **Verification.** The author checks the diff against the issue's "Done when" criteria and the applicable ADRs, then passes the pre-push gate; see [local verification](local-verification.md). A failing check is fixed, never bypassed.
+6. **Implementation.** Each issue gets its own worktree and branch; see [the task lifecycle](task-lifecycle.md). Documentation changes in the same pull request as the behaviour it describes when practical. Independently useful research and requested policy changes may use documentation-only pull requests; each investigation does not need a separate documentation pull request.
+7. **Verification.** The author checks the diff against the issue's "Done when" criteria and the applicable ADRs, performs the [portability review](#portability-review) for lasting findings or decisions, then passes the pre-push gate; see [local verification](local-verification.md). A failing check is fixed, never bypassed.
 8. **Pull request.** The body names its issue and states what changed, the evidence, and any deviation from the issue or an ADR. CI runs the same checks remotely. Set the issue's Project Status to **In review** once the pull request is ready.
 9. **Merge.** A pull request needs a green `PR build` on a current base and the owner's explicit authorization for that pull request at its head commit; no separate review step is required. A [review by a second agent](review.md) is optional evidence for that decision. See "Requesting merge authorization" below. A new commit needs a new authorization. A changed test tolerance or guardrail needs its own decision, recorded in the pull request; the guardrail table in `AGENTS.md` changes in the same pull request.
 10. **Cleanup and follow-up.** After the merge, remove the worktree and branch and close the handoff, following "Post-merge cleanup" in `AGENTS.md`. File findings outside the scope as new issues.
+
+## Knowledge ownership
+
+Essential engineering knowledge belongs in version-controlled records so a checkout remains useful after a fork, transfer or loss of access to the original issue tracker. [ADR 0002](../adr/0002-preserve-portable-engineering-knowledge.md) records the rationale and tradeoffs.
+
+| Information                                                                                    | Canonical home                                                                                                                         |
+| ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Investigation methods, findings, evidence and uncertainty                                      | [Research record](../research/README.md)                                                                                               |
+| Evolving requirements, proposed behavior, interfaces, constraints, options and validation plan | [Design note](../designs/README.md)                                                                                                    |
+| Accepted lasting decision and its rationale                                                    | [ADR](../adr/README.md)                                                                                                                |
+| Safe materials needed to reproduce important results                                           | Tracked scripts, fixtures or examples with usage instructions, linked from the record                                                  |
+| Scope, acceptance criteria, ownership, status and review discussion                            | Issue and pull request, linking the durable records                                                                                    |
+| Scratch work, drafts, raw logs and sensitive inputs                                            | [Ignored local artifacts](working-style.md#local-artifacts) or an approved restricted location under [data handling](data-handling.md) |
+
+Keep each substantive explanation in one canonical home. Related records and indexes link to it with the context their readers need. Curate lasting conclusions from discussions and scratch work; preserve useful findings without copying administrative history or entire conversations. Issue and PR links provide supplementary provenance.
+
+Records must be sufficient for their purpose. Use the space needed for material evidence, significant alternatives and limitations; there is no fixed word or page target. Remove repetition rather than substance. Put source citations next to the claims they support and explain the relevant result in the record itself. Respect licensing, privacy and publication rules when retaining evidence.
+
+Adopt this incrementally as work touches a topic. Existing dated records remain historical evidence; follow the research and ADR guides when later findings or decisions change them.
+
+## Portability review
+
+For a change that produces lasting findings or decisions, the author reads the relevant tracked records while ignoring issue and PR links. Check that a contributor with only a checkout can:
+
+1. Understand the problem and context and find the canonical explanation.
+2. For research, recover the methods, environment or revision, findings, evidence, uncertainty, significant alternatives, limitations and open questions. For an accepted decision, understand the choice, reasons, significant alternatives and consequences.
+3. Follow reproduction instructions where applicable, or understand which inputs are unavailable and how that limits the conclusions.
+4. Tell what remains undecided, what would justify revisiting the findings and whether further work is authorized.
+
+Follow links between tracked records as needed; each record serves its own purpose without repeating all supporting detail. Report the records, tested revision, result and gaps in the pull request using the manual-check format in [local verification](local-verification.md#rules). Formatting and link checks do not prove semantic completeness.
 
 ## Requesting merge authorization
 

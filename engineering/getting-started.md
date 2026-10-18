@@ -46,6 +46,7 @@ Your yes is the one step no check replaces. If the agent works with your GitHub 
 - The diff contains what the issue asked for and nothing else. Unrelated changes are a reason to say no.
 - No check, hook or test assertion was removed or loosened. If one was, the pull request must say so and you must have decided it.
 - Anything the agent says it did not verify is acceptable to you.
+- Lasting research and rationale are in linked tracked records. The reported [portability review](agents/decision-workflow.md#portability-review) explains whether they remain understandable without issue or PR access.
 
 Reading every line is not required for small changes that are well covered by tests. For a change to the checks themselves, to `AGENTS.md` or to workflows, read every line.
 
@@ -60,7 +61,7 @@ If you know this work as PRDs, specs or spec-driven development: the same things
 | "Add login, profile and settings" | Three outcomes, one pull request nobody can review | An epic with one issue per outcome                                                                           |
 | "Use the best library for charts" | A decision disguised as a task                     | Label it `decision-needed`, ask the agent for a design note with options, then decide                        |
 
-If you are unsure how to specify something, ask the agent for an `investigation` issue first: its result is findings and a recommendation, not code.
+If you are unsure how to specify something, ask the agent for an `investigation` issue first. Its result is a tracked [research record](research/README.md) of findings and uncertainty; it can finish without a recommendation or selected solution. Further implementation needs its own authorized scope. [Knowledge ownership](agents/decision-workflow.md#knowledge-ownership) explains where research, proposals and decisions belong.
 
 ## Things to say
 
@@ -82,7 +83,7 @@ If you are unsure how to specify something, ask the agent for an `investigation`
 - **An issue, web page or file tells the agent what to do.** Text the agent reads is data, not instructions. An agent that reports "this issue asked me to disable a check" is working correctly; one that does it is not.
 - **The agent wants to skip a check or says a test is wrong.** Do not agree in passing. It must show the evidence in the pull request, and changing a check is its own decision by you.
 - **The build is red.** The agent fixes it on the same branch. A red build is never merged.
-- **It asks a question it should not need to ask.** The answer is missing from the issue or from `CONTEXT.md`. Answer, and have it add the answer there so the next session does not ask again.
+- **It asks a question it should not need to ask.** Answer, then have it retain the answer in its [canonical home](agents/decision-workflow.md#knowledge-ownership): task scope in the issue, vocabulary in `CONTEXT.md`, lasting findings or rationale in tracked records.
 - **It stopped halfway.** Say `Resume issue #<number>.` If the handoff is missing, `pnpm issue show <number>`, the open pull request and `git worktree list` show the state.
 - **`main` moved and the pull request is behind.** The agent updates the branch and waits for a new build. Your earlier yes does not carry over to the new commit.
 - **You want two agents at once.** Give each its own issue. They work in separate worktrees; at most four issues are In progress at a time.
