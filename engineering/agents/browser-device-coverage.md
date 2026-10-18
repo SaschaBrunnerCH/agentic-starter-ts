@@ -263,163 +263,119 @@ before selecting a label from its catalog:
 
 ### Provider comparison
 
-Detailed options live in the Markdown tables; the graphic remains an overview.
+**Checked 2026-10-18 (UTC).** Dates below refer to documentation/catalog checks;
+actual runs have separate dates. C = Chromium (Chrome/Edge where offered),
+F = Firefox/Gecko, W = Playwright WebKit; shipping Safari is separate.
+Provider support does not establish account access, connector compatibility or
+GPU acceptance. WSL needs its own host; the test driver's OS is not the browser OS.
 
-**Snapshot checked 2026-10-18 (UTC).** Each row dates its linked documentation or
-catalog check, not future availability. This is a selection of providers, not an
-exhaustive catalog or a ranking. C = Chromium (Chrome/Edge where offered),
-F = Firefox/Gecko, W = Playwright WebKit. Shipping Safari is a separate path.
-Browser OS is the rendering host, not the controlling laptop; WSL still needs a
-WSL host. A provider's Playwright-branded feature does not establish compatibility
-with this starter's endpoint connector.
+| Browser/device farm                                                                                   | Desktop browser hosts and engines                                                                                                                                                | Physical phones/tablets                                                                                                                                                         | Connection and starter fit                                                                                                                                                                                  | Last checked / basis              |
+| ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| [TestingBot](https://testingbot.com/support/web-automate/playwright)                                  | Windows/Linux C/F; macOS C/F/W                                                                                                                                                   | Android and iPhone/iPad; [physical catalog](https://testingbot.com/support/api/devices) excludes simulators                                                                     | Desktop Playwright endpoint, subject to version checks. Separate [Android API](https://testingbot.com/support/web-automate/playwright/mobile) / [Appium](https://testingbot.com/support/app-automate) setup | 2026-10-18 · docs + live catalogs |
+| [BrowserStack](https://www.browserstack.com/docs/automate/playwright/browsers-and-os)                 | Windows/macOS C/F/W, with OS/version restrictions; no Linux desktop catalog row                                                                                                  | Android and iPhone/iPad; [iOS Playwright setup](https://www.browserstack.com/docs/automate/playwright/playwright-ios/nodejs)                                                    | Desktop Playwright endpoint after compatibility checks; mobile SDK/device paths separate                                                                                                                    | 2026-10-18 · docs + live catalog  |
+| [Sauce Labs](https://docs.saucelabs.com/web-apps/automated-testing/playwright/)                       | Windows/macOS C/F/W with [limits](https://docs.saucelabs.com/web-apps/automated-testing/playwright/limitations/); Linux client support does not establish a Linux browser target | [Android/iOS phones and tablets](https://docs.saucelabs.com/mobile-apps/automated-testing/appium/real-devices/); virtual devices separate                                       | `saucectl` runner; Appium for real mobile. Neither built in here                                                                                                                                            | 2026-10-18 · docs only            |
+| [TestMu AI (formerly LambdaTest)](https://www.lambdatest.com/support/docs/playwright-testing/)        | Windows/macOS C/F/W with [bundle compatibility](https://www.lambdatest.com/support/docs/playwright-bundled-browser-support/); Linux target unverified                            | [Android](https://www.lambdatest.com/support/docs/playwright-android/) and [iPhone/iPad Safari](https://www.lambdatest.com/support/docs/playwright-ios-device/); iOS gated beta | Provider endpoints/Android API. Published mobile ranges exclude this starter's Playwright 1.64                                                                                                              | 2026-10-18 · docs only            |
+| [Perfecto](https://help.perfecto.io/perfecto-help/content/Perfecto/automation-testing/playwright.htm) | Windows Chrome/Edge; macOS C/F/W                                                                                                                                                 | Android Chrome/WebView; iOS Safari Playwright beta                                                                                                                              | Separate capabilities/endpoints; source client-version statements differ, so confirm compatibility                                                                                                          | 2026-10-18 · docs only            |
+| [AWS Device Farm](https://docs.aws.amazon.com/devicefarm/latest/developerguide/welcome.html)          | [Desktop TestGrid](https://docs.aws.amazon.com/devicefarm/latest/testgrid/techref-support.html): Windows Chrome/Edge/Firefox                                                     | Android/iOS device pools                                                                                                                                                        | Mobile test uploads/Appium; desktop WebDriver. No plain Playwright endpoint assumed                                                                                                                         | 2026-10-18 · docs only            |
 
-| Browser/device farm                                                                                   | Desktop browser hosts and engines                                                                                                                                                                        | Physical phones/tablets                                                                                                                                                                         | Connection and starter fit                                                                                                                                                                                                                   | Last checked / basis              |
-| ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| [TestingBot](https://testingbot.com/support/web-automate/playwright)                                  | Playwright catalog: Windows/Linux C/F; macOS C/F/W                                                                                                                                                       | Android and iPhone/iPad; use the [physical-device catalog](https://testingbot.com/support/api/devices), separate from simulators/emulators                                                      | Desktop Playwright endpoint fits the connector, subject to version checks. [Android API](https://testingbot.com/support/web-automate/playwright/mobile) and [Appium](https://testingbot.com/support/app-automate) need separate mobile setup | 2026-10-18 · docs + live catalogs |
-| [BrowserStack](https://www.browserstack.com/docs/automate/playwright/browsers-and-os)                 | Windows/macOS C/F/W with browser/OS restrictions; no Linux desktop row in the checked catalog                                                                                                            | Real Android and iPhone/iPad catalog entries; [iOS Playwright](https://www.browserstack.com/docs/automate/playwright/playwright-ios/nodejs) has its own setup                                   | Desktop Playwright endpoint fits after compatibility checks; mobile SDK/device paths require separate verification                                                                                                                           | 2026-10-18 · docs + live catalog  |
-| [Sauce Labs](https://docs.saucelabs.com/web-apps/automated-testing/playwright/)                       | Published Playwright testing table: Windows/macOS C/F/W with [limits](https://docs.saucelabs.com/web-apps/automated-testing/playwright/limitations/). Linux client support is not a Linux browser target | [Android and iOS real phones/tablets](https://docs.saucelabs.com/mobile-apps/automated-testing/appium/real-devices/), plus separate virtual devices                                             | Documented `saucectl` runner; real mobile Appium. Neither integration is built in here                                                                                                                                                       | 2026-10-18 · docs only            |
-| [TestMu AI (formerly LambdaTest)](https://www.lambdatest.com/support/docs/playwright-testing/)        | Windows/macOS examples; desktop C/F/W with [bundle compatibility](https://www.lambdatest.com/support/docs/playwright-bundled-browser-support/); Linux browser target unverified                          | [Android](https://www.lambdatest.com/support/docs/playwright-android/) and [iPhone/iPad Safari](https://www.lambdatest.com/support/docs/playwright-ios-device/); iOS Playwright is a gated beta | Provider Playwright endpoints and Android API options. Published mobile version ranges exclude this starter's Playwright 1.64; no working integration claimed                                                                                | 2026-10-18 · docs only            |
-| [Perfecto](https://help.perfecto.io/perfecto-help/content/Perfecto/automation-testing/playwright.htm) | Windows Chrome/Edge; macOS C/F/W                                                                                                                                                                         | Android Chrome/WebView; iOS Safari Playwright beta with a specific client version                                                                                                               | Provider capabilities/endpoints need validation. Source version statements differ; confirm the supported client before selecting it                                                                                                          | 2026-10-18 · docs only            |
-| [AWS Device Farm](https://docs.aws.amazon.com/devicefarm/latest/developerguide/welcome.html)          | [Desktop TestGrid](https://docs.aws.amazon.com/devicefarm/latest/testgrid/techref-support.html): Windows Chrome/Edge/Firefox via WebDriver                                                               | Real Android/iOS mobile devices; select device pools and supported test framework                                                                                                               | AWS test uploads/Appium or desktop WebDriver need a separate integration; no plain Playwright endpoint assumed                                                                                                                               | 2026-10-18 · docs only            |
+Managed browser services provide endpoints rather than physical mobile devices:
 
-Managed browser services offer remote browser endpoints:
-
-| Provider / service                                                  | Browser or host coverage                                                  | GPU and full-checkout limits                                                                                                                                                                            | Connection and starter fit                                                                    | Last checked / basis                       |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| [Browserless](https://docs.browserless.io/overview/connection-urls) | Hosted C/F/W endpoints; emulation does not supply physical mobile devices | [GPU infrastructure](https://docs.browserless.io/enterprise/private-deployment/performance) is a private-deployment option. Shared endpoints establish neither GPU access nor a full developer checkout | Choose a Playwright-protocol endpoint for the connector; Chrome CDP needs a separate adapter  | 2026-10-18 · docs; prior shared Chrome run |
-| [Kernel](https://www.kernel.sh/browsers)                            | Managed Chromium sessions, not a three-engine/device farm                 | [GPU browsers use virtual GPUs](https://www.kernel.sh/blog/gpu); verify GPU configuration and access. No physical-workstation or full-checkout acceptance inferred                                      | Documented Playwright-over-CDP path needs session lifecycle code; no general CDP adapter here | 2026-10-18 · docs; GPU run not performed   |
+| Provider / service                                                  | Browser coverage | GPU / host limits                                                                                                                                                                           | Connection and starter fit                                                           | Last checked / basis                        |
+| ------------------------------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------- |
+| [Browserless](https://docs.browserless.io/overview/connection-urls) | Hosted C/F/W     | [GPU infrastructure](https://docs.browserless.io/enterprise/private-deployment/performance) is a private-deployment option; shared endpoints do not establish GPU access or a full checkout | Playwright-protocol endpoint fits the connector; Chrome CDP needs a separate adapter | 2026-10-18 · docs + prior shared Chrome run |
+| [Kernel](https://www.kernel.sh/browsers)                            | Managed Chromium | [GPU browsers use virtual GPUs](https://www.kernel.sh/blog/gpu); configuration/access need verification; no full-checkout acceptance                                                        | Playwright over CDP needs session lifecycle code; no general CDP adapter here        | 2026-10-18 · docs; GPU run not performed    |
 
 ### GPU hosts and remote Macs
 
-Runpod is one example of a host where the full repository checkout can run.
-The options below provide compute or Mac access; they are not preconfigured
-browser/device farms. Install the required Node/browser tooling and test on the
-rendering host with the existing package commands. No provider adapter is needed
-for an ordinary SSH checkout. All additional options are **documentation-only**;
-only the recorded Runpod configuration has passed this repository's host checks.
+These services supply a host for an ordinary SSH checkout and the existing
+package commands. Browser/driver installation is the caller's responsibility.
+Only the recorded Runpod configuration has been tested; the other rows are
+**documentation-only**. Compute/CUDA support alone does not establish usable
+OpenGL/Vulkan/Metal, WebGPU or correct application paint.
 
-| Provider                                                                                    | Technical options                                                                                                                                                                                                                          | Access and graphics limits                                                                                                                                                                                | Last checked / basis                   |
-| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| [Runpod Pods](https://docs.runpod.io/pods/overview)                                         | Linux GPU containers; select a GPU and container image, then install required browsers                                                                                                                                                     | SSH/full checkout. Tested NVIDIA WebGL2/core WebGPU; no Windows/macOS or physical mobile target supplied by this path                                                                                     | 2026-10-18 · docs + Linux GPU checkout |
-| [Infomaniak Public Cloud](https://docs.infomaniak.cloud/compute/instances/flavors/)         | GPU VMs; documented NVIDIA L4, A2, T4, L40S and A100 flavors, depending on cluster                                                                                                                                                         | Full VM checkout; GPU flavors require project enablement. Select OS image and compatible graphics drivers; model availability alone is not browser acceptance                                             | 2026-10-18 · docs only; untested       |
-| [Vast.ai](https://docs.vast.ai/guides/instances/connect/ssh)                                | Marketplace GPU instances with container/host configuration chosen per offer                                                                                                                                                               | SSH checkout. Hardware, driver exposure, image and networking vary by offer; establish container/VM status and actual graphics API support                                                                | 2026-10-18 · docs only; untested       |
-| [Lambda Cloud](https://docs.lambda.ai/public-cloud/on-demand/connecting-instance/)          | Linux GPU instances with SSH access and a preconfigured compute stack                                                                                                                                                                      | Full instance checkout. Compute/CUDA tooling does not establish a browser graphics stack or usable WebGL2/WebGPU; verify the selected hardware and drivers                                                | 2026-10-18 · docs only; untested       |
-| [Vultr Cloud GPU](https://docs.vultr.com/products/compute/instances/cloud-gpu/provisioning) | GPU VMs with selectable image and GPU configuration                                                                                                                                                                                        | Full VM checkout. Distinguish dedicated from [vGPU configurations](https://docs.vultr.com/how-to-manage-vgpu-on-vultr-cloud-gpu-instances); verify graphics drivers/API readback on the selected instance | 2026-10-18 · docs only; untested       |
-| AWS EC2                                                                                     | [G6 NVIDIA L4 GPU instances](https://aws.amazon.com/ec2/instance-types/g6/) for graphics workloads; [EC2 Mac](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-mac-instances.html) for a macOS checkout on Apple dedicated hardware | Separate GPU-VM and Mac host routes, with OS/image/driver setup for each. EC2 Mac supplies no physically connected iPhone/iPad; no farm endpoint assumed                                                  | 2026-10-18 · docs only; untested       |
-| [Scaleway Apple silicon](https://www.scaleway.com/en/docs/apple-silicon/quickstart/)        | Dedicated Apple Mac mini hardware for a macOS checkout; model/OS choices follow the current catalog                                                                                                                                        | SSH/remote access, install local tooling and verify Metal/API work and application paint. A remote Mac does not establish access to physical phones/tablets                                               | 2026-10-18 · docs only; untested       |
-| [MacStadium](https://macstadium.com/bare-metal-mac)                                         | Dedicated Apple hardware or [Orka virtualized Mac environments](https://macstadium.com/orka); choose the host type explicitly                                                                                                              | Full Mac environment rather than a browser-only session. Virtualized and dedicated routes need separate GPU/Metal acceptance; no physical iPhone/iPad inferred                                            | 2026-10-18 · docs only; untested       |
+| Provider                                                                                    | Technical options                                                                                                                                                                              | Access and graphics limits                                                                                                                               | Last checked / basis                   |
+| ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| [Runpod Pods](https://docs.runpod.io/pods/overview)                                         | Linux GPU containers; selectable GPU/image                                                                                                                                                     | SSH checkout; tested NVIDIA WebGL2/core WebGPU. This path supplies no Windows/macOS or physical mobile target                                            | 2026-10-18 · docs + Linux GPU checkout |
+| [Infomaniak Public Cloud](https://docs.infomaniak.cloud/compute/instances/flavors/)         | NVIDIA L4, A2, T4, L40S and A100 GPU VM flavors, by cluster                                                                                                                                    | Full VM checkout; project GPU enablement and compatible OS/graphics drivers required                                                                     | 2026-10-18 · docs only                 |
+| [Vast.ai](https://docs.vast.ai/guides/instances/connect/ssh)                                | Marketplace GPU instances; configuration varies by offer                                                                                                                                       | SSH checkout; verify container/VM type, device exposure, drivers and networking                                                                          | 2026-10-18 · docs only                 |
+| [Lambda Cloud](https://docs.lambda.ai/public-cloud/on-demand/connecting-instance/)          | Linux GPU instances with compute tooling                                                                                                                                                       | SSH checkout; verify the browser graphics stack separately from CUDA                                                                                     | 2026-10-18 · docs only                 |
+| [Vultr Cloud GPU](https://docs.vultr.com/products/compute/instances/cloud-gpu/provisioning) | GPU VMs with selectable image/configuration                                                                                                                                                    | Full checkout; distinguish dedicated GPU from [vGPU](https://docs.vultr.com/how-to-manage-vgpu-on-vultr-cloud-gpu-instances) and verify graphics drivers | 2026-10-18 · docs only                 |
+| AWS EC2                                                                                     | [G6 NVIDIA L4](https://aws.amazon.com/ec2/instance-types/g6/) GPU instances; [EC2 Mac](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-mac-instances.html) on dedicated Apple hardware | Separate GPU-VM and Mac checkout routes; OS/driver setup required. No attached iPhone/iPad inferred                                                      | 2026-10-18 · docs only                 |
+| [Scaleway Apple silicon](https://www.scaleway.com/en/docs/apple-silicon/quickstart/)        | Dedicated Mac mini; model/OS from current catalog                                                                                                                                              | SSH/remote checkout; install tooling and verify Metal/API work                                                                                           | 2026-10-18 · docs only                 |
+| [MacStadium](https://macstadium.com/bare-metal-mac)                                         | Dedicated Macs or [Orka virtualized Macs](https://macstadium.com/orka)                                                                                                                         | Full Mac environment; dedicated and virtualized routes need separate GPU/Metal acceptance                                                                | 2026-10-18 · docs only                 |
 
-GPU compute/CUDA availability does not establish graphics-capable device/driver
-access, usable OpenGL/Vulkan/Metal, WebGPU support or correct application paint.
-Choose the host type and architecture explicitly, then record each API's actual
-work/readback, adapter and cleanup. A Linux GPU VM/container, remote Mac, native
-Windows workstation and WSL environment remain different acceptance targets.
-This technical comparison intentionally excludes plans and pricing.
+A remote Mac does not imply attached mobile devices. Keep VM/container,
+WSL and native-workstation evidence distinct, including adapter and API readback.
 
 ### Dated observations
 
-These results describe particular sessions, not vendor-wide promises. The
-[platform verification issue](https://github.com/SaschaBrunnerCH/agentic-starter-ts/issues/5)
-records acceptance scope and evidence. Desktop rows do not establish physical
-mobile coverage; the separate mobile samples below name their own devices.
+Session results are not vendor-wide promises. The
+[platform verification record](https://github.com/SaschaBrunnerCH/agentic-starter-ts/issues/5)
+retains the acceptance scope; desktop results do not establish mobile coverage.
 
-| Provider / target               | Observed graphics result                                                           | Observed application result                                                                     | Run date (UTC) |
-| ------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | -------------- |
-| TestingBot Linux Chrome         | SwiftShader (software) WebGL2 readback; no WebGPU adapter                          | Interaction and axe passed; functional evidence only                                            | 2026-10-17     |
-| TestingBot macOS Chrome         | Apple Paravirtual (virtual GPU) WebGL2; WebGPU work/readback with Apple identity   | Interaction and axe passed; no physical-Mac/full-checkout proof                                 | 2026-10-17     |
-| BrowserStack macOS Chrome       | Apple M2/Metal WebGL2 and requested core/compatibility WebGPU readback passed      | Interaction and axe passed; Firefox/WebKit app checks also passed. No macOS local-tooling proof | 2026-10-18     |
-| BrowserStack Windows Chrome     | SwiftShader WebGL2; no WebGPU adapter                                              | Interaction and axe passed; functional evidence only                                            | 2026-10-18     |
-| Browserless shared Linux Chrome | SwiftShader WebGL2; no core/compatibility WebGPU adapter in checked configurations | Interaction and axe passed; private GPU deployment untested                                     | 2026-10-18     |
-| Runpod Linux GPU container      | NVIDIA WebGL2/core WebGPU work/readback; full checkout and bounded cleanup passed  | Application and axe passed; no bare-metal/performance claim                                     | 2026-10-18     |
+| Provider / target               | Observed graphics result                                     | Observed application result                                                           | Run date (UTC) |
+| ------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------- | -------------- |
+| TestingBot Linux Chrome         | SwiftShader WebGL2 readback; no WebGPU adapter               | Interaction/axe passed; software rendering                                            | 2026-10-17     |
+| TestingBot macOS Chrome         | Apple Paravirtual WebGL2; Apple WebGPU readback              | Interaction/axe passed; virtual GPU, no physical-Mac/full-checkout proof              | 2026-10-17     |
+| BrowserStack macOS Chrome       | Apple M2/Metal WebGL2 and core/compatibility WebGPU readback | Interaction/axe passed; Firefox/WebKit app checks also passed. No macOS tooling proof | 2026-10-18     |
+| BrowserStack Windows Chrome     | SwiftShader WebGL2; no WebGPU adapter                        | Interaction/axe passed; software rendering                                            | 2026-10-18     |
+| Browserless shared Linux Chrome | SwiftShader WebGL2; no core/compatibility WebGPU adapter     | Interaction/axe passed; private GPU deployment untested                               | 2026-10-18     |
+| Runpod Linux GPU container      | NVIDIA WebGL2/core WebGPU; full checkout and bounded cleanup | Application/axe passed; no bare-metal/performance claim                               | 2026-10-18     |
 
 #### Real phone and tablet observations
 
-Checked 2026-10-18 (UTC) through temporary WebDriver/Appium sessions, separate
-from the starter's Playwright emulation projects. Physical-device catalogs and
-explicit real-device capabilities selected these models; returned capabilities
-and provider device records established the device OS. These are provider-attested
-physical-device results, not an independent hardware audit or performance study.
+Temporary WebDriver/Appium runs selected physical devices through the providers'
+catalogs and real-device capabilities. These are provider-attested results;
+Playwright desktop emulation is separate. All rows passed WebGL2 and both
+requested core/compatibility WebGPU readbacks with non-fallback adapters.
 
-| Provider     | Returned device / rendering OS        | Browser observed                                          | Graphics work/readback                                                         | Run date (UTC) |
-| ------------ | ------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------ | -------------- |
-| TestingBot   | Galaxy S25 (SM-S931B), Android 15     | Chrome 149.0.7827.159                                     | WebGL2 Adreno 830; WebGPU `qualcomm adreno-8xx`, both requested modes passed   | 2026-10-18     |
-| TestingBot   | Galaxy Tab S11 (SM-X730), Android 16  | Chrome 150.0.7871.189                                     | WebGL2 Mali-G925; WebGPU `arm gen-5` readback passed, classifier finding below | 2026-10-18     |
-| TestingBot   | iPhone 17 Pro, iOS 26.5               | Safari 26.5                                               | Apple GPU WebGL2 and WebGPU, both requested modes passed                       | 2026-10-18     |
-| TestingBot   | iPad (9th generation), iPadOS 26.6    | Safari 26.6                                               | Apple GPU WebGL2 and WebGPU, both requested modes passed                       | 2026-10-18     |
-| BrowserStack | Galaxy S25 (SM-S931B), Android 15     | Chrome 152 (reduced user agent; full version unavailable) | WebGL2 Adreno 830; WebGPU `qualcomm adreno-8xx`, both requested modes passed   | 2026-10-18     |
-| BrowserStack | Galaxy Tab S11 (SM-X736B), Android 16 | Chrome 152 (reduced user agent; full version unavailable) | WebGL2 Mali-G925; WebGPU `arm gen-5` readback passed, classifier finding below | 2026-10-18     |
-| BrowserStack | iPhone 17 Pro, iOS 26.6               | Safari 26.6                                               | Apple GPU WebGL2 and WebGPU, both requested modes passed                       | 2026-10-18     |
-| BrowserStack | iPad Air 13 2025, iPadOS 26.6         | Safari 26.6.1                                             | Apple GPU WebGL2 and WebGPU, both requested modes passed                       | 2026-10-18     |
+| Provider     | Returned device / rendering OS        | Browser observed      | WebGL2 / WebGPU identity           | Run date (UTC) |
+| ------------ | ------------------------------------- | --------------------- | ---------------------------------- | -------------- |
+| TestingBot   | Galaxy S25 (SM-S931B), Android 15     | Chrome 149.0.7827.159 | Adreno 830 / `qualcomm adreno-8xx` | 2026-10-18     |
+| TestingBot   | Galaxy Tab S11 (SM-X730), Android 16  | Chrome 150.0.7871.189 | Mali-G925 / `arm gen-5`            | 2026-10-18     |
+| TestingBot   | iPhone 17 Pro, iOS 26.5               | Safari 26.5           | Apple GPU / Apple                  | 2026-10-18     |
+| TestingBot   | iPad (9th generation), iPadOS 26.6    | Safari 26.6           | Apple GPU / Apple                  | 2026-10-18     |
+| BrowserStack | Galaxy S25 (SM-S931B), Android 15     | Chrome 152¹           | Adreno 830 / `qualcomm adreno-8xx` | 2026-10-18     |
+| BrowserStack | Galaxy Tab S11 (SM-X736B), Android 16 | Chrome 152¹           | Mali-G925 / `arm gen-5`            | 2026-10-18     |
+| BrowserStack | iPhone 17 Pro, iOS 26.6               | Safari 26.6           | Apple GPU / Apple                  | 2026-10-18     |
+| BrowserStack | iPad Air 13 2025, iPadOS 26.6         | Safari 26.6.1         | Apple GPU / Apple                  | 2026-10-18     |
 
-All eight samples passed the built application's greeting/input interaction,
-changed-screenshot check, axe with zero violations, landscape rotation with the
-application retained, and deliberate wrong-pixel rejection for working APIs.
-Both core and compatibility WebGPU requests were exercised; this does not prove
-that every browser implements the requested feature-level distinction. Each owned
-session was deleted and its provider record confirmed complete/done; both accounts
-returned to zero running/queued sessions. Input used WebDriver click/clear/send
-keys, not human multitouch. The starter has no application GPU scene, so API
-readback is separate from its UI paint evidence.
+¹ Reduced user agent; full Chrome version unavailable. Apple WebGPU identity was
+`apple apple apple apple`.
 
-TestingBot's physical iPad (9th generation) with iPadOS 26.6 became available
-during continued read-only availability checks on 2026-10-18. Its subsequent
-bounded test passed, with one active physical allocation and zero VM allocations
-reported during the session, followed by confirmed completion and an idle account.
-An earlier iOS 15 diagnostic is historical local evidence only and is not counted
-among these eight current-device samples.
+All eight passed greeting/input interaction, changed screenshots, axe with zero
+violations, landscape rotation and deliberate wrong-pixel rejection. Owned
+sessions were deleted, provider completion confirmed and accounts returned idle.
+Input was automated click/clear/send keys; human multitouch and performance were
+not tested. API readback is separate from UI paint; this starter has no GPU scene.
+Requesting both WebGPU modes does not prove a browser distinguishes feature levels.
 
-At the tested harness revision `32f00b1`, both Tab S11 sessions returned working
-non-fallback WebGPU with identity `arm gen-5`, which the classifier left unknown.
-[Issue #52](https://github.com/SaschaBrunnerCH/agentic-starter-ts/issues/52) owns the
-narrow identity/reporting fix. Successful readback is not silently promoted to an
-automatic hardware-classification pass. The captured records remain unchanged.
+The original Tab S11 harness classified `arm gen-5` as unknown;
+[PR #53](https://github.com/SaschaBrunnerCH/agentic-starter-ts/pull/53) fixes that
+identity check. Original probe records remain unchanged. Initial seven samples
+used clean harness `32f00b1`; the later TestingBot iPad used `cc678f2`, each with
+byte-matched deployed assets before/after testing.
 
-Device OS, provider summary OS and driver OS are separate fields. For example,
-the checked TestingBot iPhone session returned iOS 26.5 in capabilities and a
-matching device name, while its summary `os` was `TAHOE`; that summary is not the
-phone's OS. User agents can also be frozen or use desktop mode. Use returned device
-capabilities and device-specific provider metadata, preserve disagreements, and
-leave missing fields unverified. The driver for these runs was WSL Linux, not the
-Android/iOS rendering device. The iPad also reported a desktop-mode `MacIntel`
-platform, which does not change its established iPadOS identity. The initial seven
-current-device samples used clean harness revision `32f00b1`; the subsequent
-TestingBot current-iPad run used `cc678f2`. Each run's deployed index/assets were
-byte-matched to its harness checkout before and after testing; the observations
-are scoped to those builds.
+Device OS came from returned capabilities/device metadata. Generic provider OS
+fields can identify a coordinator, and desktop/frozen user agents can misidentify
+a mobile device. Record these separately from the WSL Linux test driver.
 
-Keep account access separate from this public overview. Authentication and a
-catalog entry establish neither access to every row nor successful
-allocation, device availability, protocol compatibility or GPU acceptance.
-Recheck linked catalogs and version/access restrictions before each selection;
-record actual device/browser/adapter and cleanup in that run's evidence. Update
-only rows rechecked, with their date and source, when offerings change. Do not
-renew an old test's date after merely rereading a provider's documentation.
+### Run and maintain farm checks
 
-Prefer the available local machine/device first. Add a farm for a missing browser
-or real device, or a full GPU host for checkout/discovery acceptance. Keep
-[focused PR checks and the full declared release inventory](browser-testing.md#as-the-suite-grows)
-unchanged. No account, SDK or default matrix expansion is required by
-this overview.
+Use local hardware first, then a farm for missing browsers/devices or a full host
+for checkout acceptance. Keep the [focused PR/full declared release policy](browser-testing.md#as-the-suite-grows).
+Recheck only the selected provider rows and date their sources; rereading docs
+must not renew an old test's date. Plans and pricing are excluded.
 
-Check the live device catalog, authorized access and returned OS/browser/device identity.
-Do not accept a substituted VM or emulator as the requested real-device row.
-Use an exact identifiable deployed build or an owned tunnel; remote `localhost`
-belongs to the rendering host. Provider tunnel rules differ:
-[TestingBot documents an iOS localhost limitation](https://testingbot.com/support/app-automate/help/tunnel).
-A custom hostname also needs correct routing and trusted HTTPS for secure APIs.
+Verify live availability, authorized access and returned device/browser identity;
+reject substituted emulators/VMs for physical-device tests. Use an identifiable
+build or owned tunnel with trusted HTTPS. Remote `localhost` belongs to the
+rendering host; [TestingBot iOS has a localhost limitation](https://testingbot.com/support/app-automate/help/tunnel).
 
-Keep each authorized run bounded by duration, concurrency and available quota,
-including other projects' account use. Inspect video/log/screenshot retention and
-private data exposure. Provision credentials through protected runtime settings;
-never include them in reports. Record the returned owned session ID privately,
-close only that session/tunnel, and confirm cleanup after failure/cancellation.
-An uncertain allocation or cleanup needs reconciliation before another allocation.
-No provider SDK, budget manager, tunnel launcher or device-lab abstraction is added
-by this guide. [Existing endpoint setup](browser-testing.md#connect-one) remains optional.
-
-Desktop farm machines may use software or virtual GPUs; a cloud macOS row is not
-physical-Mac proof. Real-device labeling also does not prove a requested API or
-native gesture was exercised. Read the adapter and execute work on that rendering
-host, then check application paint. Keep remote timings scoped to that device,
-virtualization, power/thermal state and load; never substitute them for native
-workstation or local physical-device acceptance.
+Bound duration/concurrency/quota, including other account users. Check recording
+retention and keep credentials and session IDs private. Close only owned
+sessions/tunnels; reconcile uncertain allocation or cleanup before retrying.
+Real-device labels do not prove API work or native gestures: record readback,
+application paint and adapter evidence, keeping remote timings scoped to their
+hardware, virtualization and load. [Endpoint setup](browser-testing.md#connect-one)
+remains optional; this guide adds no SDK, provider adapter or default test matrix.
