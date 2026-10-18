@@ -429,35 +429,8 @@ for (const name of ["github-pages", "browser-farm"]) {
   }
 }
 
-// The switch for browser tests in the PR build, off by default: they run on the developer's
-// machine (engineering/agents/browser-testing.md). An existing value is kept.
-try {
-  const current = answers([
-    "api",
-    `${repositoryPath}/actions/variables/BROWSER_TESTS_IN_CI`,
-    "--jq",
-    ".value",
-  ])?.trim();
-  if (current === undefined) {
-    gh([
-      "api",
-      "-X",
-      "POST",
-      `${repositoryPath}/actions/variables`,
-      "-f",
-      "name=BROWSER_TESTS_IN_CI",
-      "-f",
-      "value=false",
-    ]);
-    changes.push("variable BROWSER_TESTS_IN_CI created as false: browser tests run locally");
-  } else {
-    console.log(
-      `Browser tests in the PR build: BROWSER_TESTS_IN_CI is ${current}${current === "true" ? " (on)" : " (off)"}`,
-    );
-  }
-} catch (error) {
-  notApplied.push(`variable BROWSER_TESTS_IN_CI: ${reason(error)}`);
-}
+// PR browser acceptance runs locally on the GPU and is reported on the PR.
+// Legacy BROWSER_TESTS_IN_CI variables are harmless: no workflow consumes them.
 
 // Immutable releases: a published release's assets and tag cannot change.
 try {
