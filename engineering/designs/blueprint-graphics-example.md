@@ -14,7 +14,20 @@ Each panel explains missing APIs, a missing adapter, initialization/rendering fa
 
 ## Code ownership
 
-`src/graphics/scene.ts` owns projections, shared colored line triangles, the rotation clock and pixel classification. Both APIs consume those exact vertices. CPU projection keeps the shader examples short; it is not a recommendation for large production datasets. `renderers.ts` owns shader compilation, buffers, canvas drawing/readback and resource destruction. `GraphicsLab.tsx` owns controls, canvas sizing, frame scheduling and readable status. `webgpu.d.ts` supplements the platform DOM library's missing canvas overload and runtime constants, without another package.
+`src/graphics/scene.ts` owns projections, shared colored line triangles, the rotation clock and pixel classification. Both APIs consume those exact vertices. CPU projection keeps the shader examples short; it is not a recommendation for large production datasets. `GraphicsLab.tsx` owns controls, canvas sizing, frame scheduling and readable status. `webgpu.d.ts` supplements the platform DOM library's missing canvas overload and runtime constants, without another package.
+
+The API implementations and shader languages have separate files, as requested by the owner:
+
+| File under `src/graphics/` | Owns                                                                     |
+| -------------------------- | ------------------------------------------------------------------------ |
+| `renderer.ts`              | The shared renderer contract and background color.                       |
+| `webgl-renderer.ts`        | WebGL2 setup, shader compilation, buffers, drawing/readback and cleanup. |
+| `webgpu-renderer.ts`       | WebGPU setup, shader compilation, buffers, drawing/readback and cleanup. |
+| `shaders/world.vert.glsl`  | The WebGL2 GLSL vertex shader.                                           |
+| `shaders/world.frag.glsl`  | The WebGL2 GLSL fragment shader.                                         |
+| `shaders/world.wgsl`       | The WebGPU WGSL vertex and fragment entry points.                        |
+
+The renderer modules import shader files through Vite's `?raw` imports. This keeps native shader source readable and preserves syntax highlighting without a loader dependency, new package or graphics engine.
 
 The two API implementations are intentionally separate. WebGPU uses a four-sample attachment resolved into the canvas so thin lines remain comparable with WebGL2's antialiasing; resizing and disposal destroy that attachment. Async initialization checks cancellation before configuring a canvas, so an old React StrictMode effect cannot overwrite its replacement. WebGL cleanup deletes the owned resources without deliberately losing the reusable canvas context. A general engine abstraction or separate package is unnecessary for an example that adopters can remove as one folder. The README lists the removal steps. Styling belongs to `src/app.css`; there are no remote fonts or assets.
 

@@ -59,6 +59,8 @@ The one-page example keeps the greeting above two matching blueprint canvases. G
 
 The [capture metadata and procedure](engineering/diagrams/README.md#actual-ui-capture) identify what was actually rendered. The [example design](engineering/designs/blueprint-graphics-example.md) explains its code and evidence limits.
 
+The native APIs are separate: [WebGL2 setup and drawing](src/graphics/webgl-renderer.ts) and [WebGPU setup and drawing](src/graphics/webgpu-renderer.ts). Their shaders live in [GLSL vertex](src/graphics/shaders/world.vert.glsl), [GLSL fragment](src/graphics/shaders/world.frag.glsl) and [WGSL](src/graphics/shaders/world.wgsl) files; the small [renderer contract](src/graphics/renderer.ts) is shared.
+
 Replace `src/App.tsx` and `src/app.css` with your first screen; remove `src/graphics/`, `e2e/graphics.spec.ts` and `e2e/graphics-evidence.ts`, and remove the graphics coverage exclusion in `vite.config.ts`. Update `src/App.test.tsx`, the greeting files and `e2e/smoke.spec.ts` for the product. Replace or remove this example screenshot, its metadata and `engineering/diagrams/capture-starter.mjs` together, including this README's example image and the visual guide's "Actual UI capture" section. Remove `engineering/designs/blueprint-graphics-example.md` and its index entry, and replace the example product terms in `CONTEXT.md`. Keep the general browser/GPU tooling only where your product needs it. Run the gate and relevant browser tests after replacement.
 
 ### Without React

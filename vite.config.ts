@@ -19,7 +19,7 @@ export default defineConfig({
         // Native canvas/resource lifecycles need a browser. Geometry, clock and
         // pixel classification remain measured in scene.ts; e2e/graphics.spec.ts
         // checks both renderers, their painted output and unavailable paths.
-        "src/graphics/{GraphicsLab.tsx,renderers.ts}",
+        "src/graphics/{GraphicsLab.tsx,webgl-renderer.ts,webgpu-renderer.ts}",
         // Commands that run git, gh, the network or a browser. Their decisions live in the
         // rule modules beside them, which are measured.
         "scripts/workflow/{issue,task,init-local-artifacts}.ts",

@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { angleAt, sceneVertices, type Motion, type Projection } from "./scene.ts";
-import { webglRenderer, webgpuRenderer, type Renderer } from "./renderers.ts";
+import type { Renderer } from "./renderer.ts";
+import { webglRenderer } from "./webgl-renderer.ts";
+import { webgpuRenderer } from "./webgpu-renderer.ts";
 
 type Api = "WebGL2" | "WebGPU";
 interface View {
