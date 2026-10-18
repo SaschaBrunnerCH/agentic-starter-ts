@@ -153,6 +153,7 @@ export async function webgpuRenderer(
         ],
       },
       primitive: { topology: "triangle-list" },
+      multisample: { count: 4 },
     });
     // Configure only after async initialization and cancellation checks. An old
     // StrictMode effect must never overwrite the replacement effect's canvas.
@@ -164,6 +165,7 @@ export async function webgpuRenderer(
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
     });
     let buffer: GPUBuffer | undefined;
+    let multisample: GPUTexture | undefined;
     return {
       identity:
         [
@@ -185,11 +187,25 @@ export async function webgpuRenderer(
         }
         device.queue.writeBuffer(buffer, 0, vertices);
         const texture = context.getCurrentTexture();
+        if (
+          !multisample ||
+          multisample.width !== canvas.width ||
+          multisample.height !== canvas.height
+        ) {
+          multisample?.destroy();
+          multisample = device.createTexture({
+            size: { width: canvas.width, height: canvas.height },
+            format,
+            sampleCount: 4,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT,
+          });
+        }
         const encoder = device.createCommandEncoder();
         const pass = encoder.beginRenderPass({
           colorAttachments: [
             {
-              view: texture.createView(),
+              view: multisample.createView(),
+              resolveTarget: texture.createView(),
               clearValue: background,
               loadOp: "clear",
               storeOp: "store",
@@ -238,6 +254,7 @@ export async function webgpuRenderer(
       dispose() {
         disposed = true;
         buffer?.destroy();
+        multisample?.destroy();
         context.unconfigure();
         device.destroy();
       },
