@@ -68,7 +68,7 @@
     "knip": "^6.41.0",
     "lint-staged": "^17.6.0",
     "oxlint": "^1.88.0",
-    "oxlint-tsgolint": "^7.0.2003",
+    "oxlint-tsgolint": "^7.0.2004",
     "prettier": "^3.9.10",
     "secretlint": "^13.0.7",
     "typescript": "^7.0.2",
