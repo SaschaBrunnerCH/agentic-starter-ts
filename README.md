@@ -18,6 +18,20 @@ New to working with agents? Complete setup below, then follow [your first sessio
   <img src="engineering/diagrams/template-highlights.svg" alt="Six starter highlights: small app, agent workflow, early verification, real hardware, owner control and repeatable delivery. The bullets above provide the text equivalent.">
 </picture>
 
+## How the agent workflow fits together
+
+You define the outcome and authorize the merge. The agent takes one checkable issue through implementation, verification and a pull request, using the same workflow whichever coding agent you choose.
+
+<picture>
+  <source media="(max-width: 600px)" srcset="engineering/diagrams/agent-workflow-narrow.svg">
+  <img src="engineering/diagrams/agent-workflow.svg" alt="Context feeds agent work in an isolated worktree. Verification sends failed checks back for fixes; the owner approves the exact commit before merge and cleanup. The bullets below provide the text equivalent.">
+</picture>
+
+- **Context in.** The [issue](engineering/agents/issue-tracker.md) supplies the goal, priority and “Done when” criteria. [AGENTS.md](AGENTS.md) supplies the rules; [CONTEXT.md](CONTEXT.md) supplies shared terms. The agent reads guides, designs, research and ADRs as the task needs them, and preserves lasting findings and rationale in tracked records.
+- **Agent work.** `pnpm task start <issue>` claims the issue and creates an isolated branch and worktree. The agent plans, changes code, tests and updates documentation. A [handoff](engineering/agents/task-lifecycle.md#handoff-with-unfinished-work) preserves state, evidence and the next action when a session stops.
+- **Verification.** Commit hooks check staged changes; `pnpm check:push` runs the full gate before push, and the PR build repeats the code/build gate. Local GPU browser acceptance is reported on the PR separately. Failed checks return to the agent for fixes; `pnpm task ready <pr>` checks readiness for your review. See [what each check establishes](engineering/agents/local-verification.md).
+- **Owner approval.** With a current base and green PR build, you review the result and authorize the exact commit. A new commit needs a new yes. The agent then merges that commit and cleans up its worktree and branch through the [task lifecycle](engineering/agents/task-lifecycle.md#validate-and-complete).
+
 ## Prerequisites
 
 - **Node.js 24**, **Git** and **pnpm 12**. The pnpm version is pinned in `packageManager` in `package.json`; install it with `npm install --global pnpm@12.10.1`. Node.js 24 still ships Corepack, so `corepack enable` works too.

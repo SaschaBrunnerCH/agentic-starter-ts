@@ -49,6 +49,8 @@ Use useful alt text and nearby prose or a data table for important information. 
 - **Editable diagrams:** open `.excalidraw` at [Excalidraw](https://excalidraw.com), edit, save the source and export SVG with a background. Update matching files together. The highlights use Excalidraw 0.18.0's actual [export API](https://docs.excalidraw.com/docs/@excalidraw/excalidraw/api/utils/export). Both SVGs embed editable scenes; reopen the narrow SVG to change its stacked layout. Synchronize both layouts with the README bullets. Older SVGs were drawn from the same descriptions as their sources; editor exports can differ. The workflow source was also verified through the exporter.
 - **Vector graphics:** edit the SVG directly or use a suitable editor. Preserve the viewBox, labels and text alternatives; an export should display without an editor account.
 
+The [README agent workflow](../../README.md#how-the-agent-workflow-fits-together) uses directly editable SVG: [wide layout](agent-workflow.svg) and [stacked layout](agent-workflow-narrow.svg). Both files are their own source; edit them together with the README text equivalent. They describe the existing context, isolated agent work, verification feedback and owner approval flow. Local browser evidence is separate from the automated code/build gate; the overview does not establish a passed check or hardware test.
+
 ### Measured chart
 
 ![Recorded unit-test coverage: statements 96.73%, branches 91.14%, functions 98.23%, lines 97.16%; required floors 95%, 90%, 95%, 95%.](coverage-example.svg)
@@ -76,6 +78,7 @@ Keep visuals with their owning documentation; update source, export, text equiva
 | Diagram                 | Shows                          | Embedded in                         |
 | ----------------------- | ------------------------------ | ----------------------------------- |
 | `workflow`              | Issue to merged change         | Getting started                     |
+| `agent-workflow`        | Context to approved change     | Repository README                   |
 | `guardrails`            | Four verification layers       | Getting started, local verification |
 | `issue-statuses`        | Project statuses               | Issue tracker                       |
 | `browser-device-matrix` | Desktop, device and farm paths | Browser/device coverage             |

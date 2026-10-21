@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
+  <title id="title">How the agentic starter workflow fits together</title>
+  <desc id="desc">An issue, shared instructions and tracked knowledge feed an agent working in an isolated worktree. Commit hooks, the push gate, the PR build and local browser evidence verify its changes. Failed checks return to the agent for fixes. The owner authorizes the exact commit before merge and cleanup. Handoffs preserve unfinished work.</desc>
+  <!-- Editable SVG source. Keep the wide and narrow layouts and README text equivalent in sync. -->
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569" />
+    </marker>
+    <marker id="feedback" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1971C2" />
+    </marker>
+  </defs>
+  <rect width="1200" height="700" rx="20" fill="#F8FAFC" />
+  <g font-family="Arial, Helvetica, sans-serif" fill="#0F172A">
+<text x="28" y="52" font-size="32" fill="#0F172A" font-weight="700">From intent to an approved change</text>
+<text x="28" y="84" font-size="19" fill="#475569">You decide the outcome. The agent implements it. Checks and your approval control delivery.</text>
+<text x="28" y="134" font-size="15" fill="#475569" font-weight="700">01  CONTEXT IN</text>
+<text x="432" y="134" font-size="15" fill="#475569" font-weight="700">02  AGENT WORK</text>
+<text x="844" y="134" font-size="15" fill="#475569" font-weight="700">03  VERIFICATION</text>
+<rect x="28" y="158" width="328" height="100" rx="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" />
+<text x="48" y="188" font-size="22" fill="#0F172A" font-weight="700">A checkable issue</text>
+<text x="48" y="215" font-size="19" fill="#475569">Owner sets goal and priority</text>
+<text x="48" y="240" font-size="19" fill="#475569">“Done when” defines completion</text>
+<rect x="28" y="274" width="328" height="100" rx="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" />
+<text x="48" y="304" font-size="22" fill="#0F172A" font-weight="700">Shared instructions</text>
+<text x="48" y="331" font-size="19" fill="#475569">AGENTS.md + CONTEXT.md</text>
+<text x="48" y="356" font-size="19" fill="#475569">One rule source, shared terms</text>
+<rect x="28" y="390" width="328" height="124" rx="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" />
+<text x="48" y="420" font-size="22" fill="#0F172A" font-weight="700">Tracked knowledge</text>
+<text x="48" y="447" font-size="19" fill="#475569">Guides, designs, research, ADRs</text>
+<text x="48" y="472" font-size="19" fill="#475569">Read what the task needs</text>
+<text x="48" y="497" font-size="19" fill="#475569">Keep lasting rationale in the repo</text>
+<path d="M 356 208 H 392" fill="none" stroke="#475569" stroke-width="2" />
+<path d="M 356 324 H 392" fill="none" stroke="#475569" stroke-width="2" />
+<path d="M 356 452 H 392 V 208" fill="none" stroke="#475569" stroke-width="2" />
+<path d="M 392 300 H 432" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)" />
+<rect x="432" y="214" width="336" height="172" rx="12" fill="#EAF3FC" stroke="#1971C2" stroke-width="1.5" />
+<text x="456" y="254" font-size="28" fill="#145A96" font-weight="700">Your coding agent</text>
+<text x="456" y="290" font-size="20" fill="#0F172A">Plan, change, test &amp; document</text>
+<text x="456" y="320" font-size="20" fill="#0F172A">One issue, an isolated worktree</text>
+<text x="456" y="358" font-size="18" fill="#145A96">pnpm task start &lt;issue&gt;</text>
+<path d="M 768 288 H 844" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)" />
+<rect x="844" y="158" width="328" height="180" rx="12" fill="#EFF9F1" stroke="#2F9E44" stroke-width="1.5" />
+<text x="864" y="190" font-size="23" fill="#226F31" font-weight="700">Verify the change</text>
+<text x="864" y="222" font-size="19" fill="#475569">Commit hooks + push gate</text>
+<text x="864" y="248" font-size="19" fill="#475569">Same code/build gate in CI</text>
+<text x="864" y="282" font-size="19" fill="#475569">Local GPU browser acceptance</text>
+<text x="864" y="308" font-size="19" fill="#475569">Evidence reported on the PR</text>
+<path d="M 1008 338 V 416 H 600 V 386" fill="none" stroke="#1971C2" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#feedback)" />
+<text x="654" y="403" font-size="18" fill="#145A96">Failed checks → agent fixes</text>
+<path d="M 1128 338 V 462" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)" />
+<text x="1142" y="404" font-size="16" fill="#475569">Ready</text>
+<path d="M 512 386 V 462" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)" />
+<text x="530" y="448" font-size="17" fill="#475569">Pause / resume</text>
+<rect x="432" y="462" width="336" height="92" rx="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" />
+<text x="452" y="492" font-size="22" fill="#0F172A" font-weight="700">Resumable handoff</text>
+<text x="452" y="520" font-size="19" fill="#475569">State, evidence and next action</text>
+<text x="844" y="446" font-size="15" fill="#475569" font-weight="700">04  OWNER APPROVAL</text>
+<rect x="844" y="462" width="328" height="92" rx="12" fill="#FFF4EB" stroke="#C05621" stroke-width="1.5" />
+<text x="864" y="492" font-size="22" fill="#9A451B" font-weight="700">Your yes, for this commit</text>
+<text x="864" y="520" font-size="19" fill="#475569">Current base + green PR build</text>
+<text x="864" y="542" font-size="18" fill="#475569">New commit → ask again</text>
+<path d="M 1008 554 V 594" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)" />
+<rect x="432" y="594" width="740" height="80" rx="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" />
+<text x="456" y="625" font-size="23" fill="#0F172A" font-weight="700">Merge the approved commit, then clean up</text>
+<text x="456" y="653" font-size="19" fill="#475569">pnpm task merge · pnpm task cleanup</text>
+<text x="28" y="578" font-size="18" fill="#475569">Same workflow across agents.</text>
+<text x="28" y="606" font-size="18" fill="#475569">Rules and evidence live</text>
+<text x="28" y="632" font-size="18" fill="#475569">with the repository.</text>
+</g></svg>
