@@ -18,6 +18,22 @@ New to working with agents? Complete setup below, then follow [your first sessio
   <img src="engineering/diagrams/template-highlights.svg" alt="Six starter highlights: small app, agent workflow, early verification, real hardware, owner control and repeatable delivery. The bullets above provide the text equivalent.">
 </picture>
 
+## How the agent workflow fits together
+
+You define the outcome and authorize the merge. The agent takes one checkable issue through implementation, verification and a pull request, using the same workflow whichever coding agent you choose.
+
+Robot icons mark work an agent can carry out or receive by delegation. Person icons mark owner decisions or hands-on review. You can delegate issue drafting and Project updates while deciding the scope, Priority and authorization to merge.
+
+<picture>
+  <source media="(max-width: 600px)" srcset="engineering/diagrams/agent-workflow-narrow.svg">
+  <img src="engineering/diagrams/agent-workflow.svg" alt="Context feeds an isolated coding agent, with optional review. Robot icons mark agent work; person icons mark owner decisions or hands-on review. Checks send failures back for fixes. A PR preview lets reviewers try the app when configured. Human gates authorize the exact commit before merge and cleanup. The bullets below provide the text equivalent.">
+</picture>
+
+- **Context in.** The [issue](engineering/agents/issue-tracker.md) supplies the goal, priority and “Done when” criteria. [AGENTS.md](AGENTS.md) supplies the rules; [CONTEXT.md](CONTEXT.md) supplies shared terms. The agent reads guides, designs, research and ADRs as the task needs them, and preserves lasting findings and rationale in tracked records. The repository's [review and issue skills](engineering/agents/ai-tools.md#skills) start only when a person names them. A [handoff](engineering/agents/task-lifecycle.md#handoff-with-unfinished-work) records state, evidence and the next action for unfinished work.
+- **Agent work.** `pnpm task start <issue>` claims the issue and creates an isolated branch and worktree. The agent plans, implements, tests and updates documentation. An optional, owner-requested [independent review](engineering/agents/review.md) reads the rules, issue and diff in a fresh context, reports findings and leaves fixes to the author.
+- **Guardrails out.** Commit hooks check formatting, staged lint and secrets. `pnpm check:push` checks types, lint, unit tests and coverage, links, licences, secrets, workflows, the production build and its size budget; the PR build repeats the code/build gate. When [PR previews are configured](engineering/operations/deployment.md#pull-request-previews), a successful build publishes an app preview linked from the PR: open it and try the change. Local Chrome/GPU acceptance with axe is reported on the PR separately. Failed checks return to the agent for fixes; `pnpm task ready <pr>` checks the head, base and PR build. See [the full gate and its evidence](engineering/agents/local-verification.md).
+- **Human gates.** You resolve product decisions and review the ready pull request. With a current base and green PR build, you authorize the exact commit. A new commit needs a new yes. An independent review adds evidence for your decision. The agent then merges the approved commit and cleans up its worktree and branch through the [task lifecycle](engineering/agents/task-lifecycle.md#validate-and-complete).
+
 ## Prerequisites
 
 - **Node.js 24**, **Git** and **pnpm 12**. The pnpm version is pinned in `packageManager` in `package.json`; install it with `npm install --global pnpm@12.10.1`. Node.js 24 still ships Corepack, so `corepack enable` works too.
@@ -82,6 +98,28 @@ The agent reads `AGENTS.md` on its own. [Getting started with agentic work](engi
 - **Authorize merges.** The agent shows you a ready pull request with a green build and asks. Your "yes" is for that commit only; a new commit needs a new one. If the agent works with your GitHub account, GitHub cannot tell it from you: read what it shows you before you answer.
 - **Handle what only you can.** Issues labelled `ready-for-human`, the GitHub UI settings in step 7, and merges when the agent has no access to your account.
 - **Look at Dependabot weekly.** Its pull requests are handled like any other; see [dependency automation](engineering/agents/dependency-automation.md).
+
+### Through GitHub Issues, Projects and pull requests
+
+The [GitHub workflow](engineering/agents/issue-tracker.md) connects the issue, the Project and the pull request. One task moves through **Backlog → Ready → In progress → In review → Done**; **Blocked** records a dependency or decision that stops started work.
+
+The Project's **Board** view groups open issues by Status. The cards below use muted lines as placeholders so the process stays in focus. Closed tasks disappear from this open-only view; the workflow below shows how a task reaches Done.
+
+<picture>
+  <source media="(max-width: 900px)" srcset="engineering/diagrams/project-board-narrow.svg">
+  <img src="engineering/diagrams/project-board.svg" alt="Schematic Project board with Backlog, Ready, In progress, In review, Blocked and Done columns. Muted lines stand in for card contents. Robot icons identify agent work. Done is empty because this view shows open issues. The narrow layout reflows the columns into rows.">
+</picture>
+
+The workflow below shows the steps that move an issue through the board, including the PR preview you can try before authorizing a merge.
+
+<picture>
+  <source media="(max-width: 600px)" srcset="engineering/diagrams/github-workflow-narrow.svg">
+  <img src="engineering/diagrams/github-workflow.svg" alt="One issue moves across GitHub Project statuses. Robot icons mark agent work, including delegated issue drafting and board updates; person icons mark owner decisions or hands-on review. A green PR build can publish a preview app to try when configured. Approval authorizes the exact merge head. Parallel pause and resume arrows connect implementation with Blocked. The bullets below provide the text equivalent.">
+</picture>
+
+- **Issues define the work.** An agent can draft an issue from your goal, including a parent chain to an epic, type and area labels, and checkable “Done when” criteria. You resolve product decisions. Ready work is specified and unblocked; `ready-for-agent` identifies work an agent can take.
+- **Projects track execution.** An agent can propose ordering and apply your decisions to Project fields. You decide Priority: P0, then P1, then P2. `pnpm task start <issue>` claims the task, sets In progress and creates its worktree. At most four issues are In progress. A blocked task records what it needs and resumes when that is resolved.
+- **Pull requests deliver the change.** The agent opens a PR linking its issue with `Closes #<issue>` and reports checks and browser evidence. Failed checks return to the agent for fixes. After a green PR build, configured previews publish the app and link it in a PR comment: you and the agent can open it and try the change before merge. Enable this once with `pnpm setup:previews`; see [PR preview setup](engineering/operations/deployment.md#pull-request-previews). `pnpm task ready <pr>` verifies readiness and sets In review. Your yes authorizes the exact head; the agent runs `pnpm task merge` to merge it, close the issue and set Done, then `pnpm task cleanup` removes the local worktree and branch. The commands update and read back Project fields; closing an issue alone does not guarantee its Status changes.
 
 ## Commands
 

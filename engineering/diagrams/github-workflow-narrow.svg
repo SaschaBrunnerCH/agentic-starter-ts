@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="2296" viewBox="0 0 440 2296" role="img" aria-labelledby="title desc">
+  <title id="title">From a GitHub issue to a merged change</title>
+  <desc id="desc">Robot icons mark work an agent can carry out or receive by delegation, including drafting issues, proposing an order, updating the Project, implementing, preparing a PR, trying the preview, fixing checks and merging after authorization. Person icons mark owner decisions or hands-on review. The owner decides scope and Priority and authorizes the exact merge head. A task moves through Project statuses Backlog, Ready, In progress, In review and Done. Blocked is below implementation, with separate parallel pause and resume arrows. A green PR build can publish a preview app when pnpm setup:previews has been completed; open its PR link and try the app before deciding to merge. Preview publication is automated, and previews do not replace required checks or owner authorization. Task commands update and read back Project fields.</desc>
+  <!-- Directly editable source. Keep both layouts and the README text equivalent synchronized. Workflow schematic; the app window is illustrative, not a live screenshot. -->
+  <defs>
+    <symbol id="robot" viewBox="0 0 32 32">
+      <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 7 V4 M4 15 H2 V21 H4 M28 15 H30 V21 H28" />
+        <rect x="5" y="8" width="22" height="20" rx="5" />
+        <circle cx="11" cy="16" r="1.5" fill="currentColor" stroke="none" /><circle cx="21" cy="16" r="1.5" fill="currentColor" stroke="none" />
+        <path d="M11 22 H21" />
+      </g>
+    </symbol>
+    <symbol id="person" viewBox="0 0 32 32">
+      <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="16" cy="9" r="5" /><path d="M6 28 V24 A10 10 0 0 1 26 24 V28 Z" />
+      </g>
+    </symbol>
+    <marker id="flow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569" /></marker>
+    <marker id="agent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#1971C2" /></marker>
+    <marker id="owner" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#C05621" /></marker>
+    <marker id="preview" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#7C3AED" /></marker>
+  </defs>
+  <rect width="440" height="2296" fill="#F8FAFC" />
+  <g font-family="Arial, Helvetica, sans-serif" fill="#0F172A">
+  <text x="24" y="42" font-size="28" fill="#0F172A" font-weight="700">From issue to merge</text>
+  <text x="24" y="76" font-size="20" fill="#475569">Through GitHub + Projects</text>
+  <rect x="24" y="102" width="392" height="80" rx="10" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.5" />
+  <text x="40" y="132" font-size="20" fill="#0F172A" font-weight="700">GitHub Project: Status + Priority</text>
+  <text x="40" y="161" font-size="17" fill="#475569">You decide Priority: P0 → P1 → P2</text>
+  <use href="#robot" x="24" y="200" width="26" height="26" color="#1971C2" />
+  <text x="62" y="221" font-size="18" fill="#475569">Agent work · can be delegated</text>
+  <use href="#person" x="24" y="238" width="26" height="26" color="#C05621" />
+  <text x="62" y="259" font-size="17" fill="#475569">Owner decisions or hands-on review</text>
+  <text x="24" y="294" font-size="14" fill="#475569" font-weight="700">ONE ISSUE MOVES THROUGH THESE STATES</text>
+  <rect x="24" y="318" width="392" height="212" rx="10" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.5" />
+  <rect x="36" y="330" width="368" height="30" rx="6" fill="#EDF2F7" stroke="#EDF2F7" stroke-width="1.5" />
+  <text x="52" y="352" font-size="19" fill="#0F172A" font-weight="700">Backlog</text>
+  <use href="#robot" x="38" y="370" width="28" height="28" color="#1971C2" />
+  <text x="78" y="391" font-size="23" fill="#0F172A" font-weight="700">Write the issue</text>
+  <text x="40" y="421" font-size="18" fill="#475569">Draft scope + Done when</text>
+  <text x="40" y="444" font-size="18" fill="#475569">Parent chain → epic</text>
+  <text x="40" y="467" font-size="18" fill="#475569">Type + area labels</text>
+  <text x="40" y="490" font-size="18" fill="#475569">Owner resolves decisions</text>
+  <text x="40" y="516" font-size="17" fill="#475569">pnpm issue create</text>
+  <path d="M 220 530 V 578" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#flow)" />
+  <rect x="24" y="578" width="392" height="212" rx="10" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.5" />
+  <rect x="36" y="590" width="368" height="30" rx="6" fill="#EAF3FF" stroke="#EAF3FF" stroke-width="1.5" />
+  <text x="52" y="612" font-size="19" fill="#0F172A" font-weight="700">Ready</text>
+  <use href="#robot" x="38" y="630" width="28" height="28" color="#1971C2" />
+  <text x="78" y="651" font-size="23" fill="#0F172A" font-weight="700">Order the work</text>
+  <text x="40" y="681" font-size="18" fill="#475569">Agent proposes + updates</text>
+  <text x="40" y="704" font-size="18" fill="#475569">Owner confirms Priority</text>
+  <text x="40" y="727" font-size="18" fill="#475569">Label: ready-for-agent</text>
+  <text x="40" y="750" font-size="18" fill="#475569">No open native blocker</text>
+  <text x="40" y="776" font-size="17" fill="#475569">pnpm issue ready</text>
+  <path d="M 220 790 V 838" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#flow)" />
+  <rect x="24" y="838" width="392" height="212" rx="10" fill="#FFFFFF" stroke="#1971C2" stroke-width="1.5" />
+  <rect x="36" y="850" width="368" height="30" rx="6" fill="#EAF3FF" stroke="#EAF3FF" stroke-width="1.5" />
+  <text x="52" y="872" font-size="19" fill="#0F172A" font-weight="700">In progress</text>
+  <use href="#robot" x="38" y="890" width="28" height="28" color="#1971C2" />
+  <text x="78" y="911" font-size="23" fill="#0F172A" font-weight="700">Build in a worktree</text>
+  <text x="40" y="941" font-size="18" fill="#475569">Claim + isolated branch</text>
+  <text x="40" y="964" font-size="18" fill="#475569">Implement, test, document</text>
+  <text x="40" y="987" font-size="18" fill="#475569">Commit hook + push gate</text>
+  <text x="40" y="1010" font-size="18" fill="#475569">Fix + rerun failed checks</text>
+  <text x="40" y="1036" font-size="17" fill="#475569">pnpm task start &lt;issue&gt;</text>
+  <path d="M 220 1050 V 1098" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#flow)" />
+  <rect x="24" y="1098" width="392" height="212" rx="10" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.5" />
+  <rect x="36" y="1110" width="368" height="30" rx="6" fill="#FFF0E6" stroke="#FFF0E6" stroke-width="1.5" />
+  <text x="52" y="1132" font-size="19" fill="#0F172A" font-weight="700">In review</text>
+  <use href="#robot" x="38" y="1150" width="28" height="28" color="#1971C2" />
+  <text x="78" y="1171" font-size="23" fill="#0F172A" font-weight="700">PR + verification</text>
+  <text x="40" y="1201" font-size="18" fill="#475569">Link: Closes #&lt;issue&gt;</text>
+  <text x="40" y="1224" font-size="18" fill="#475569">Green build; current base</text>
+  <text x="40" y="1247" font-size="18" fill="#475569">Browser evidence on PR</text>
+  <text x="40" y="1270" font-size="18" fill="#475569">Preview app when set up</text>
+  <text x="40" y="1296" font-size="17" fill="#475569">pnpm task ready &lt;pr&gt;</text>
+  <rect x="24" y="1682" width="392" height="236" rx="10" fill="#FFFFFF" stroke="#2F9E44" stroke-width="1.5" />
+  <rect x="36" y="1694" width="368" height="30" rx="6" fill="#EAF7EE" stroke="#EAF7EE" stroke-width="1.5" />
+  <text x="52" y="1716" font-size="19" fill="#0F172A" font-weight="700">Done</text>
+  <use href="#robot" x="38" y="1734" width="28" height="28" color="#1971C2" />
+  <text x="78" y="1755" font-size="23" fill="#0F172A" font-weight="700">Merge + clean up</text>
+  <text x="40" y="1785" font-size="17" fill="#475569">After owner’s exact-head yes</text>
+  <text x="40" y="1808" font-size="17" fill="#475569">Merge; close the issue</text>
+  <text x="40" y="1831" font-size="17" fill="#475569">Set Project Status Done</text>
+  <text x="40" y="1854" font-size="17" fill="#475569">Remove worktree + branch</text>
+  <text x="40" y="1876" font-size="17" fill="#475569">pnpm task merge &lt;pr&gt;</text>
+  <text x="40" y="1902" font-size="17" fill="#475569">pnpm task cleanup &lt;pr&gt;</text>
+  <path d="M 384 1310 V 1358" fill="none" stroke="#7C3AED" stroke-width="1.8" marker-end="url(#preview)" />
+  <rect x="24" y="1358" width="392" height="126" rx="10" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.5" />
+  <rect x="36" y="1370" width="368" height="26" rx="5" fill="#F2EBFF" stroke="#F2EBFF" stroke-width="1.5" />
+  <text x="48" y="1389" font-size="16" fill="#475569">PR preview · when configured</text>
+  <use href="#person" x="40" y="1403" width="26" height="26" color="#C05621" />
+  <use href="#robot" x="74" y="1403" width="26" height="26" color="#1971C2" />
+  <text x="112" y="1426" font-size="22" fill="#0F172A" font-weight="700">Open and try the app</text>
+  <text x="40" y="1452" font-size="17" fill="#475569">Link on PR after a green build.</text>
+  <text x="40" y="1476" font-size="16" fill="#475569">Requires pnpm setup:previews.</text>
+  <path d="M 220 1484 V 1530" fill="none" stroke="#C05621" stroke-width="1.8" marker-end="url(#owner)" />
+  <rect x="24" y="1530" width="392" height="104" rx="10" fill="#FFF0E6" stroke="#C05621" stroke-width="1.5" />
+  <use href="#person" x="38" y="1545" width="27" height="27" color="#C05621" />
+  <text x="76" y="1565" font-size="21" fill="#C05621" font-weight="700">Owner authorizes this head</text>
+  <text x="40" y="1593" font-size="17" fill="#475569">Green build + current base + reviewed result.</text>
+  <text x="40" y="1621" font-size="18" fill="#475569">New commit → new yes.</text>
+  <path d="M 220 1634 V 1682" fill="none" stroke="#C05621" stroke-width="1.8" marker-end="url(#owner)" />
+  <path d="M 24 1202 H 12 V 944 H 24" fill="none" stroke="#1971C2" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#agent)" />
+  <text x="24" y="1338" font-size="17" fill="#1971C2">Failed checks → agent fixes and rechecks.</text>
+  <rect x="24" y="1966" width="392" height="138" rx="10" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.5" />
+  <use href="#robot" x="38" y="1980" width="28" height="28" color="#1971C2" />
+  <text x="78" y="2003" font-size="22" fill="#0F172A" font-weight="700">Blocked · when needed</text>
+  <text x="40" y="2032" font-size="17" fill="#475569">Record the dependency or decision</text>
+  <text x="40" y="2058" font-size="17" fill="#475569">and who provides it. Resume in</text>
+  <text x="40" y="2084" font-size="17" fill="#475569">In progress once it is resolved.</text>
+  <path d="M 24 2142 H 416" stroke="#DCE3EC" />
+  <text x="24" y="2172" font-size="17" fill="#475569">Agents can draft issues and update the board.</text>
+  <text x="24" y="2202" font-size="17" fill="#475569">You decide scope, Priority and merge approval.</text>
+  <text x="24" y="2238" font-size="17" fill="#475569">Project fields are updated and read back</text>
+  <text x="24" y="2266" font-size="17" fill="#475569">by the task commands.</text>
+  </g>
+</svg>
