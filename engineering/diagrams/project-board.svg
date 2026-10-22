@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="200" viewBox="0 0 1080 200" role="img" aria-labelledby="title desc">
+  <title id="title">A schematic Project board</title>
+  <desc id="desc">Six Status columns: Backlog, Ready, In progress, In review, Blocked and Done. Muted bars stand in for issue-card contents, with no titles, labels, priorities, identifiers or other readable task details. Robot icons identify agent work in In progress and In review. The Board view is filtered to open issues, so Done has no closed cards. The adjacent workflow explains how a task progresses and reaches completion. The phone layout reflows the six columns into three rows.</desc>
+  <!-- Directly editable source. Card contents are intentionally abstract shapes; keep labels, open-only filter and README text equivalent synchronized. -->
+  <defs>
+    <symbol id="robot" viewBox="0 0 32 32">
+      <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 7 V4 M4 15 H2 V21 H4 M28 15 H30 V21 H28" />
+        <rect x="5" y="8" width="22" height="20" rx="5" />
+        <circle cx="11" cy="16" r="1.5" fill="currentColor" stroke="none" /><circle cx="21" cy="16" r="1.5" fill="currentColor" stroke="none" />
+        <path d="M11 22 H21" />
+      </g>
+    </symbol>
+  </defs>
+  <rect width="1080" height="200" fill="#F8FAFC" />
+  <g font-family="Arial, Helvetica, sans-serif" fill="#0F172A">
+  <text x="16" y="30" font-size="25" fill="#0F172A" font-weight="700">Project board</text>
+  <rect x="16" y="46" width="166" height="138" rx="9" fill="#EDF2F7" stroke="#EDF2F7" stroke-width="1.4" />
+  <text x="28" y="72" font-size="22" fill="#0F172A" font-weight="700">Backlog</text>
+  <rect x="22" y="82" width="154" height="36" rx="6" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4" />
+  <rect x="32" y="91" width="99" height="5" rx="2.5" fill="#DCE3EC" />
+  <rect x="32" y="103" width="117" height="4" rx="2" fill="#DCE3EC" />
+  <rect x="22" y="126" width="154" height="34" rx="6" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4" />
+  <rect x="32" y="135" width="99" height="5" rx="2.5" fill="#DCE3EC" />
+  <rect x="32" y="147" width="89" height="4" rx="2" fill="#DCE3EC" />
+  <rect x="192" y="46" width="166" height="138" rx="9" fill="#EDF2F7" stroke="#EDF2F7" stroke-width="1.4" />
+  <text x="204" y="72" font-size="22" fill="#0F172A" font-weight="700">Ready</text>
+  <rect x="198" y="82" width="154" height="36" rx="6" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4" />
+  <rect x="208" y="91" width="99" height="5" rx="2.5" fill="#DCE3EC" />
+  <rect x="208" y="103" width="117" height="4" rx="2" fill="#DCE3EC" />
+  <rect x="198" y="126" width="154" height="34" rx="6" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4" />
+  <rect x="208" y="135" width="99" height="5" rx="2.5" fill="#DCE3EC" />
+  <rect x="208" y="147" width="89" height="4" rx="2" fill="#DCE3EC" />
+  <rect x="368" y="46" width="166" height="138" rx="9" fill="#EDF2F7" stroke="#EDF2F7" stroke-width="1.4" />
+  <text x="380" y="72" font-size="22" fill="#0F172A" font-weight="700">In progress</text>
+  <rect x="374" y="82" width="154" height="36" rx="6" fill="#EAF3FF" stroke="#1971C2" stroke-width="1.4" />
+  <rect x="384" y="91" width="66" height="5" rx="2.5" fill="#DCE3EC" />
+  <rect x="384" y="103" width="80" height="4" rx="2" fill="#DCE3EC" />
+  <use href="#robot" x="498" y="87" width="22" height="22" color="#1971C2" />
+  <rect x="544" y="46" width="166" height="138" rx="9" fill="#EDF2F7" stroke="#EDF2F7" stroke-width="1.4" />
+  <text x="556" y="72" font-size="22" fill="#0F172A" font-weight="700">In review</text>
+  <rect x="550" y="82" width="154" height="36" rx="6" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4" />
+  <rect x="560" y="91" width="66" height="5" rx="2.5" fill="#DCE3EC" />
+  <rect x="560" y="103" width="80" height="4" rx="2" fill="#DCE3EC" />
+  <use href="#robot" x="674" y="87" width="22" height="22" color="#1971C2" />
+  <rect x="720" y="46" width="166" height="138" rx="9" fill="#EDF2F7" stroke="#EDF2F7" stroke-width="1.4" />
+  <text x="732" y="72" font-size="22" fill="#0F172A" font-weight="700">Blocked</text>
+  <rect x="726" y="82" width="154" height="36" rx="6" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4" />
+  <rect x="736" y="91" width="99" height="5" rx="2.5" fill="#DCE3EC" />
+  <rect x="736" y="103" width="117" height="4" rx="2" fill="#DCE3EC" />
+  <rect x="896" y="46" width="166" height="138" rx="9" fill="#EDF2F7" stroke="#EDF2F7" stroke-width="1.4" />
+  <text x="908" y="72" font-size="22" fill="#0F172A" font-weight="700">Done</text>
+  </g>
+</svg>
