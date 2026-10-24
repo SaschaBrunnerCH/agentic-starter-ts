@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -159,6 +159,12 @@ function fixture(
   mkdirSync(join(root, "src"));
   writeFileSync(join(root, ".gitignore"), "node_modules\n");
   writeFileSync(join(root, "src/sum.ts"), before);
+  if (testFilename.endsWith(".tsx")) {
+    writeFileSync(
+      join(root, "vite.config.mjs"),
+      'export default { oxc: { jsx: { runtime: "classic", pragma: "element" } } };\n',
+    );
+  }
   git(root, "add", ".");
   git(root, "commit", "-q", "-m", "Add sum");
   const base = git(root, "rev-parse", "HEAD");
@@ -166,11 +172,15 @@ function fixture(
   writeFileSync(join(root, "src", testFilename), test);
   git(root, "add", ".");
   git(root, "commit", "-q", "-m", "Fix sum");
-  symlinkSync(
-    resolve(import.meta.dirname, "../../node_modules"),
-    join(root, "node_modules"),
-    "dir",
-  );
+  // Fixtures exercise tooling, independently of the replaceable application framework.
+  mkdirSync(join(root, "node_modules"));
+  for (const dependency of [".bin", "vitest"]) {
+    symlinkSync(
+      resolve(import.meta.dirname, "../../node_modules", dependency),
+      join(root, "node_modules", dependency),
+      "dir",
+    );
+  }
   return { root, base, head: git(root, "rev-parse", "HEAD") };
 }
 
@@ -296,12 +306,25 @@ describe("runOnBase", () => {
 
   it("checks imports in TSX regression tests", { timeout: 60_000 }, () => {
     const { root, base, head } = fixture(
-      'import React from "react"; import { it, expect } from "vitest"; import { sum } from "./sum"; it("adds", () => expect((<span>{sum(2, 3)}</span>).props.children).toBe(5));',
+      `import { it, expect } from "vitest";
+       import { sum } from "./sum";
+       function element(_tag: string, _props: unknown, child: number) {
+         return { props: { children: child } };
+       }
+       it("adds", () => expect((<span>{sum(2, 3)}</span>).props.children).toBe(5));`,
       undefined,
       undefined,
       "sum.test.tsx",
     );
-    expect(runOnBase(root, base, head, ["src/sum.test.tsx"]).failed).toEqual(["adds"]);
+    expect(existsSync(join(root, "node_modules/react"))).toBe(false);
+    expect(runOnBase(root, base, head, ["src/sum.test.tsx"])).toEqual({
+      failed: ["adds"],
+      notLoaded: [],
+    });
+    expect(runOnBase(root, head, head, ["src/sum.test.tsx"])).toEqual({
+      failed: [],
+      notLoaded: [],
+    });
   });
 
   it("leaves side-effect/framework imports alone", { timeout: 60_000 }, () => {
