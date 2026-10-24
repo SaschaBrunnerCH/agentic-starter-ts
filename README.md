@@ -51,6 +51,14 @@ Robot icons mark work an agent can carry out or receive by delegation. Person ic
 
 `pnpm task start`, `pnpm check:push` and `pnpm check:adoption` reject unsupported Node.js platforms before claiming work or launching checks. Installation and standalone commands remain available for browser testing and diagnostics; their availability does not establish a supported native Windows development workflow. WSL1 is outside the support policy: both WSL generations report `linux` to Node, so the guard does not verify the WSL generation. Confirm WSL2 during setup.
 
+### Why WSL2 on Windows?
+
+- **Faster file operations:** Keep your project inside WSL’s Linux filesystem so dependency installs, Git operations and builds avoid slow access across the Windows/Linux filesystem boundary.
+- **Seamless VS Code workflow:** Use your familiar Windows editor while terminals, extensions and debugging work directly inside WSL2.
+- **Everything you need to contribute:** Run the starter’s complete build, test and verification workflow in one supported environment.
+- **Fewer surprises in CI:** Develop with Linux tools locally, reducing platform differences when your changes reach CI.
+- **Smoother agent workflows:** Give coding agents a consistent shell and toolchain, reducing the need for Windows-specific command adaptations.
+
 ### Windows development with WSL2
 
 1. In PowerShell, inspect `wsl --list --verbose` and use a distribution whose VERSION is `2`. If WSL is missing, follow [Microsoft's installation guide](https://learn.microsoft.com/en-us/windows/wsl/install); installation or conversion is an explicit machine-setup action for the owner.
