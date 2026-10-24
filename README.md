@@ -44,10 +44,10 @@ Robot icons mark work an agent can carry out or receive by delegation. Person ic
 
 ### Supported environments
 
-| Activity                                                                          | Environment                                                                                                                                                            |
-| --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Coding-agent sessions, development toolchain, builds, tests and full verification | WSL2, macOS or Linux                                                                                                                                                   |
-| Native Windows Chrome/Edge and GPU acceptance                                     | Separate Windows checkout and Windows toolchain; see [device coverage](engineering/agents/browser-device-coverage.md#install-and-launch-on-windows-and-wsl-separately) |
+| Activity                                                                          | Environment                                                                                      |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Coding-agent sessions, development toolchain, builds, tests and full verification | WSL2, macOS or Linux                                                                             |
+| Optional native Windows Chrome/Edge and GPU acceptance                            | Optional platform coverage; see [device coverage](engineering/agents/browser-device-coverage.md) |
 
 `pnpm task start`, `pnpm check:push` and `pnpm check:adoption` reject unsupported Node.js platforms before claiming work or launching checks. Installation and standalone commands remain available for browser testing and diagnostics; their availability does not establish a supported native Windows development workflow. WSL1 is outside the support policy: both WSL generations report `linux` to Node, so the guard does not verify the WSL generation. Confirm WSL2 during setup.
 
@@ -64,9 +64,11 @@ Robot icons mark work an agent can carry out or receive by delegation. Person ic
 1. In PowerShell, inspect `wsl --list --verbose` and use a distribution whose VERSION is `2`. If WSL is missing, follow [Microsoft's installation guide](https://learn.microsoft.com/en-us/windows/wsl/install); installation or conversion is an explicit machine-setup action for the owner.
 2. Open that distribution with `wsl --distribution <name>`. Install Linux Git, Node.js 24, the pinned pnpm and the GitHub CLI inside it. Windows executables inherited through PATH are not the Linux toolchain: check `command -v git node pnpm gh`, `git --version`, `node --version`, `pnpm --version` and `node -p "process.platform"` (expected `linux`).
 3. Clone into WSL’s Linux filesystem using `~/dev/github/<owner>/<repo>`, where `<owner>` is your GitHub username or organisation. Then run the setup below from that checkout. For task work, follow the [task lifecycle](engineering/agents/task-lifecycle.md#start-or-resume) and use `pnpm task start <issue>` (creates a sibling checkout on a dedicated branch). For Linux tools, Microsoft recommends the [Linux filesystem rather than a mounted Windows drive](https://learn.microsoft.com/en-us/windows/wsl/filesystems); avoid `/mnt/c/...` checkouts for this workflow.
-4. Install dependencies in the WSL checkout with `pnpm install --frozen-lockfile`. A separate native Windows browser checkout needs its own Windows installation; each environment owns its `node_modules` and platform-specific browser cache. Re-clone and reinstall when migrating rather than copying dependencies across operating systems.
+4. Install dependencies in the WSL checkout with `pnpm install --frozen-lockfile`. Everyday development only needs this WSL2 checkout.
 5. Open the Linux checkout with a Windows editor's WSL integration, such as VS Code's WSL extension and `code .` from the WSL shell. Run terminals and coding-agent processes inside WSL. The editor's visible Windows interface does not determine the toolchain OS.
-6. Run `pnpm check:push` in WSL. For Windows-specific Chrome/Edge behavior or performance, follow the explicit native Windows browser-testing path and record the browser OS separately. A WSL browser run establishes WSL rendering evidence.
+6. Run `pnpm check:push` in WSL.
+
+Routine development and browser tests run from WSL2. Broader [browser and device coverage](engineering/agents/browser-device-coverage.md) is optional and documented separately.
 
 The platform check never installs WSL, invokes it automatically, moves a checkout or changes host settings. The [platform decision](engineering/adr/0004-use-wsl2-for-windows-development.md) records the support boundary and tradeoffs.
 
