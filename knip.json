@@ -4,11 +4,11 @@
     "index.html",
     "src/**/*.test.{ts,tsx}",
     "scripts/**/*.test.ts",
-    "scripts/workflow/{issue,task,init-local-artifacts}.ts",
+    "scripts/workflow/{issue,task,heavy,heavy-supervisor,heavy-group,init-local-artifacts}.ts",
     "scripts/setup/{setup-github,setup-previews}.ts",
     "scripts/git/{install-hooks,pre-push,check-commit-message}.ts",
     "scripts/checks/{run-local-checks,check-*}.ts",
-    "scripts/browser/{test-devices,check-browser-environment}.ts"
+    "scripts/browser/{test-devices,check-browser-environment,browser-doctor}.ts"
   ],
   "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts", "e2e/**/*.ts"],
   "ignoreDependencies": ["@secretlint/secretlint-rule-preset-recommend"],

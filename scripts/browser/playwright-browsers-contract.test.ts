@@ -35,8 +35,15 @@ function problems(
   sources: Readonly<Record<string, string>>,
 ): string[] {
   const found: string[] = [];
-  for (const entry of entries)
-    if (!commands[entry]?.startsWith(preload)) found.push(`${entry}: missing cache preload`);
+  for (const entry of entries) {
+    const command = commands[entry];
+    if (!command?.startsWith(preload)) found.push(`${entry}: missing cache preload`);
+    if (
+      command?.includes("scripts/workflow/heavy.ts") &&
+      !command.split(" -- ")[1]?.startsWith(preload)
+    )
+      found.push(`${entry}: heavy child missing cache preload`);
+  }
   for (const [name, command] of Object.entries(commands))
     if (
       /\bplaywright\s+(?:install(?!-deps)|test|show-trace|codegen|open|screenshot|pdf|run-server)\b/u.test(
@@ -107,4 +114,20 @@ it("rejects a new raw CLI workflow step", () => {
   expect(
     problems(scripts, { ...files, ".github/workflows/new.yml": "run: pnpm exec playwright test" }),
   ).toContain(".github/workflows/new.yml: direct Playwright CLI bypass");
+});
+
+it("checks the actual browser child behind the heavy runner", () => {
+  const wrapped = preload + "scripts/workflow/heavy.ts run --label browser -- ";
+  expect(
+    problems(
+      { ...scripts, "test:browser": wrapped + "node scripts/browser/browser-test.ts" },
+      files,
+    ),
+  ).toContain("test:browser: heavy child missing cache preload");
+  expect(
+    problems(
+      { ...scripts, "test:browser": wrapped + preload + "scripts/browser/browser-test.ts" },
+      files,
+    ),
+  ).toEqual([]);
 });

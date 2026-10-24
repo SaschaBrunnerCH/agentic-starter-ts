@@ -41,6 +41,7 @@ Robot icons mark work an agent can carry out or receive by delegation. Person ic
 - **The GitHub CLI**, signed in as an account with administrator rights on the new repository and with the Project scope: `gh auth login`, then `gh auth refresh -s project`.
 - **A GitHub plan with rulesets for the repository.** Public repositories have them on every plan; private ones need a paid plan. Without rulesets nothing on GitHub protects `main`, and the merge rule is kept by discipline only.
 - **Network access** on the first gate run, which downloads two pinned tools, actionlint and zizmor.
+- **Local coordination prerequisites** for the heavy-job reservation; see [WSL2, macOS and Linux setup](engineering/agents/heavy-jobs.md#platforms-and-prerequisites).
 
 ### Supported environments
 
@@ -165,6 +166,7 @@ entrypoints on Windows, WSL, Linux and macOS; see [browser testing](engineering/
 | `pnpm test`           | Run unit tests with the coverage floor                                                                                   |
 | `pnpm test:browser`   | Run browser tests against the production build, on the GPU; see [browser testing](engineering/agents/browser-testing.md) |
 | `pnpm test:devices`   | Run them on other browsers and farm devices locally; `--report <pr>` posts the results on the pull request               |
+| `pnpm heavy status`   | Inspect advisory ownership of the shared local heavy-job slot; see [coordination](engineering/agents/heavy-jobs.md)      |
 | `pnpm check:push`     | Run the whole gate, as the pre-push hook and the PR build do                                                             |
 | `pnpm format`         | Format all files                                                                                                         |
 | `pnpm issue help`     | Create, show, claim and update issues in the Project                                                                     |

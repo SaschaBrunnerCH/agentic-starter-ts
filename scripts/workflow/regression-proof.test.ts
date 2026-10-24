@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   browserTestFiles,
   judge,
@@ -131,6 +131,7 @@ describe("judge", () => {
 // "fixed" with a test that passes either way.
 const made: string[] = [];
 afterEach(() => {
+  vi.unstubAllEnvs();
   for (const path of made.splice(0)) rmSync(path, { recursive: true, force: true });
 });
 
@@ -155,9 +156,11 @@ function fixture(
 ): { root: string; base: string; head: string } {
   const root = mkdtempSync(join(tmpdir(), "regression-fixture-"));
   made.push(root);
+  vi.stubEnv("HEAVY_JOB_RUN", undefined);
+  vi.stubEnv("HEAVY_JOB_STATE_DIR", join(root, ".heavy-state"));
   git(root, "init", "-q", "-b", "main");
   mkdirSync(join(root, "src"));
-  writeFileSync(join(root, ".gitignore"), "node_modules\n");
+  writeFileSync(join(root, ".gitignore"), "node_modules\n.heavy-state\n");
   writeFileSync(join(root, "src/sum.ts"), before);
   if (testFilename.endsWith(".tsx")) {
     writeFileSync(
