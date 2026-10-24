@@ -37,7 +37,7 @@ Robot icons mark work an agent can carry out or receive by delegation. Person ic
 ## Prerequisites
 
 - **Node.js 24**, **Git** and **pnpm 12**. The pnpm version is pinned in `packageManager` in `package.json`; install it with `npm install --global pnpm@12.10.1`. Node.js 24 still ships Corepack, so `corepack enable` works too.
-- **Linux, macOS or WSL2 for development.** Run coding agents, Git, Node.js, pnpm and full verification in that environment. On Windows follow [WSL2 setup](#windows-development-with-wsl2). Native Windows browser/GPU acceptance remains supported as a separate testing workflow.
+- **WSL2, macOS or Linux for development.** Run coding agents, Git, Node.js, pnpm and full verification in that environment. On Windows follow [WSL2 setup](#windows-development-with-wsl2). Native Windows browser/GPU acceptance remains supported as a separate testing workflow.
 - **The GitHub CLI**, signed in as an account with administrator rights on the new repository and with the Project scope: `gh auth login`, then `gh auth refresh -s project`.
 - **A GitHub plan with rulesets for the repository.** Public repositories have them on every plan; private ones need a paid plan. Without rulesets nothing on GitHub protects `main`, and the merge rule is kept by discipline only.
 - **Network access** on the first gate run, which downloads two pinned tools, actionlint and zizmor.
@@ -46,7 +46,7 @@ Robot icons mark work an agent can carry out or receive by delegation. Person ic
 
 | Activity                                                                          | Environment                                                                                                                                                            |
 | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Coding-agent sessions, development toolchain, builds, tests and full verification | Linux, macOS or WSL2                                                                                                                                                   |
+| Coding-agent sessions, development toolchain, builds, tests and full verification | WSL2, macOS or Linux                                                                                                                                                   |
 | Native Windows Chrome/Edge and GPU acceptance                                     | Separate Windows checkout and Windows toolchain; see [device coverage](engineering/agents/browser-device-coverage.md#install-and-launch-on-windows-and-wsl-separately) |
 
 `pnpm task start`, `pnpm check:push` and `pnpm check:adoption` reject unsupported Node.js platforms before claiming work or launching checks. Installation and standalone commands remain available for browser testing and diagnostics; their availability does not establish a supported native Windows development workflow. WSL1 is outside the support policy: both WSL generations report `linux` to Node, so the guard does not verify the WSL generation. Confirm WSL2 during setup.

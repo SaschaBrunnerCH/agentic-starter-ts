@@ -6,15 +6,15 @@ status: accepted
 
 ## Context
 
-The full repository gate uses pinned workflow-checking tools with Linux and macOS builds. Windows contributors already need WSL to run that gate, while browser/GPU acceptance has working native Windows entrypoints. Leaving the development boundary implicit makes agents discover it late, after worktree creation or partial checks, and encourages mixing toolchains and dependency installations.
+The full repository gate uses pinned workflow-checking tools with macOS and Linux builds. Windows contributors already need WSL to run that gate, while browser/GPU acceptance has working native Windows entrypoints. Leaving the development boundary implicit makes agents discover it late, after worktree creation or partial checks, and encourages mixing toolchains and dependency installations.
 
 Independent development environments also make local resource coordination harder to define. Choosing one supported Windows development path establishes a boundary for later tooling without claiming that WSL isolates the workstation's CPU, memory or GPU.
 
 ## Decision
 
-Support Linux, macOS and WSL2 for coding-agent sessions, Git/Node/pnpm development, builds, tests and full verification. On Windows use a Linux-filesystem WSL2 checkout, Linux executables and independently installed dependencies. [README setup](../../README.md#windows-development-with-wsl2) owns the procedure.
+Support WSL2, macOS and Linux for coding-agent sessions, Git/Node/pnpm development, builds, tests and full verification. On Windows use a Linux-filesystem WSL2 checkout, Linux executables and independently installed dependencies. [README setup](../../README.md#windows-development-with-wsl2) owns the procedure.
 
-Check the Node.js platform before task startup, the full gate and adoption verification. Reject unsupported platforms with actionable WSL2 guidance. Apply the same rule in CI. The guard checks the operating system, not the complete machine configuration: both WSL generations report Linux, so the owner verifies WSL2 during setup. Supported Linux/macOS tooling prerequisites still apply.
+Check the Node.js platform before task startup, the full gate and adoption verification. Reject unsupported platforms with actionable WSL2 guidance. Apply the same rule in CI. The guard checks the operating system, not the complete machine configuration: both WSL generations report Linux, so the owner verifies WSL2 during setup. Supported macOS/Linux tooling prerequisites still apply.
 
 Keep native Windows browser/GPU and device acceptance available through its documented separate checkout/toolchain. Preserve installation and standalone commands for that workflow and diagnostics. Record the driver OS and tested browser OS separately; WSL rendering does not establish native Windows behavior or performance.
 

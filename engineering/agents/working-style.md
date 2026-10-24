@@ -28,7 +28,7 @@ For lasting findings and rationale, follow [knowledge ownership](decision-workfl
 
 ## Development environment
 
-Run coding-agent sessions and the development toolchain on Linux, macOS or WSL2. On Windows, follow [WSL2 setup](../../README.md#windows-development-with-wsl2) before starting a task: use Linux executables and a Linux-filesystem checkout with its own dependencies. The Windows editor may connect through WSL integration. Full workflow guards check the Node.js OS; setup must verify WSL2 because Node also reports WSL1 as Linux.
+Run coding-agent sessions and the development toolchain on WSL2, macOS or Linux. On Windows, follow [WSL2 setup](../../README.md#windows-development-with-wsl2) before starting a task: use Linux executables and a Linux-filesystem checkout with its own dependencies. The Windows editor may connect through WSL integration. Full workflow guards check the Node.js OS; setup must verify WSL2 because Node also reports WSL1 as Linux.
 
 Use a separate Windows checkout/toolchain for explicit native Windows [browser/GPU acceptance](browser-device-coverage.md#install-and-launch-on-windows-and-wsl-separately). Record the development-tool OS and tested browser OS separately. The [platform ADR](../adr/0004-use-wsl2-for-windows-development.md) explains the support boundary.
 
