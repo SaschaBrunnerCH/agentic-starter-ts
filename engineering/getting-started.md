@@ -18,6 +18,10 @@ The third row is what makes the first two safe. An agent that is wrong gets stop
 
 ![Four layers that stop a wrong change: commit hooks, the push gate, the PR build, and the rulesets with the owner's yes](diagrams/guardrails.svg)
 
+## Development environment
+
+Use Linux, macOS or WSL2 for your agent and development tools. On Windows, complete [WSL2 setup](../README.md#windows-development-with-wsl2), open the checkout through your editor's WSL integration and launch the agent in a WSL terminal. Task startup and the full verification commands check the Node.js platform before starting work. Native Windows remains available for explicit [browser/device acceptance](agents/browser-device-coverage.md#install-and-launch-on-windows-and-wsl-separately).
+
 ## Your first session
 
 1. **Write one small issue.** Pick something you could check in a minute. Use the template on GitHub's "New issue" page, or the commands in the README. Example:
