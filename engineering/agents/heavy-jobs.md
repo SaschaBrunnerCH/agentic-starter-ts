@@ -2,6 +2,16 @@
 
 Several sessions can read, plan and edit concurrently. Their worktrees still share CPU, memory, disk and GPU capacity. Supported heavy commands reserve one cooperative per-user slot, so independent participating jobs wait instead of starting together. A job can still use many internal workers: this is a concurrency limit, not a resource budget.
 
+## Reservation lifecycle
+
+![Heavy-job lifecycle: wait, check previous ownership, run, finish foreground children and release. Cancellation releases only after proved cleanup. After a supervisor crash, recorded survivors or uncertain state block new work even when the OS lock is free.](../diagrams/heavy-job-lifecycle.svg)
+
+[Full-size diagram](../diagrams/heavy-job-lifecycle.svg) · [Editable Excalidraw source](../diagrams/heavy-job-lifecycle.excalidraw). The diagram shows lifecycle stages, not additional ownership metadata statuses.
+
+- **Normal execution:** acquire the OS lock and check previous ownership before starting work. Keep the reservation through nested commands and supported foreground children, then release it. A frontend crash leaves supervised work running.
+- **Cancellation:** stopping a waiter starts no work and leaves the owner alone. Cancelling running work stops only verified owned groups; unproved cleanup retains an ownership barrier.
+- **Supervisor crash:** the next caller may acquire the OS lock while earlier work still survives. Inspect the recorded ownership before starting anything. Recorded survivors, invalid state or uncertain cleanup block new work. Recovery returns an error; retry after the survivors finish, without deleting the permanent lock file or signalling stale records.
+
 ## Commands and participation
 
 ```sh
