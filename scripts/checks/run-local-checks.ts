@@ -1,5 +1,8 @@
+import { requireDevelopmentPlatform } from "../shared/development-platform.ts";
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
+
+requireDevelopmentPlatform();
 
 // The pre-push hook and the PR build run this one list, so a push that passes
 // locally meets the same checks remotely. Add a check here and to the

@@ -1,3 +1,4 @@
+import { requireDevelopmentPlatform } from "../shared/development-platform.ts";
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
@@ -156,6 +157,7 @@ const isBranchType = (text: string): text is BranchType =>
   branchTypes.some((candidate) => candidate === text);
 
 function start(issueArgument: string, typeArgument?: string): number {
+  requireDevelopmentPlatform();
   const issue = Number(issueArgument);
   if (!Number.isInteger(issue) || issue <= 0)
     throw new Error(`Not an issue number: ${issueArgument}`);

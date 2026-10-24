@@ -1,7 +1,10 @@
+import { requireDevelopmentPlatform } from "../shared/development-platform.ts";
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+
+requireDevelopmentPlatform();
 
 // On-demand acceptance, deliberately outside check:push and the unit-test inventory.
 // Fixtures contain files from HEAD only: no original .git, worktree, origin or gh state.

@@ -37,10 +37,40 @@ Robot icons mark work an agent can carry out or receive by delegation. Person ic
 ## Prerequisites
 
 - **Node.js 24**, **Git** and **pnpm 12**. The pnpm version is pinned in `packageManager` in `package.json`; install it with `npm install --global pnpm@12.10.1`. Node.js 24 still ships Corepack, so `corepack enable` works too.
-- **Linux or macOS for the complete repository gate.** On Windows use WSL for that gate; the workflow check has no Windows build. Browser/GPU commands also run natively on Windows.
+- **WSL2, macOS or Linux for development.** Run coding agents, Git, Node.js, pnpm and full verification in that environment. On Windows follow [WSL2 setup](#windows-development-with-wsl2). Native Windows browser/GPU acceptance remains supported as a separate testing workflow.
 - **The GitHub CLI**, signed in as an account with administrator rights on the new repository and with the Project scope: `gh auth login`, then `gh auth refresh -s project`.
 - **A GitHub plan with rulesets for the repository.** Public repositories have them on every plan; private ones need a paid plan. Without rulesets nothing on GitHub protects `main`, and the merge rule is kept by discipline only.
 - **Network access** on the first gate run, which downloads two pinned tools, actionlint and zizmor.
+
+### Supported environments
+
+| Activity                                                                          | Environment                                                                                      |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Coding-agent sessions, development toolchain, builds, tests and full verification | WSL2, macOS or Linux                                                                             |
+| Optional native Windows Chrome/Edge and GPU acceptance                            | Optional platform coverage; see [device coverage](engineering/agents/browser-device-coverage.md) |
+
+`pnpm task start`, `pnpm check:push` and `pnpm check:adoption` reject unsupported Node.js platforms before claiming work or launching checks. Installation and standalone commands remain available for browser testing and diagnostics; their availability does not establish a supported native Windows development workflow. WSL1 is outside the support policy: both WSL generations report `linux` to Node, so the guard does not verify the WSL generation. Confirm WSL2 during setup.
+
+### Why WSL2 on Windows?
+
+- **Faster file operations:** Keep your project inside WSL’s Linux filesystem so dependency installs, Git operations and builds avoid slow access across the Windows/Linux filesystem boundary.
+- **Seamless VS Code workflow:** Use your familiar Windows editor while terminals, extensions and debugging work directly inside WSL2.
+- **Everything you need to contribute:** Run the starter’s complete build, test and verification workflow in one supported environment.
+- **Fewer surprises in CI:** Develop with Linux tools locally, reducing platform differences when your changes reach CI.
+- **Smoother agent workflows:** Give coding agents a consistent shell and toolchain, reducing the need for Windows-specific command adaptations.
+
+### Windows development with WSL2
+
+1. In PowerShell, inspect `wsl --list --verbose` and use a distribution whose VERSION is `2`. If WSL is missing, follow [Microsoft's installation guide](https://learn.microsoft.com/en-us/windows/wsl/install); installation or conversion is an explicit machine-setup action for the owner.
+2. Open that distribution with `wsl --distribution <name>`. Install Linux Git, Node.js 24, the pinned pnpm and the GitHub CLI inside it. Windows executables inherited through PATH are not the Linux toolchain: check `command -v git node pnpm gh`, `git --version`, `node --version`, `pnpm --version` and `node -p "process.platform"` (expected `linux`).
+3. Clone into WSL’s Linux filesystem using `~/dev/<host>/<owner>/<repo>` (`<host>` is any Git server hostname, such as `github.com`, `gitlab.com` or an internal host; `<owner>` is the account or repository namespace, including nested groups where needed). Then run the setup below from that checkout. For task work, follow the [task lifecycle](engineering/agents/task-lifecycle.md#start-or-resume) and use `pnpm task start <issue>` (creates a sibling checkout on a dedicated branch). For Linux tools, Microsoft recommends the [Linux filesystem rather than a mounted Windows drive](https://learn.microsoft.com/en-us/windows/wsl/filesystems); avoid `/mnt/c/...` checkouts for this workflow.
+4. Install dependencies in the WSL checkout with `pnpm install --frozen-lockfile`. Everyday development only needs this WSL2 checkout.
+5. Open the Linux checkout with a Windows editor's WSL integration, such as VS Code's WSL extension and `code .` from the WSL shell. Run terminals and coding-agent processes inside WSL. The editor's visible Windows interface does not determine the toolchain OS.
+6. Run `pnpm check:push` in WSL.
+
+Routine development and browser tests run from WSL2. Broader [browser and device coverage](engineering/agents/browser-device-coverage.md) is optional and documented separately.
+
+The platform check never installs WSL, invokes it automatically, moves a checkout or changes host settings. The [platform decision](engineering/adr/0004-use-wsl2-for-windows-development.md) records the support boundary and tradeoffs.
 
 ## Start a new repository
 
