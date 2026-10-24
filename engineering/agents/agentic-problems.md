@@ -16,9 +16,9 @@ Working with coding agents fails in ways that working alone does not. This page 
 
 **Looks like:** two test suites, builds or browser runs side by side push the load up and fail on timeouts that have nothing to do with the change; a test talks to another worktree's server on the same port; a shared cache reloads another session's page.
 
-**Handled by:** the browser tests derive their port from the worktree's directory and fail on a busy port instead of testing whatever answers there. Caches and build output live in each worktree. Browser tests are not part of the push gate, so pushes stay light.
+**Handled by:** supported tests, builds, gates and browser commands reserve one per-user slot across participating repositories and worktrees; nested commands reuse verified ownership. [Local workload coordination](workload-coordination.md) describes cancellation, crash recovery and adoption. Browser tests also derive their port from the worktree's directory and fail on a busy port instead of testing whatever answers there. Build output stays in each worktree; the repository's browser cache is shared through the Git common directory. Browser acceptance runs separately from the push gate.
 
-**Left to people:** run heavy work one at a time, and check the load, including other projects' containers, before blaming a change. See "Sharing the machine" in [working style](working-style.md).
+**Left to people:** inspect host load from nonparticipating commands, other users, Windows activity and containers; they do not automatically share the reservation. Keep coordinator protocols and state compatible across participating repositories, and leave other sessions' processes alone. See "Sharing the machine" in [working style](working-style.md).
 
 ### Work moves underneath
 

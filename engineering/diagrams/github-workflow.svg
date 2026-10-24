@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="1064" viewBox="0 0 1360 1064" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="1194" viewBox="0 0 1360 1194" role="img" aria-labelledby="title desc">
   <title id="title">From a GitHub issue to a merged change</title>
-  <desc id="desc">Robot icons mark work an agent can carry out or receive by delegation, including drafting issues, proposing an order, updating the Project, implementing, preparing a PR, trying the preview, fixing checks and merging after authorization. Person icons mark owner decisions or hands-on review. The owner decides scope and Priority and authorizes the exact merge head. A task moves through Project statuses Backlog, Ready, In progress, In review and Done. Blocked is below implementation, with separate parallel pause and resume arrows. A green PR build can publish a preview app when pnpm setup:previews has been completed; open its PR link and try the app before deciding to merge. Preview publication is automated, and previews do not replace required checks or owner authorization. Task commands update and read back Project fields.</desc>
+  <desc id="desc">Robot icons mark work an agent can carry out or receive by delegation, including drafting issues, proposing an order, updating the Project, implementing, preparing a PR, trying the preview, fixing checks and merging after authorization. Person icons mark owner decisions or hands-on review. The owner decides scope and Priority and authorizes the exact merge head. A task moves through Project statuses Backlog, Ready, In progress, In review and Done. Blocked is below implementation, with separate parallel pause and resume arrows. A green PR build can publish a preview app when pnpm setup:previews has been completed; open its PR link and try the app before deciding to merge. Preview publication is automated, and previews do not replace required checks or owner authorization. Task commands update and read back Project fields. Local tests, builds and browser acceptance share one execution slot across participating agent sessions; reading, planning and editing can continue concurrently. Overlapping resource-intensive runs can cause longer runtimes and timeouts. GitHub CI runs separately.</desc>
   <!-- Directly editable source. Keep both layouts and the README text equivalent synchronized. Workflow schematic; the app window is illustrative, not a live screenshot. -->
   <defs>
     <symbol id="robot" viewBox="0 0 32 32">
@@ -21,7 +21,7 @@
     <marker id="owner" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#C05621" /></marker>
     <marker id="preview" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#7C3AED" /></marker>
   </defs>
-  <rect width="1360" height="1064" fill="#F8FAFC" />
+  <rect width="1360" height="1194" fill="#F8FAFC" />
   <g font-family="Arial, Helvetica, sans-serif" fill="#0F172A">
   <text x="40" y="58" font-size="36" fill="#0F172A" font-weight="700">From a GitHub issue to a merged change</text>
   <text x="40" y="94" font-size="20" fill="#475569">Agents can prepare and carry out the work. You decide scope, Priority and merge authorization.</text>
@@ -84,7 +84,7 @@
   <text x="880" y="408" font-size="18" fill="#0F172A" font-weight="700">PR + verification</text>
   <text x="848" y="443" font-size="16" fill="#475569">Link: Closes #&lt;issue&gt;</text>
   <text x="848" y="470" font-size="16" fill="#475569">Green build; current base</text>
-  <text x="848" y="497" font-size="16" fill="#475569">Browser evidence on PR</text>
+  <text x="848" y="497" font-size="16" fill="#475569">Local slot; browser evidence</text>
   <text x="848" y="524" font-size="16" fill="#475569">Preview app when set up</text>
   <text x="848" y="565" font-size="16" fill="#475569">pnpm task ready &lt;pr&gt;</text>
   <rect x="1096" y="170" width="224" height="142" rx="10" fill="#FFFFFF" stroke="#2F9E44" stroke-width="1.5" />
@@ -139,5 +139,9 @@
   <path d="M 40 980 H 1320" stroke="#DCE3EC" />
   <text x="40" y="1011" font-size="18" fill="#475569">One issue moves across the statuses. You decide scope and Priority and authorize the exact merge head.</text>
   <text x="40" y="1041" font-size="18" fill="#475569">Task commands update and read back Project fields; closing an issue alone does not guarantee a Status change.</text>
+  <path d="M 40 1072 H 1320" stroke="#DCE3EC" />
+  <text x="40" y="1104" font-size="22" fill="#1971C2" font-weight="700">Local workloads share one slot</text>
+  <text x="40" y="1136" font-size="18" fill="#475569">Tests, builds and browser checks take turns. Planning and editing continue concurrently; GitHub CI runs separately.</text>
+  <text x="40" y="1168" font-size="18" fill="#475569">Competing runs can lengthen runtimes, pressure memory and cause timeouts.</text>
   </g>
 </svg>

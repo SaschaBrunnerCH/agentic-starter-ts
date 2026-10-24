@@ -25,8 +25,8 @@ export default defineConfig({
         // rule modules beside them, which are measured.
         "scripts/workflow/{issue,task,init-local-artifacts}.ts",
         // OS/IPC command supervision is exercised by bounded real-process fixtures.
-        // Protocol decisions remain measured in heavy-rules.ts.
-        "scripts/workflow/{heavy,heavy-runtime,heavy-supervisor,heavy-group}.ts",
+        // Protocol decisions remain measured in workload-rules.ts.
+        "scripts/workflow/{workload,workload-runtime,workload-supervisor,workload-group}.ts",
         "scripts/setup/{setup-github,setup-previews}.ts",
         "scripts/release/release.ts",
         "scripts/shared/github.ts",

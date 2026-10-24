@@ -23,11 +23,11 @@ const ownerShape = json.object({
   groups: json.array(processShape),
   code: json.nullable(json.number),
 });
-export type HeavyOwner = json.ShapeOf<typeof ownerShape>;
+export type WorkloadOwner = json.ShapeOf<typeof ownerShape>;
 
-export function parseOwner(text: string): HeavyOwner {
+export function parseOwner(text: string): WorkloadOwner {
   try {
-    const owner = json.parseJson(text, ownerShape, "heavy ownership");
+    const owner = json.parseJson(text, ownerShape, "workload ownership");
     const keys = [
       "protocol",
       "run",
@@ -80,7 +80,7 @@ export function parseOwner(text: string): HeavyOwner {
   } catch {
     // Never echo invalid JSON: another writer may have put sensitive material there.
     throw new Error(
-      "Invalid heavy-job ownership metadata (possibly an incompatible protocol). Inspect its provenance and owned work; never delete the lock file.",
+      "Invalid workload ownership metadata (possibly an incompatible protocol). Inspect its provenance and owned work; never delete the lock file.",
     );
   }
 }
@@ -107,7 +107,7 @@ export function parseRun(args: readonly string[]) {
       timeout = Number(value);
     else
       throw new Error(
-        "Use heavy run [--label purpose] [--timeout seconds] -- command [arguments].",
+        "Use workload run [--label purpose] [--timeout seconds] -- command [arguments].",
       );
   }
   if (args[index] !== "--" || !args[index + 1]) throw new Error("A command must follow --.");
@@ -187,7 +187,7 @@ export function descendant(
   return false;
 }
 
-export function survivors(owner: HeavyOwner, boot: string, rows: readonly ProcessIdentity[]) {
+export function survivors(owner: WorkloadOwner, boot: string, rows: readonly ProcessIdentity[]) {
   if (owner.boot !== boot || owner.status === "finished") return [];
   // A reused group id blocks conservatively too. Recovery never signals old records.
   return rows.filter(
@@ -202,7 +202,7 @@ export function exitCode(code: number | null, signal: NodeJS.Signals | null): nu
 }
 
 const perlLock =
-  '$^F=1024; use Fcntl qw(:flock); use Time::HiRes qw(clock_gettime CLOCK_MONOTONIC sleep); my $path=shift; my $wait=shift; open(my $f,"+>>",$path) or die "Cannot open heavy lock\\n"; my $end=clock_gettime(CLOCK_MONOTONIC)+$wait; while(!flock($f,LOCK_EX|LOCK_NB)){ exit 75 if clock_gettime(CLOCK_MONOTONIC)>=$end; sleep(0.05); } exec @ARGV; die "Cannot execute heavy supervisor\\n";';
+  '$^F=1024; use Fcntl qw(:flock); use Time::HiRes qw(clock_gettime CLOCK_MONOTONIC sleep); my $path=shift; my $wait=shift; open(my $f,"+>>",$path) or die "Cannot open workload lock\\n"; my $end=clock_gettime(CLOCK_MONOTONIC)+$wait; while(!flock($f,LOCK_EX|LOCK_NB)){ exit 75 if clock_gettime(CLOCK_MONOTONIC)>=$end; sleep(0.05); } exec @ARGV; die "Cannot execute workload supervisor\\n";';
 
 export function lockCommand(platform: string, file: string, timeout: number, worker: string) {
   const target = [process.execPath, worker];
@@ -225,7 +225,7 @@ export function lockCommand(platform: string, file: string, timeout: number, wor
 
 export function socketDirectory(directory: string, uid: number): string {
   return (
-    "/tmp/agent-heavy-" +
+    "/tmp/agent-workload-" +
     uid +
     "-" +
     createHash("sha256").update(directory).digest("hex").slice(0, 32)

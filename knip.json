@@ -4,7 +4,7 @@
     "index.html",
     "src/**/*.test.{ts,tsx}",
     "scripts/**/*.test.ts",
-    "scripts/workflow/{issue,task,heavy,heavy-supervisor,heavy-group,init-local-artifacts}.ts",
+    "scripts/workflow/{issue,task,workload,workload-supervisor,workload-group,init-local-artifacts}.ts",
     "scripts/setup/{setup-github,setup-previews}.ts",
     "scripts/git/{install-hooks,pre-push,check-commit-message}.ts",
     "scripts/checks/{run-local-checks,check-*}.ts",

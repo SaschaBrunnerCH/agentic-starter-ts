@@ -24,6 +24,8 @@ You define the outcome and authorize the merge. The agent takes one checkable is
 
 Robot icons mark work an agent can carry out or receive by delegation. Person icons mark owner decisions or hands-on review. You can delegate issue drafting and Project updates while deciding the scope, Priority and authorization to merge.
 
+**Local workloads take turns.** Test suites, builds, browser acceptance and complete verification gates share the machine across agent sessions and repositories. Overlapping runs can lengthen runtimes, exhaust memory and cause timeouts that look like regressions. [Local workload coordination](engineering/agents/workload-coordination.md) reserves one shared slot for participating commands while planning, reading and editing continue concurrently. A gate retains that reservation through its nested tests and build. GitHub CI runs separately; activity outside participation still needs host-load inspection.
+
 <picture>
   <source media="(max-width: 600px)" srcset="engineering/diagrams/agent-workflow-narrow.svg">
   <img src="engineering/diagrams/agent-workflow.svg" alt="Context feeds an isolated coding agent, with optional review. Robot icons mark agent work; person icons mark owner decisions or hands-on review. Checks send failures back for fixes. A PR preview lets reviewers try the app when configured. Human gates authorize the exact commit before merge and cleanup. The bullets below provide the text equivalent.">
@@ -41,7 +43,7 @@ Robot icons mark work an agent can carry out or receive by delegation. Person ic
 - **The GitHub CLI**, signed in as an account with administrator rights on the new repository and with the Project scope: `gh auth login`, then `gh auth refresh -s project`.
 - **A GitHub plan with rulesets for the repository.** Public repositories have them on every plan; private ones need a paid plan. Without rulesets nothing on GitHub protects `main`, and the merge rule is kept by discipline only.
 - **Network access** on the first gate run, which downloads two pinned tools, actionlint and zizmor.
-- **Local coordination prerequisites** for the heavy-job reservation; see [WSL2, macOS and Linux setup](engineering/agents/heavy-jobs.md#platforms-and-prerequisites).
+- **Local coordination prerequisites** for the workload reservation; see [WSL2, macOS and Linux setup](engineering/agents/workload-coordination.md#platforms-and-prerequisites).
 
 ### Supported environments
 
@@ -80,7 +82,7 @@ The [scripts map](scripts/README.md) explains which tooling supports setup and w
 The order matters: step 6 protects `main`, so everything before it is pushed directly, and everything after it goes through a pull request.
 
 1. **Create the repository.** On GitHub choose **Use this template** and then clone the new repository, or do both with `gh repo create <owner>/<name> --template SaschaBrunnerCH/agentic-starter-ts --private --clone`. Do not copy the files instead: the dependency check compares with `origin/main`, which a repository created from the template has from its first commit.
-2. **Install:** `pnpm install --frozen-lockfile`. This also activates the Git hooks.
+2. **Install:** `pnpm install --frozen-lockfile`. This also activates the Git hooks. Run `pnpm workload status` to inspect the shared workload reservation before the first gate; follow [coordinator adoption](engineering/agents/workload-coordination.md#adopting-the-coordinator) if existing workstation state needs reconciling. Keep the per-user sharing configuration when personalizing the repository.
 3. **Run the gate once:** `pnpm check:push`. It passes without edits.
 4. **Make it yours.** Set the owner in `.github/CODEOWNERS`: a user account, or for an organisation a team such as `@org/team`, since an organisation name alone is not valid there. Set the name in `package.json`; `pnpm-lock.yaml` does not record it. Set the title and description in `index.html`. For an application without React, remove React first; see [Without React](#without-react). Customize product areas in [.github/labels.json](.github/labels.json); keep the required workflow labels and `area:engineering`. [Triage labels](engineering/agents/triage-labels.md) explains their meaning. Add the product's terms to [CONTEXT.md](CONTEXT.md). Keep this README until you have finished step 9, then replace it with the product's own.
 5. **Stage, review, commit and push to `main`:** run `git status --short`, then `git add <intended-paths>` to include the setup changes and any new files, including `src/main.ts` on the non-React route. Inspect `git diff --cached` before `git commit -m "Start <name> from agentic-starter-ts"` and `git push`. This is the only direct push to `main` the repository will see. Automatic deployment waits until hosted setup initializes `PAGES_DEPLOYMENT_ENABLED=true`; the first push does not produce an expected failed Pages deploy.
@@ -159,21 +161,21 @@ Use `pnpm test:devices --help` for other engines and phones/tablets, or
 `pnpm browser:doctor --help` for local GPU setup. These browser commands use the same
 entrypoints on Windows, WSL, Linux and macOS; see [browser testing](engineering/agents/browser-testing.md).
 
-| Command               | Use                                                                                                                      |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `pnpm dev`            | Serve the application locally                                                                                            |
-| `pnpm build`          | Build for production into `dist/`                                                                                        |
-| `pnpm test`           | Run unit tests with the coverage floor                                                                                   |
-| `pnpm test:browser`   | Run browser tests against the production build, on the GPU; see [browser testing](engineering/agents/browser-testing.md) |
-| `pnpm test:devices`   | Run them on other browsers and farm devices locally; `--report <pr>` posts the results on the pull request               |
-| `pnpm heavy status`   | Inspect advisory ownership of the shared local heavy-job slot; see [coordination](engineering/agents/heavy-jobs.md)      |
-| `pnpm check:push`     | Run the whole gate, as the pre-push hook and the PR build do                                                             |
-| `pnpm format`         | Format all files                                                                                                         |
-| `pnpm issue help`     | Create, show, claim and update issues in the Project                                                                     |
-| `pnpm task help`      | Start a task, check a pull request, merge with recorded authorization, clean up                                          |
-| `pnpm setup:github`   | Create or repair labels, Project, merge settings and rulesets                                                            |
-| `pnpm release <v>`    | Check a release of the head of `main`; tag it with `--authorized-by-owner`                                               |
-| `pnpm setup:previews` | Create the previews repository, its deploy key, environment and variables                                                |
+| Command                | Use                                                                                                                           |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`             | Serve the application locally                                                                                                 |
+| `pnpm build`           | Build for production into `dist/`                                                                                             |
+| `pnpm test`            | Run unit tests with the coverage floor                                                                                        |
+| `pnpm test:browser`    | Run browser tests against the production build, on the GPU; see [browser testing](engineering/agents/browser-testing.md)      |
+| `pnpm test:devices`    | Run them on other browsers and farm devices locally; `--report <pr>` posts the results on the pull request                    |
+| `pnpm workload status` | Inspect advisory ownership of the shared local workload slot; see [coordination](engineering/agents/workload-coordination.md) |
+| `pnpm check:push`      | Run the whole gate, as the pre-push hook and the PR build do                                                                  |
+| `pnpm format`          | Format all files                                                                                                              |
+| `pnpm issue help`      | Create, show, claim and update issues in the Project                                                                          |
+| `pnpm task help`       | Start a task, check a pull request, merge with recorded authorization, clean up                                               |
+| `pnpm setup:github`    | Create or repair labels, Project, merge settings and rulesets                                                                 |
+| `pnpm release <v>`     | Check a release of the head of `main`; tag it with `--authorized-by-owner`                                                    |
+| `pnpm setup:previews`  | Create the previews repository, its deploy key, environment and variables                                                     |
 
 Engineering documentation starts at [engineering/README.md](engineering/README.md).
 

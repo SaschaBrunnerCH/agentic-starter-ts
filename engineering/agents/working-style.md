@@ -36,7 +36,7 @@ Use a separate Windows checkout/toolchain for explicit native Windows [browser/G
 
 Several sessions, and other projects, often share one machine.
 
-- Run heavy work one at a time through the [shared heavy-job slot](heavy-jobs.md): test suites, builds and browser runs. Supported commands reserve automatically; lightweight reading, planning and editing can continue while waiting. Check other host load first, including nonparticipating commands, Windows activity and other projects' containers. A timeout under load is not evidence against a change; run it again alone before concluding anything.
+- Run resource-intensive workloads one at a time through the [shared workload slot](workload-coordination.md): test suites, builds and browser runs. Supported commands reserve automatically; lightweight reading, planning and editing can continue while waiting. Check other host load first, including nonparticipating commands, Windows activity and other projects' containers. A timeout under load is not evidence against a change; run it again alone before concluding anything.
 - Leave other sessions' worktrees, processes, containers and ports alone, even when they slow you down. Ask the owner instead.
 - Do not open graphical applications or browser windows on the owner's desktop session: GPU-heavy pages can freeze it. Run browsers headless, and hand the owner a URL to open.
 

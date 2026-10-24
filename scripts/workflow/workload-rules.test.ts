@@ -13,12 +13,12 @@ import {
   same,
   survivors,
   socketDirectory,
-  type HeavyOwner,
+  type WorkloadOwner,
   type ProcessIdentity,
-} from "./heavy-rules.ts";
+} from "./workload-rules.ts";
 
 const row: ProcessIdentity = { pid: 100, ppid: 50, pgid: 100, birth: "linux:10", state: "S" };
-const owner: HeavyOwner = {
+const owner: WorkloadOwner = {
   protocol: 1,
   run: "run",
   label: "gate",
@@ -126,7 +126,7 @@ describe("private ownership protocol", () => {
       {},
     ];
     for (const value of ["do-not-echo", ...variants.map((variant) => JSON.stringify(variant))]) {
-      expect(() => parseOwner(value)).toThrow("Invalid heavy-job ownership metadata");
+      expect(() => parseOwner(value)).toThrow("Invalid workload ownership metadata");
       try {
         parseOwner(value);
       } catch (error) {

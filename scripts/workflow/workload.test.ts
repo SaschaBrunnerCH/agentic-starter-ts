@@ -19,23 +19,23 @@ import {
   same,
   lockCommand,
   socketDirectory,
-  type HeavyOwner,
+  type WorkloadOwner,
   type ProcessIdentity,
-} from "./heavy-rules.ts";
+} from "./workload-rules.ts";
 
 const quote = (text: string) => "'" + text.replaceAll("'", "'\\''") + "'";
-const entry = resolve(import.meta.dirname, "heavy.ts");
+const entry = resolve(import.meta.dirname, "workload.ts");
 const roots: string[] = [];
 const children: ChildProcess[] = [];
-const records: HeavyOwner[] = [];
+const records: WorkloadOwner[] = [];
 const environment = () =>
   Object.fromEntries(
     Object.entries(process.env).filter(
-      ([key]) => !key.startsWith("HEAVY_JOB_") && !key.startsWith("GIT_"),
+      ([key]) => !key.startsWith("WORKLOAD_") && !key.startsWith("GIT_"),
     ),
   );
 function fixture() {
-  const root = mkdtempSync(join(tmpdir(), "heavy-fixture-"));
+  const root = mkdtempSync(join(tmpdir(), "workload-fixture-"));
   roots.push(root);
   const state = join(root, "state");
   const a = join(root, "a");
@@ -54,7 +54,7 @@ async function until(check: () => boolean, timeout = 5000) {
   const deadline = Date.now() + timeout;
   while (!check()) {
     if (Date.now() > deadline)
-      throw new Error("Bounded heavy fixture did not reach its expected state.");
+      throw new Error("Bounded workload fixture did not reach its expected state.");
     await new Promise((resolveWait) => setTimeout(resolveWait, 30));
   }
 }
@@ -86,7 +86,7 @@ function start(
     ],
     {
       cwd: options.cwd ?? f.a,
-      env: { ...environment(), CI: "", HEAVY_JOB_STATE_DIR: f.state, ...options.env },
+      env: { ...environment(), CI: "", WORKLOAD_STATE_DIR: f.state, ...options.env },
       stdio: ["pipe", "pipe", "pipe"],
     },
   );
@@ -163,7 +163,7 @@ afterEach(async () => {
 });
 
 describe.skipIf(process.platform !== "linux" && process.platform !== "darwin")(
-  "real heavy-job boundaries",
+  "real workload boundaries",
   () => {
     it(
       "serializes different directories and names the owner while waiting",
@@ -233,7 +233,7 @@ describe.skipIf(process.platform !== "linux" && process.platform !== "darwin")(
         const command = node("require('node:fs').writeFileSync(process.argv[1],'wrong')", never);
         expect((await start(f, command, { timeout: "0" }).done).code).toBe(75);
         const waiter = start(f, command);
-        await until(() => waiter.stderr().includes("Waiting for heavy slot:"));
+        await until(() => waiter.stderr().includes("Waiting for workload slot:"));
         waiter.child.kill("SIGTERM");
         expect((await waiter.done).code).toBe(143);
         expect(existsSync(never)).toBe(false);
@@ -413,15 +413,13 @@ describe.skipIf(process.platform !== "linux" && process.platform !== "darwin")(
         expect(status.code).toBe(0);
         expect(existsSync(f.state)).toBe(false);
         expect(
-          (
-            await start(f, node("process.exitCode=99"), { env: { HEAVY_JOB_RUN: "unrelated" } })
-              .done
-          ).code,
+          (await start(f, node("process.exitCode=99"), { env: { WORKLOAD_RUN: "unrelated" } }).done)
+            .code,
         ).toBe(1);
         writeFileSync(join(f.state, "owner.json"), "invalid-do-not-echo", { mode: 0o600 });
         const result = await start(f, node("process.exitCode=99")).done;
         expect(result.code).toBe(1);
-        expect(result.stderr).toContain("Invalid heavy-job ownership");
+        expect(result.stderr).toContain("Invalid workload ownership");
         expect(result.stderr).not.toContain("invalid-do-not-echo");
       },
     );
@@ -582,7 +580,7 @@ describe.skipIf(process.platform !== "linux" && process.platform !== "darwin")(
           ],
           {
             cwd: f.a,
-            env: { ...environment(), CI: "", HEAVY_JOB_STATE_DIR: f.state },
+            env: { ...environment(), CI: "", WORKLOAD_STATE_DIR: f.state },
             stdio: ["ignore", "pipe", "pipe"],
           },
         );

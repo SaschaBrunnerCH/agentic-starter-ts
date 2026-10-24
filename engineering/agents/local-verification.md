@@ -49,9 +49,9 @@ touch scratch.txt && git push --dry-run origin HEAD:refs/heads/hook-check; rm sc
 
 ![The layers a change passes: commit, push, pull request and merge](../diagrams/guardrails.svg)
 
-## Shared heavy-job reservation
+## Shared workload reservation
 
-Supported heavy commands acquire one per-user reservation across participating repositories and worktrees. The full gate retains it across its checks, and adoption/regression-proof workflows reuse it through verified nested ownership. Browser commands acquire the heavy slot before their separate GPU lock and retain cache initialization. See [heavy-job guidance](heavy-jobs.md) for commands, WSL2/macOS/Linux prerequisites, state, CI behavior, cancellation, recovery and process boundaries. Bounded fixtures use isolated state; they never contend for the live shared slot.
+Supported workloads acquire one per-user reservation across participating repositories and worktrees. The full gate retains it across its checks, and adoption/regression-proof workflows reuse it through verified nested ownership. Browser commands acquire the shared slot before their separate GPU lock and retain cache initialization. See [workload guidance](workload-coordination.md) for commands, WSL2/macOS/Linux prerequisites, state, CI behavior, cancellation, recovery and process boundaries. Bounded fixtures use isolated state; they never contend for the live shared slot.
 
 ## Development platforms
 

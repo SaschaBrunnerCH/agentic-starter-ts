@@ -36,7 +36,7 @@ Consult the guides below when their topic applies. For browser changes, start wi
 | [Problems in agentic work](agents/agentic-problems.md)         | What goes wrong with agents and what handles each problem                    |
 | [Task lifecycle](agents/task-lifecycle.md)                     | Starting, resuming, completing and handing off a task                        |
 | [Decision workflow](agents/decision-workflow.md)               | Goal to merge, knowledge ownership and portability review                    |
-| [Shared heavy jobs](agents/heavy-jobs.md)                      | Cross-repository reservation, ownership, cancellation and recovery           |
+| [Local workload coordination](agents/workload-coordination.md) | Cross-repository reservation, ownership, cancellation and recovery           |
 | [Working style](agents/working-style.md)                       | How much to change, how to write, local-only work                            |
 | [Engineering scripts](../scripts/README.md)                    | Tooling responsibilities, command entry points and lifecycle                 |
 | [Issue tracker](agents/issue-tracker.md)                       | Issue metadata, the Project's statuses and priorities                        |

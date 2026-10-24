@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { parseSync, Visitor } from "vite";
 import { dirname, join } from "node:path";
 import * as json from "../shared/json-shape.ts";
-import { heavyEntry } from "./heavy-runtime.ts";
+import { workloadEntry } from "./workload-runtime.ts";
 
 // The proof a bug fix owes, from engineering/agents/task-lifecycle.md: its regression test
 // fails on the revision before the fix. `pnpm task ready` runs the new or changed unit tests
@@ -232,7 +232,7 @@ export function runOnBase(
     run(
       process.execPath,
       [
-        heavyEntry,
+        workloadEntry,
         "run",
         "--label",
         "regression-proof",

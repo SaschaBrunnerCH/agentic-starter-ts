@@ -156,11 +156,11 @@ function fixture(
 ): { root: string; base: string; head: string } {
   const root = mkdtempSync(join(tmpdir(), "regression-fixture-"));
   made.push(root);
-  vi.stubEnv("HEAVY_JOB_RUN", undefined);
-  vi.stubEnv("HEAVY_JOB_STATE_DIR", join(root, ".heavy-state"));
+  vi.stubEnv("WORKLOAD_RUN", undefined);
+  vi.stubEnv("WORKLOAD_STATE_DIR", join(root, ".workload-state"));
   git(root, "init", "-q", "-b", "main");
   mkdirSync(join(root, "src"));
-  writeFileSync(join(root, ".gitignore"), "node_modules\n.heavy-state\n");
+  writeFileSync(join(root, ".gitignore"), "node_modules\n.workload-state\n");
   writeFileSync(join(root, "src/sum.ts"), before);
   if (testFilename.endsWith(".tsx")) {
     writeFileSync(
