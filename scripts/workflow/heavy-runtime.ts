@@ -287,8 +287,6 @@ export async function cli(args: string[]): Promise<number> {
       "clock_gettime(CLOCK_MONOTONIC); exit 0",
     ]);
   else checked("flock", ["--version"]);
-  if (previous?.status === "running")
-    console.error("Waiting for heavy slot: " + describe(previous));
   const launcher = lockCommand(process.platform, state.lock, options.timeout, worker);
   const child = spawn(launcher.command, launcher.args, {
     stdio: ["inherit", "inherit", "inherit", "pipe"],
@@ -320,6 +318,9 @@ export async function cli(args: string[]): Promise<number> {
   };
   process.on("SIGINT", cancel);
   process.on("SIGTERM", cancel);
+  // Publish the waiting notice only once this frontend can handle cancellation.
+  if (previous?.status === "running")
+    console.error("Waiting for heavy slot: " + describe(previous));
   try {
     const code = await waitChild(child);
     if (!acquired && code === 75)

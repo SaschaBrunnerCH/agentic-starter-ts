@@ -116,7 +116,7 @@ function start(
       child.once("exit", (code, signal) => resolveExit({ code, signal }));
     },
   );
-  return { child, done, exited };
+  return { child, done, exited, stderr: () => stderr };
 }
 const node = (source: string, ...args: string[]) => [process.execPath, "-e", source, ...args];
 function current(pid: number): ProcessIdentity | undefined {
@@ -233,7 +233,7 @@ describe.skipIf(process.platform !== "linux" && process.platform !== "darwin")(
         const command = node("require('node:fs').writeFileSync(process.argv[1],'wrong')", never);
         expect((await start(f, command, { timeout: "0" }).done).code).toBe(75);
         const waiter = start(f, command);
-        await new Promise((resolveWait) => setTimeout(resolveWait, 150));
+        await until(() => waiter.stderr().includes("Waiting for heavy slot:"));
         waiter.child.kill("SIGTERM");
         expect((await waiter.done).code).toBe(143);
         expect(existsSync(never)).toBe(false);
