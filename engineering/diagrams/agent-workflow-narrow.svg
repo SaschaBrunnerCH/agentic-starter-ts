@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="440" height="2340" viewBox="0 0 440 2340" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="2520" viewBox="0 0 440 2520" role="img" aria-labelledby="title desc">
   <title id="title">How we build with agentic-starter-ts</title>
-  <desc id="desc">Context in: a checkable issue, shared instructions, on-demand guides and explicitly named skills, tracked knowledge and session handoffs. The coding agent plans, implements, tests and documents one issue in an isolated worktree. An optional owner-requested review returns read-only findings. Guardrails out: commit hooks, the push gate, the PR build, local GPU browser acceptance and the readiness check. Failed checks return to the agent for fixes. Human gates resolve decisions and authorize the exact commit on a current base with a green PR build, before merge and cleanup. Robot icons mark agent work or steps that can be delegated; person icons mark owner decisions or hands-on review. A preview app linked from the PR can be tried after a green build when previews are configured.</desc>
+  <desc id="desc">Context in: a checkable issue, shared instructions, on-demand guides and explicitly named skills, tracked knowledge and session handoffs. The coding agent plans, implements, tests and documents one issue in an isolated worktree. An optional owner-requested review returns read-only findings. Guardrails out: commit hooks, the push gate, the PR build, local GPU browser acceptance and the readiness check. Failed checks return to the agent for fixes. Human gates resolve decisions and authorize the exact commit on a current base with a green PR build, before merge and cleanup. Robot icons mark agent work or steps that can be delegated; person icons mark owner decisions or hands-on review. A preview app linked from the PR can be tried after a green build when previews are configured. Local tests, builds and browser acceptance share one execution slot across participating agent sessions; reading, planning and editing can continue concurrently. Overlapping resource-intensive runs can cause longer runtimes and timeouts. GitHub CI runs separately.</desc>
   <!-- Directly editable SVG source. Keep both layouts and the README text equivalent synchronized. -->
   <defs>
     <symbol id="robot" viewBox="0 0 32 32">
@@ -23,7 +23,7 @@
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#C05621" />
     </marker>
   </defs>
-  <rect width="440" height="2340" fill="#F8FAFC" />
+  <rect width="440" height="2520" fill="#F8FAFC" />
   <g font-family="Arial, Helvetica, sans-serif" fill="#0F172A">
   <text x="24" y="40" font-size="27" fill="#0F172A" font-weight="700">How we build with</text>
   <text x="24" y="74" font-size="27" fill="#0F172A" font-weight="700">agentic-starter-ts</text>
@@ -79,13 +79,13 @@
   <text x="40" y="1184" font-size="22" fill="#0F172A" font-weight="700">Commit hooks</text>
   <text x="40" y="1212" font-size="18" fill="#475569">Format, staged lint and secret scan</text>
   <rect x="24" y="1258" width="392" height="140" rx="7" fill="#FFFFFF" stroke="#2F9E44" stroke-width="1.4" />
-  <text x="40" y="1288" font-size="22" fill="#0F172A" font-weight="700">Push gate</text>
+  <text x="40" y="1288" font-size="22" fill="#0F172A" font-weight="700">Local push gate · shared slot</text>
   <text x="40" y="1316" font-size="18" fill="#475569">Types, lint, unit tests and coverage</text>
   <text x="40" y="1341" font-size="18" fill="#475569">Links, licences, secrets and workflows</text>
   <text x="40" y="1366" font-size="18" fill="#475569">Production build and size budget</text>
   <rect x="24" y="1410" width="392" height="92" rx="7" fill="#FFFFFF" stroke="#2F9E44" stroke-width="1.4" />
   <text x="40" y="1440" font-size="22" fill="#0F172A" font-weight="700">PR build</text>
-  <text x="40" y="1468" font-size="18" fill="#475569">Repeats the same code/build gate</text>
+  <text x="40" y="1468" font-size="18" fill="#475569">Same gate; CI runs separately</text>
   <rect x="24" y="1514" width="392" height="132" rx="7" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.4" />
   <rect x="36" y="1526" width="368" height="26" rx="7" fill="#F2EBFF" stroke="#F2EBFF" stroke-width="1.4" />
   <text x="48" y="1545" font-size="16" fill="#475569">PR preview · when configured</text>
@@ -96,7 +96,7 @@
   <text x="40" y="1634" font-size="16" fill="#475569">Requires pnpm setup:previews.</text>
   <rect x="24" y="1658" width="392" height="116" rx="7" fill="#FFFFFF" stroke="#2F9E44" stroke-width="1.4" />
   <use href="#robot" x="40" y="1665" width="26" height="26" color="#1971C2" />
-  <text x="74" y="1688" font-size="22" fill="#0F172A" font-weight="700">Local browser acceptance</text>
+  <text x="74" y="1688" font-size="22" fill="#0F172A" font-weight="700">Local browser · shared slot</text>
   <text x="40" y="1716" font-size="18" fill="#475569">Chrome on a verified GPU + axe</text>
   <text x="40" y="1741" font-size="18" fill="#475569">Evidence on the PR, separate from CI</text>
   <rect x="24" y="1786" width="392" height="100" rx="7" fill="#FFFFFF" stroke="#2F9E44" stroke-width="1.4" />
@@ -121,5 +121,10 @@
   <text x="62" y="2276" font-size="17" fill="#475569">Agent work · can be delegated</text>
   <use href="#person" x="24" y="2290" width="24" height="24" color="#C05621" />
   <text x="62" y="2312" font-size="17" fill="#475569">Owner decisions / hands-on review</text>
+  <path d="M 24 2348 H 416" stroke="#DCE3EC" />
+  <text x="24" y="2380" font-size="22" fill="#1971C2" font-weight="700">Local workloads share one slot</text>
+  <text x="24" y="2412" font-size="17" fill="#475569">Tests, builds and browser checks take turns.</text>
+  <text x="24" y="2444" font-size="17" fill="#475569">Plan/edit together; CI runs separately.</text>
+  <text x="24" y="2476" font-size="17" fill="#475569">Overlap can mean slowdowns and timeouts.</text>
 </g>
 </svg>

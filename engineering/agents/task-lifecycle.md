@@ -20,6 +20,8 @@ Retained drafts and evidence go in the primary checkout's ignored `.local/`, usi
 
 `pnpm install --frozen-lockfile` is needed in every new worktree: the checks and the Git hooks run tools from its `node_modules`.
 
+Worktrees share workstation resources. Supported verification commands acquire the [shared workload reservation](workload-coordination.md); a new worktree does not create another execution slot. Reading, planning and editing can continue while a workload waits.
+
 Naming:
 
 - **Branch:** `<type>/<issue>-<short-title>`, with the type `feat`, `fix`, `docs` or `chore`.

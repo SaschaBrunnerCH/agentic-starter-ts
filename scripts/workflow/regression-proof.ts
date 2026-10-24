@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { parseSync, Visitor } from "vite";
 import { dirname, join } from "node:path";
 import * as json from "../shared/json-shape.ts";
+import { workloadEntry } from "./workload-runtime.ts";
 
 // The proof a bug fix owes, from engineering/agents/task-lifecycle.md: its regression test
 // fails on the revision before the fix. `pnpm task ready` runs the new or changed unit tests
@@ -229,8 +230,20 @@ export function runOnBase(
     }
     const report = join(scratch, "report.json");
     run(
-      join(tree, "node_modules", ".bin", "vitest"),
-      ["run", "--coverage.enabled=false", "--reporter=json", `--outputFile=${report}`, ...tests],
+      process.execPath,
+      [
+        workloadEntry,
+        "run",
+        "--label",
+        "regression-proof",
+        "--",
+        join(tree, "node_modules", ".bin", "vitest"),
+        "run",
+        "--coverage.enabled=false",
+        "--reporter=json",
+        `--outputFile=${report}`,
+        ...tests,
+      ],
       tree,
     );
     return readBaseRun(readFileSync(report, "utf8"));

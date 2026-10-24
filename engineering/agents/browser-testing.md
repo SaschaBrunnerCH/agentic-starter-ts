@@ -77,7 +77,7 @@ own adapter requests.
 #### What an agent never does
 
 - Never open visible browser windows on the user's desktop session. A virtual display or headless only, one page at a time. Several heavy 3D pages on a live desktop can freeze the machine.
-- Never start a GPU run beside another heavy job: check the load and the lock first, and wait instead of competing for the GPU.
+- Never start a GPU run beside another resource-intensive workload: use the [shared workload slot](workload-coordination.md), check host load and acquire the separate GPU lock afterwards.
 - Never turn the renderer check off, or switch to `BROWSER_GPU=off`, to get a run through without saying so in the pull request.
 - Never report timings from a software renderer as a statement about devices.
 - Stop only what the run started: its own browser and virtual display, never another session's.

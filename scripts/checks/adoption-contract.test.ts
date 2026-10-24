@@ -8,7 +8,7 @@ it("keeps expensive adoption acceptance outside the fixture's ordinary gate and 
   const gate = readFileSync(resolve(root, "scripts/checks/run-local-checks.ts"), "utf8");
   expect(gate).not.toContain('"check:adoption"');
   expect(readFileSync(resolve(root, "package.json"), "utf8")).toContain(
-    '"check:adoption": "node scripts/checks/check-adoption.ts"',
+    '"check:adoption": "node scripts/workflow/workload.ts run --label adoption -- node scripts/checks/check-adoption.ts"',
   );
   expect("scripts/checks/check-adoption.ts").not.toMatch(/\.test\.tsx?$/u);
 });

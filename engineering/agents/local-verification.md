@@ -49,6 +49,10 @@ touch scratch.txt && git push --dry-run origin HEAD:refs/heads/hook-check; rm sc
 
 ![The layers a change passes: commit, push, pull request and merge](../diagrams/guardrails.svg)
 
+## Shared workload reservation
+
+Supported workloads acquire one per-user reservation across participating repositories and worktrees. The full gate retains it across its checks, and adoption/regression-proof workflows reuse it through verified nested ownership. Browser commands acquire the shared slot before their separate GPU lock and retain cache initialization. See [workload guidance](workload-coordination.md) for commands, WSL2/macOS/Linux prerequisites, state, CI behavior, cancellation, recovery and process boundaries. Bounded fixtures use isolated state; they never contend for the live shared slot.
+
 ## Development platforms
 
 Run the complete gate and adoption verification on WSL2, macOS or Linux; see [setup and support boundaries](../../README.md#windows-development-with-wsl2). `scripts/shared/development-platform.ts` guards `pnpm task start`, `pnpm check:push` and `pnpm check:adoption` before task claims, checks or fixture creation. There is no CI bypass: CI must use a supported platform too. WSL2 is a setup prerequisite; Node's `linux` platform value alone cannot distinguish WSL1.

@@ -55,6 +55,8 @@ The [README GitHub workflow](../../README.md#through-github-issues-projects-and-
 
 The README also includes a schematic [Project board](project-board.svg) and [narrow layout](project-board-narrow.svg). These directly editable SVGs emphasize the six Status columns and use muted bars for card contents, without task text or metadata. Compact cards and spacing keep the board brief; view/filter chips are omitted. Robot icons identify agent work. The configured Board view filters to open issues, so Done stays empty; the workflow diagram explains completion separately. Blocked retains its configured position before Done. The narrow layout reflows the columns into two per row and is selected up to 900px viewport width. Keep both layouts and the README explanation aligned with the issue tracker and hosted setup. The board is an abstract illustration, with no live issue data.
 
+The [workload lifecycle](workload-lifecycle.svg), with its [editable Excalidraw source](workload-lifecycle.excalidraw), starts with competing agents sharing CPU, memory, disk and GPU resources, then shows normal execution, cancellation and supervisor-crash recovery. Its central distinction is that a free OS lock does not prove previous work has finished. The [owning guide and text equivalent](../agents/workload-coordination.md#reservation-lifecycle) define workloads, their place in agentic development, adoption, the supported process boundary and safe recovery. The SVG is an Excalidraw 0.18.0 export with an embedded editable scene, a white background and accessible title/description. Both wide/narrow agent and GitHub overview graphics mark local verification as sharing a slot, with planning/editing concurrent and CI separate. Update sources, exports and text together; check both full-size and narrow previews. These describe behavior, not a live process inventory or evidence that any platform passed verification.
+
 ### Measured chart
 
 ![Recorded unit-test coverage: statements 96.73%, branches 91.14%, functions 98.23%, lines 97.16%; required floors 95%, 90%, 95%, 95%.](coverage-example.svg)
@@ -86,6 +88,7 @@ Keep visuals with their owning documentation; update source, export, text equiva
 | `github-workflow`       | Issue, Project and PR delivery | Repository README                   |
 | `project-board`         | Status columns and task cards  | Repository README                   |
 | `guardrails`            | Four verification layers       | Getting started, local verification |
+| `workload-lifecycle`    | Reservation and crash recovery | Workload coordination guide         |
 | `issue-statuses`        | Project statuses               | Issue tracker                       |
 | `browser-device-matrix` | Desktop, device and farm paths | Browser/device coverage             |
 

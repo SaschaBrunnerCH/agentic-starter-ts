@@ -24,6 +24,8 @@ Use WSL2, macOS or Linux for your agent and development tools. On Windows, compl
 
 ## Your first session
 
+Several agents can plan and edit concurrently. Their worktrees share the machine, so supported tests, builds and browser checks take turns through [local workload coordination](agents/workload-coordination.md). This reduces competing runs that can slow verification or trigger timeouts; activity outside participation still needs inspection. After installation, use `pnpm workload status` to inspect the shared reservation and follow the [adoption steps](agents/workload-coordination.md#adopting-the-coordinator) before the first gate.
+
 1. **Write one small issue.** Pick something you could check in a minute. Use the template on GitHub's "New issue" page, or the commands in the README. Example:
 
    > **Problem.** The name input changes the greeting, but a shared URL cannot initialize it to a chosen name.
