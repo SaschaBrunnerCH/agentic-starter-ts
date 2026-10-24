@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  cleanupProgress,
   descendant,
   enabled,
   exitCode,
@@ -30,6 +31,23 @@ const owner: WorkloadOwner = {
   groups: [row],
   code: null,
 };
+
+it("finishes cleanup once the last live group is gone despite earlier uncertainty or deadline", () => {
+  for (const unproved of [false, true]) {
+    for (const expired of [false, true]) {
+      expect(cleanupProgress([row], [], unproved, expired)).toEqual({ groups: [], blocked: false });
+      expect(cleanupProgress([row], [{ ...row, state: "Z" }], unproved, expired)).toEqual({
+        groups: [],
+        blocked: false,
+      });
+      expect(cleanupProgress([row], [row], unproved, expired)).toEqual({
+        groups: [row],
+        blocked: unproved || expired,
+      });
+    }
+  }
+  expect(cleanupProgress([row], [{ ...row, birth: "linux:999" }], true, false).blocked).toBe(true);
+});
 
 it("coordinates only local Unix development, with explicit CI detection", () => {
   for (const os of ["linux", "darwin"]) {

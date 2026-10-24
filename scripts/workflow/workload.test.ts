@@ -420,7 +420,75 @@ describe.skipIf(process.platform !== "linux" && process.platform !== "darwin")(
         const result = await start(f, node("process.exitCode=99")).done;
         expect(result.code).toBe(1);
         expect(result.stderr).toContain("Invalid workload ownership");
+        expect(result.stderr).toContain(join(f.state, "owner.json"));
+        expect(result.stderr).toContain("#invalid-or-incompatible-metadata");
         expect(result.stderr).not.toContain("invalid-do-not-echo");
+      },
+    );
+
+    it(
+      "prints recorded and observed identities for inspecting a held reservation",
+      { timeout: 10000 },
+      async () => {
+        const f = fixture();
+        const first = start(
+          f,
+          node(
+            "require('node:fs').writeFileSync(process.argv[1],'ready');setTimeout(()=>{},7000)",
+            f.marker,
+          ),
+        );
+        await until(() => existsSync(f.marker));
+        const held = ownerOf(f);
+        const before = readFileSync(join(f.state, "owner.json"), "utf8");
+        const result = await start(f, [], { mode: ["status"] }).done;
+        expect(result.code).toBe(0);
+        expect(result.stdout).toContain("Owner record: " + join(f.state, "owner.json"));
+        expect(result.stdout).toContain("Recorded boot: " + held.boot);
+        expect(result.stdout).toContain("Current boot: " + held.boot);
+        expect(result.stdout).toContain("Recorded supervisor: " + JSON.stringify(held.owner));
+        for (const group of held.groups) {
+          expect(result.stdout).toContain("Recorded group: " + JSON.stringify(group));
+          expect(result.stdout).toContain('"pgid":' + group.pgid);
+          expect(result.stdout).toContain('"birth":"' + group.birth + '"');
+        }
+        expect(result.stdout).toContain("Observed group member:");
+        expect(result.stdout).toContain("never authorize signalling");
+        expect(readFileSync(join(f.state, "owner.json"), "utf8")).toBe(before);
+        first.child.kill("SIGTERM");
+        expect((await first.done).code).toBe(143);
+      },
+    );
+
+    it.each(["frontend", "supervisor", "foreground session"])(
+      "cancels owned work on a %s hang-up",
+      { timeout: 15000 },
+      async (target) => {
+        const f = fixture();
+        const stopped = join(f.root, "stopped");
+        const first = start(
+          f,
+          node(
+            "const fs=require('node:fs');process.on('SIGTERM',()=>{fs.writeFileSync(process.argv[2],'stopped');process.exit(0)});fs.writeFileSync(process.argv[1],String(process.pid));setTimeout(()=>{},10000)",
+            f.marker,
+            stopped,
+          ),
+        );
+        await until(() => existsSync(f.marker));
+        const held = ownerOf(f);
+        const command = current(Number(readFileSync(f.marker, "utf8")));
+        if (!command) throw new Error("Owned command disappeared before hang-up.");
+        if (target !== "supervisor") first.child.kill("SIGHUP");
+        if (target !== "frontend") {
+          const supervisor = current(held.owner.pid);
+          if (supervisor && same(held.owner, supervisor)) process.kill(supervisor.pid, "SIGHUP");
+        }
+        expect((await first.exited).code).toBe(143);
+        expect((await first.done).code).toBe(143);
+        expect(readFileSync(stopped, "utf8")).toBe("stopped");
+        expect(current(command.pid)?.state ?? "Z").toMatch(/^Z/u);
+        expect(ownerOf(f)).toMatchObject({ status: "finished", groups: [], code: 143 });
+        expect((await start(f, node("process.exitCode=0")).done).code).toBe(0);
       },
     );
 

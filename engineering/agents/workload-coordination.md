@@ -33,9 +33,7 @@ A complete gate holds one reservation while its tests and build run within it. N
 
 [Full-size diagram](../diagrams/workload-lifecycle.svg) · [Editable Excalidraw source](../diagrams/workload-lifecycle.excalidraw). The diagram shows lifecycle stages, not additional ownership metadata statuses.
 
-- **Normal execution:** acquire the OS lock and check previous ownership before starting work. Keep the reservation through nested commands and supported foreground children, then release it. A frontend crash leaves supervised work running.
-- **Cancellation:** stopping a waiter starts no work and leaves the owner alone. Cancelling running work stops only verified owned groups; unproved cleanup retains an ownership barrier.
-- **Supervisor crash:** the next caller may acquire the OS lock while earlier work still survives. Inspect the recorded ownership before starting anything. Recorded survivors, invalid state or uncertain cleanup block new work. Recovery returns an error; retry after the survivors finish, without deleting the permanent lock file or signalling stale records.
+Text equivalent: wait for the OS lock, check previous ownership, run, finish supported foreground children and release. Nested commands share the reservation; abrupt frontend loss leaves supervised work running. Cancellation stops only verified owned work and releases after cleanup. After a supervisor crash, a free OS lock alone is insufficient: recorded survivors or uncertain state block new work. The [recovery procedure](#cancellation-and-recovery) below owns the inspection and retry steps.
 
 ## Commands and participation
 
@@ -52,7 +50,7 @@ These entrypoints reserve automatically: `check:push`, `test`, `build`, `check:a
 
 Browser entrypoints retain their cache preloads. Acquisition order is **shared slot, then GPU lock**. The GPU lock remains responsible for verified profiles, renderer evidence and browser/display cleanup. Do not acquire a workload reservation from inside an independently owned GPU reservation.
 
-`status` reads advisory ownership and surviving-group information without creating state or acquiring a slot. It is not a full process inventory, resource-utilization report or proof that the machine is idle.
+`status` reads advisory ownership without creating state or acquiring a slot. It prints the `owner.json` path, recorded and current boot identities, recorded/observed supervisor identities, recorded group leaders and observed live group members with PID, parent/group IDs and process-start identities. Observed IDs can be reused: this output never authorizes signalling. It is not a full process inventory, resource-utilization report or proof that the machine is idle.
 
 ## Adopting the coordinator
 
@@ -83,11 +81,51 @@ An inherited `WORKLOAD_RUN` identifies a candidate reservation; it is not proof 
 
 ## Cancellation and recovery
 
-Cancel a waiting command normally; it stops only that waiter's own launcher. It never signals the slot owner. Cancelling a running reservation sends graceful termination to verified owned groups. Groups escalate after two seconds; the supervisor has a bounded fallback. Cancellation returns 143. Normal command exits and signals keep their corresponding result.
+Coordinated runs handle SIGINT, SIGTERM and terminal hang-up (SIGHUP) as cancellation, returning 143. A waiting command stops only its own launcher and never signals the slot owner. Cancelling a running reservation sends graceful termination to verified owned groups; groups escalate after two seconds and the supervisor has a bounded fallback. Once the final live group is gone, earlier cleanup uncertainty or an elapsed deadline does not retain a barrier. Normal command exits and signals keep their corresponding result. CI/unsupported-OS bypass retains ordinary child-command results.
 
 A frontend crash leaves its supervisor and reservation running. If the supervisor crashes and the kernel releases the lock, the next runner checks the recorded boot and groups before starting anything. Live recorded work blocks recovery, including ambiguous reused group identities. Zombies do not count as live work; a previous boot is distinguished from the current one. Recovery never signals stale records. If current ownership or cleanup cannot be proved, leave the barrier intact and involve the owner rather than killing processes by name or guessed PID.
 
-For inspection, use `pnpm workload status`, then compare the private record with the actual boot, process start identity and process group. When the recorded foreground work finishes, retry the original command: recovery reuses the permanent lock inode. If metadata is invalid, preserve it and have the owner reconcile its provenance and work while holding the same OS lock; the runner provides no force-unlock shortcut. Do not switch state directories, delete the lock or clear records to bypass surviving work.
+For inspection, use `pnpm workload status` and compare recorded/observed boot, process-start and group identities. When the recorded foreground work finishes, retry the original command: recovery reuses the permanent lock inode. The reservation has no execution-duration timeout: a helper that stays alive in a supported group keeps the slot until it exits or the owning run is cancelled. `--timeout` bounds acquisition only. Invalid metadata needs the owner's [manual reconciliation](#invalid-or-incompatible-metadata); there is no force-unlock shortcut.
+
+### Invalid or incompatible metadata
+
+An invalid `owner.json` can hide surviving work. Preserve the record and establish its provenance and the state of the previous run locally; do not copy raw metadata into shared logs. A free OS lock proves only that no participating coordinator currently holds it, not that its children have finished. If the owner cannot establish that all previous work has ended, leave the record in place. Permissions or foreign ownership must be resolved as setup problems, not hidden by clearing metadata.
+
+For a known existing state directory, set the same absolute path used by the participating repositories:
+
+```sh
+export WORKLOAD_STATE_DIR="${WORKLOAD_STATE_DIR:-$HOME/.local/state/agent-workload}"
+```
+
+On **WSL2**, open a temporary inspection shell only after acquiring the existing permanent lock; failure means leave the current reservation alone. The waiting `flock` parent retains the lock until the shell exits:
+
+```sh
+test -f "$WORKLOAD_STATE_DIR/lock" &&
+  flock --exclusive --nonblock --conflict-exit-code 75 "$WORKLOAD_STATE_DIR/lock" /bin/sh
+```
+
+On **macOS**, the waiting Perl parent holds the existing lock while the inspection shell is open:
+
+```sh
+perl -MFcntl=:flock -e '
+  open(my $lock, "+<", $ARGV[0]) or die "Cannot open existing workload lock\n";
+  flock($lock, LOCK_EX | LOCK_NB) or die "Workload lock is held\n";
+  system("/bin/sh");
+  exit($? == -1 ? 1 : $? >> 8);
+' "$WORKLOAD_STATE_DIR/lock"
+```
+
+On **Linux**, use the WSL2 command above. These are owner inspection shells, not workload launchers; do not run another coordinated workload from inside them. Acquiring the lock grants no permission to stop processes or bypass uncertain cleanup.
+
+Only after the owner proves all previous work has ended and confirms that participating repositories use the same protocol, quarantine the invalid record from inside that locked shell. Choose a new private archive name if `owner.reviewed.json` already exists. This preserves the original record while leaving the permanent `lock` file untouched:
+
+```sh
+test ! -e "$WORKLOAD_STATE_DIR/owner.reviewed.json" &&
+  mv "$WORKLOAD_STATE_DIR/owner.json" "$WORKLOAD_STATE_DIR/owner.reviewed.json"
+exit
+```
+
+Then retry the original command outside the inspection shell. The runner publishes a new record under the same OS lock. Never switch state directories, replace the permanent lock inode or signal processes from stale records to bypass surviving work.
 
 ## Supported boundary and verification
 

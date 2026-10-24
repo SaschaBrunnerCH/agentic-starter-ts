@@ -201,6 +201,19 @@ export function exitCode(code: number | null, signal: NodeJS.Signals | null): nu
   return code ?? (signal ? 128 + constants.signals[signal] : 1);
 }
 
+export function cleanupProgress(
+  groups: readonly ProcessIdentity[],
+  rows: readonly ProcessIdentity[],
+  unproved: boolean,
+  expired: boolean,
+) {
+  const remaining = groups.filter((group) =>
+    rows.some((row) => row.pgid === group.pgid && live(row)),
+  );
+  // An earlier uncertainty/deadline cannot retain a barrier after all live work is gone.
+  return { groups: remaining, blocked: remaining.length > 0 && (unproved || expired) };
+}
+
 const perlLock =
   '$^F=1024; use Fcntl qw(:flock); use Time::HiRes qw(clock_gettime CLOCK_MONOTONIC sleep); my $path=shift; my $wait=shift; open(my $f,"+>>",$path) or die "Cannot open workload lock\\n"; my $end=clock_gettime(CLOCK_MONOTONIC)+$wait; while(!flock($f,LOCK_EX|LOCK_NB)){ exit 75 if clock_gettime(CLOCK_MONOTONIC)>=$end; sleep(0.05); } exec @ARGV; die "Cannot execute workload supervisor\\n";';
 

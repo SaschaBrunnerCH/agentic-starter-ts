@@ -21,6 +21,7 @@ import { isAbsolute, join } from "node:path";
 import { Duplex } from "node:stream";
 import * as json from "../shared/json-shape.ts";
 import {
+  cleanupProgress,
   descendant,
   enabled,
   exitCode,
@@ -45,6 +46,7 @@ const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
 const runShape = json.object({ label: json.string, command: json.array(json.string) });
 const requestShape = json.object({ kind: json.string, run: json.string, pid: json.number });
 const replyShape = json.object({ ok: json.boolean, error: json.optional(json.string) });
+const cancellationSignals: NodeJS.Signals[] = ["SIGINT", "SIGTERM", "SIGHUP"];
 
 function paths() {
   const directory =
@@ -99,7 +101,17 @@ function ownerAt(path: string): WorkloadOwner | undefined {
     if (error instanceof Error && "code" in error && error.code === "ENOENT") return undefined;
     throw error;
   }
-  return parseOwner(readFileSync(path, "utf8"));
+  try {
+    return parseOwner(readFileSync(path, "utf8"));
+  } catch (error) {
+    throw new Error(
+      (error instanceof Error ? error.message : "Cannot read workload ownership.") +
+        " Owner record: " +
+        path +
+        ". Recovery: engineering/agents/workload-coordination.md#invalid-or-incompatible-metadata",
+      { cause: error },
+    );
+  }
 }
 
 function save(path: string, owner: WorkloadOwner) {
@@ -223,13 +235,11 @@ function waitChild(child: ChildProcess): Promise<number> {
 async function ordinary(command: string[]) {
   const child = spawn(command[0] ?? "", command.slice(1), { stdio: "inherit" });
   const cancel = () => child.kill("SIGTERM");
-  process.on("SIGINT", cancel);
-  process.on("SIGTERM", cancel);
+  for (const signal of cancellationSignals) process.on(signal, cancel);
   try {
     return await waitChild(child);
   } finally {
-    process.off("SIGINT", cancel);
-    process.off("SIGTERM", cancel);
+    for (const signal of cancellationSignals) process.off(signal, cancel);
   }
 }
 
@@ -249,14 +259,33 @@ export async function cli(args: string[]): Promise<number> {
     }
     const state = paths();
     if (existsSync(state.directory)) privatePath(state.directory, true);
+    console.log("Owner record: " + state.owner);
     const owner = ownerAt(state.owner);
     console.log(describe(owner));
-    if (owner)
+    if (owner) {
+      const boot = bootIdentity();
+      const rows = processes();
+      console.log("Recorded boot: " + owner.boot);
+      console.log("Current boot: " + boot);
+      console.log("Recorded supervisor: " + JSON.stringify(owner.owner));
       console.log(
-        "Recorded surviving group members: " +
-          survivors(owner, bootIdentity(), processes()).length +
+        "Observed supervisor: " +
+          JSON.stringify(rows.find((row) => row.pid === owner.owner.pid) ?? null),
+      );
+      console.log("Observed identities are advisory; they never authorize signalling.");
+      for (const group of owner.groups) {
+        console.log("Recorded group: " + JSON.stringify(group));
+        for (const row of rows.filter(
+          (candidate) => candidate.pgid === group.pgid && live(candidate),
+        ))
+          console.log("Observed group member: " + JSON.stringify(row));
+      }
+      console.log(
+        "Recorded live supervisor/group processes: " +
+          survivors(owner, boot, rows).length +
           ". Advisory only; this is not a machine-load report.",
       );
+    }
     return 0;
   }
   if (mode !== "run") throw new Error("Use workload run, workload status or workload help.");
@@ -317,8 +346,7 @@ export async function cli(args: string[]): Promise<number> {
     cancelled = true;
     child.kill("SIGTERM");
   };
-  process.on("SIGINT", cancel);
-  process.on("SIGTERM", cancel);
+  for (const signal of cancellationSignals) process.on(signal, cancel);
   // Publish the waiting notice only once this frontend can handle cancellation.
   if (previous?.status === "running")
     console.error("Waiting for workload slot: " + describe(previous));
@@ -333,8 +361,7 @@ export async function cli(args: string[]): Promise<number> {
     return cancelled ? 143 : code;
   } finally {
     clearInterval(notice);
-    process.off("SIGINT", cancel);
-    process.off("SIGTERM", cancel);
+    for (const signal of cancellationSignals) process.off(signal, cancel);
     channel.destroy();
   }
 }
@@ -346,13 +373,11 @@ async function runGroup(command: string[]) {
   });
   child.send({ command });
   const cancel = () => child.kill("SIGTERM");
-  process.on("SIGINT", cancel);
-  process.on("SIGTERM", cancel);
+  for (const signal of cancellationSignals) process.on(signal, cancel);
   try {
     return await waitChild(child);
   } finally {
-    process.off("SIGINT", cancel);
-    process.off("SIGTERM", cancel);
+    for (const signal of cancellationSignals) process.off(signal, cancel);
   }
 }
 
@@ -378,8 +403,7 @@ export async function groupMain(): Promise<number> {
     process.kill(-process.pid, "SIGTERM");
     escalation = setTimeout(() => process.kill(-process.pid, "SIGKILL"), 2000);
   };
-  process.on("SIGINT", cancel);
-  process.on("SIGTERM", cancel);
+  for (const signal of cancellationSignals) process.on(signal, cancel);
   const code = await waitChild(child);
   // Keep the group leader alive until owned foreground children have gone.
   while (
@@ -388,8 +412,7 @@ export async function groupMain(): Promise<number> {
     await sleep(100);
   await request("done");
   if (escalation) clearTimeout(escalation);
-  process.off("SIGINT", cancel);
-  process.off("SIGTERM", cancel);
+  for (const signal of cancellationSignals) process.off(signal, cancel);
   if (process.connected) process.disconnect();
   return cancelling ? 143 : code;
 }
@@ -510,22 +533,21 @@ export async function supervisorMain(): Promise<number> {
     signalGroups("SIGTERM");
     escalation = setTimeout(() => signalGroups("SIGKILL"), 2500);
   };
-  process.on("SIGINT", cancel);
-  process.on("SIGTERM", cancel);
+  for (const signal of cancellationSignals) process.on(signal, cancel);
   try {
     const code = await runGroup(incoming.command);
     const deadline = cancelling ? performance.now() + 4000 : Infinity;
     while (owner.groups.length) {
       unchangedLock();
-      const rows = processes();
-      owner = {
-        ...owner,
-        groups: owner.groups.filter((group) =>
-          rows.some((row) => row.pgid === group.pgid && live(row)),
-        ),
-      };
+      const progress = cleanupProgress(
+        owner.groups,
+        processes(),
+        unproved,
+        performance.now() > deadline,
+      );
+      owner = { ...owner, groups: progress.groups };
       save(state.owner, owner);
-      if (performance.now() > deadline || unproved)
+      if (progress.blocked)
         throw new Error(
           "Workload cleanup unproved; ownership barrier retained. Inspect workload status.",
         );
@@ -537,8 +559,7 @@ export async function supervisorMain(): Promise<number> {
     return owner.code ?? 1;
   } finally {
     if (escalation) clearTimeout(escalation);
-    process.off("SIGINT", cancel);
-    process.off("SIGTERM", cancel);
+    for (const signal of cancellationSignals) process.off(signal, cancel);
     server.close();
     rmSync(state.socket, { force: true });
     rmdirSync(state.socketDir);
