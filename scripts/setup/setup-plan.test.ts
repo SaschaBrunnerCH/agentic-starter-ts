@@ -355,31 +355,66 @@ it.each(["setup-github.ts", "setup-previews.ts"])(
     expect(result.stdout).toContain("No changes applied");
   },
 );
+function differences(entry: string) {
+  const f = fixture();
+  if (entry === "setup-github.ts") {
+    const configured = json.parseJson(
+      JSON.stringify(f.responses.labels),
+      json.array(json.object({ name: json.string, color: json.string, description: json.string })),
+      "fixture labels",
+    );
+    // One missing label and one changed label exercise both reconciliation paths.
+    f.responses.labels = configured
+      .slice(1)
+      .map((label, index) =>
+        index === 0 ? { ...label, color: "ffffff", description: "Outdated" } : label,
+      );
+    f.responses.repository = {
+      id: "repository-id",
+      name: "product",
+      nameWithOwner: repo,
+      url: `https://github.com/${repo}`,
+      owner: { login: "example-owner" },
+      squashMergeAllowed: false,
+      mergeCommitAllowed: true,
+      rebaseMergeAllowed: true,
+      deleteBranchOnMerge: false,
+    };
+  } else {
+    f.responses.variables = [];
+    f.responses.repositorySecrets = [{ name: "PREVIEWS_DEPLOY_KEY" }];
+  }
+  return f;
+}
 it.each(["setup-github.ts", "setup-previews.ts"])(
-  "%s applies planned deltas then becomes a no-op",
+  "%s applies the differences reported by its plan",
   (entry) => {
-    const f = fixture();
-    if (entry === "setup-github.ts") {
-      f.responses.labels = [{ name: "bug", color: "ffffff", description: "Outdated" }];
-      f.responses.repository = {
-        id: "repository-id",
-        name: "product",
-        nameWithOwner: repo,
-        url: `https://github.com/${repo}`,
-        owner: { login: "example-owner" },
-        squashMergeAllowed: false,
-        mergeCommitAllowed: true,
-        rebaseMergeAllowed: true,
-        deleteBranchOnMerge: false,
-      };
-    } else {
-      f.responses.variables = [];
-      f.responses.repositorySecrets = [{ name: "PREVIEWS_DEPLOY_KEY" }];
-    }
+    const f = differences(entry);
     f.save();
     const before = f.cli(entry, ["--dry-run"]);
     expect(before.status, before.stderr).toBe(0);
     expect(before.stdout).toContain("[change]");
+    f.save(false);
+    const applied = f.cli(entry);
+    expect(applied.status, applied.stderr).toBe(0);
+    expect(applied.stdout).not.toContain("No changes");
+    if (entry === "setup-github.ts") {
+      expect(before.stdout).toContain("update label");
+      expect(before.stdout).toContain("create label");
+      expect(applied.stdout).toContain("updated");
+      expect(applied.stdout).toContain("created");
+      expect(applied.stdout).toContain("merge settings set to squash only");
+    } else {
+      expect(before.stdout).toContain("remove legacy repository-level");
+      expect(applied.stdout).toContain("repository secret PREVIEWS_DEPLOY_KEY removed");
+      expect(applied.stdout).toContain("variable PREVIEWS_URL set");
+    }
+  },
+);
+it.each(["setup-github.ts", "setup-previews.ts"])(
+  "%s becomes a no-op after applying differences",
+  (entry) => {
+    const f = differences(entry);
     f.save(false);
     const first = f.cli(entry);
     expect(first.status, first.stderr).toBe(0);
@@ -387,9 +422,6 @@ it.each(["setup-github.ts", "setup-previews.ts"])(
     const second = f.cli(entry);
     expect(second.status, second.stderr).toBe(0);
     expect(second.stdout).toContain("No changes");
-    const after = f.cli(entry, ["--dry-run"]);
-    expect(after.status, after.stderr).toBe(0);
-    expect(after.stdout).not.toMatch(/\[(?:change|blocked|deferred)\]/u);
   },
 );
 
