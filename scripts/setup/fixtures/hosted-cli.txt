@@ -1,0 +1,45 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const file = path.join(process.cwd(), 'hosted.json');
+const state = JSON.parse(fs.readFileSync(file, 'utf8'));
+const args = process.argv.slice(2);
+fs.appendFileSync('calls.jsonl', JSON.stringify(args) + '\n');
+function fail(message) { console.error(message); process.exit(75); }
+function answer(key) {
+  if (!(key in state.responses)) fail('Unexpected hosted read: ' + key);
+  const value = state.responses[key];
+  if (value && value.httpError) fail('HTTP ' + value.httpError);
+  if (args.includes('--jq')) console.log(String(value.enabled));
+  else console.log(typeof value === 'string' ? value : JSON.stringify(value));
+}
+let key;
+if (args[0] === 'api') {
+  const query = args.find(a => a.startsWith('query='));
+  if (query) {
+    if (!query.startsWith('query=query')) fail('Mutation sentinel: ' + query);
+    key = query.includes('repositoryOwner') ? 'owner' : query.includes('fields(first:') ? 'project' : 'linked';
+  } else {
+    const method = args.includes('-X') ? args[args.indexOf('-X') + 1] : args.includes('--method') ? args[args.indexOf('--method') + 1] : 'GET';
+    if (method !== 'GET') fail('Mutation sentinel: ' + args.join(' '));
+    key = args.find(a => a.startsWith('repos/')) ?? 'scopes';
+  }
+} else if (args[0] === 'repo' && args[1] === 'view') key = 'repository';
+else if (args[0] === 'label' && args[1] === 'list') key = 'labels';
+else if (args[0] === 'secret' && args[1] === 'list') key = args.includes('--env') ? 'environmentSecrets' : 'repositorySecrets';
+else if (args[0] === 'variable' && args[1] === 'list') key = 'variables';
+else {
+  if (state.readOnly) fail('Mutation sentinel: ' + args.join(' '));
+  if (args[0] === 'label' && args[1] === 'create') {
+    const label = { name: args[2], color: args[args.indexOf('--color') + 1], description: args[args.indexOf('--description') + 1] };
+    state.responses.labels = state.responses.labels.filter(l => l.name !== label.name).concat(label);
+  } else if (args[0] === 'repo' && args[1] === 'edit') {
+    Object.assign(state.responses.repository, {squashMergeAllowed:true,mergeCommitAllowed:false,rebaseMergeAllowed:false,deleteBranchOnMerge:true});
+  } else if (args[0] === 'variable' && args[1] === 'set') {
+    const name = args[2], value = args[args.indexOf('--body') + 1];
+    state.responses.variables = state.responses.variables.filter(v => v.name !== name).concat({name,value});
+  } else if (args[0] === 'secret' && args[1] === 'delete') state.responses.repositorySecrets = [];
+  else fail('Unexpected mutation: ' + args.join(' '));
+  fs.writeFileSync(file, JSON.stringify(state));
+  process.exit(0);
+}
+answer(key);

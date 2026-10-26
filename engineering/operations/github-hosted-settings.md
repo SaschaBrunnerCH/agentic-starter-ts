@@ -2,6 +2,14 @@
 
 These settings live on GitHub, not in files, and a repository created from the template does not inherit them. `pnpm setup:github` creates them and can be rerun at any time to repair them; it writes only differences. It needs the GitHub CLI signed in with administrator rights on the repository and the Project scope (`gh auth refresh -s project`).
 
+## Inspect before applying
+
+`pnpm setup:github --help` (also `-h` or `help`) prints usage without reading setup files or contacting GitHub. Unsupported arguments and combined modes fail before setup starts. With no arguments, setup still applies differences directly.
+
+`pnpm setup:github --dry-run` validates local configuration and reads hosted metadata, then lists each setting as `change`, `unchanged`, `deferred` or `blocked`. It makes no hosted writes. Creation-dependent IDs, Project defaults and successful readbacks are deferred until apply; availability-dependent security features are also deferred where reads cannot establish support. A 404 is reported as missing or not visible, while other failed reads stop the plan. Blocked drift exits unsuccessfully; a successful plan means inspection completed, not that apply will succeed. Run ordinary setup to apply, then verify its readbacks.
+
+The read-only planners live in `scripts/setup/setup-plan.ts`; desired Project options/views are shared with apply through `setup-configuration.ts`. Colocated tests reject unexpected writes and compare planned changes with apply and its second, unchanged run against a controlled CLI. They do not provision real hosted resources.
+
 ## What the script sets
 
 | Setting                    | Value                                                                                                                                                                                                                          |

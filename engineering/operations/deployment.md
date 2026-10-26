@@ -26,6 +26,8 @@ The site is public, even when the repository is private: GitHub Pages has no acc
 
 Each pull request from this repository gets a preview at `<previews URL>/pr-<number>/`, linked in a comment on the pull request. The previews live in a separate repository, `<repository>-previews`, whose GitHub Pages site serves its `gh-pages` branch. `pnpm setup:previews` creates that repository, its branch and Pages site, a deploy key with write access to it alone, the environment `previews` that only `main` may use, the key as that environment's secret `PREVIEWS_DEPLOY_KEY`, and the variables `PREVIEWS_REPOSITORY` and `PREVIEWS_URL`. Without them the preview workflow skips without starting a job, so it costs no CI minutes; pull requests that get no preview comment mean `pnpm setup:previews` has not run.
 
+Inspect with `pnpm setup:previews --dry-run` before applying. It reads repository, branch, Pages, environment, variable and secret-name metadata only; it generates no deploy key, creates no credential files and never reads secret values. Key replacement is deferred to apply. When the preview repository or Pages does not exist, its dependent resources and actual URL are deferred too. `pnpm setup:previews --help` (also `-h` or `help`) works without configuration or GitHub access; other arguments and combined modes fail early. See [plan statuses and failure handling](github-hosted-settings.md#inspect-before-applying). No-argument setup keeps applying directly.
+
 How a preview is published, and why pull-request code never sees the key:
 
 1. The PR build builds the pull request without secrets and keeps `dist/` as the artifact `site` for three days. The gate has passed. Browser acceptance runs locally on the verified GPU and is reported on the PR; see [browser testing](../agents/browser-testing.md).
@@ -64,7 +66,7 @@ Pages fits a static application. For another target, keep the structure and repl
 - Prefer short-lived credentials through OpenID Connect (`id-token: write`) over stored keys, where the target supports it.
 - Keep the test after the deploy and the rollback by commit.
 
-Remove the Pages section from `scripts/setup/setup-github.ts` and the deploy workflow when the repository does not deploy at all.
+Remove the Pages sections from `scripts/setup/setup-github.ts` and `scripts/setup/setup-plan.ts`, and the deploy workflow when the repository does not deploy at all.
 
 ## When Pages is not available
 
