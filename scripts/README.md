@@ -18,6 +18,10 @@ Keep tests beside their modules: `workflow/task-rules.test.ts` tests `workflow/t
 
 Most of this code remains useful for the life of a project. Setup is infrequent, but its repair commands are retained. These folders are part of the repository's single package; they add no published packages or application runtime dependency.
 
+Responsibility folders keep the commands, supporting rules and tests changed together near each other. A flat list becomes harder to navigate as tooling grows; separate command/library/test layers scatter related work. Folder ownership and review provide structure without introducing workspace packages or a new dependency-boundary mechanism.
+
+Projects can read and edit these tools independently, but must adopt relevant starter fixes themselves. Extracting packages alone would not provide shared upgrades. Revisit a generator or versioned engineering CLI when repeated fixes across projects create measurable maintenance cost and the reusable API, project-owned configuration, release process and compatibility policy are understood. A generator would own initial scaffolding; a shared CLI would own ongoing tools.
+
 ## How the groups connect
 
 The groups own their commands and rule modules. `shared/` supplies infrastructure without importing a command group. `workflow/` reads browser evidence from `browser/` and checks attribution through `git/`; the browser runner does not import task orchestration. Other command groups use `shared/` where needed. Test fixtures and configuration are allowed to exercise entry points across groups.
@@ -39,6 +43,5 @@ The guides own procedures; this page owns the implementation map:
 - [Run and extend checks](../engineering/agents/local-verification.md).
 - [Test browsers and devices](../engineering/agents/browser-testing.md) and [discover GPU access](../engineering/agents/browser-gpu-discovery.md).
 - [Manage hosted settings](../engineering/operations/github-hosted-settings.md), [previews and deployment](../engineering/operations/deployment.md), and [releases](../engineering/operations/releases.md).
-- [ADR 0003](../engineering/adr/0003-group-engineering-scripts-by-responsibility.md) explains the grouping, maintenance tradeoffs and why package extraction is deferred.
 
 Folders improve navigation; they do not automatically enforce import boundaries. Add an enforced boundary only when a demonstrated problem warrants it, following [dependency-direction guidance](../engineering/agents/dependency-rules.md). A generator or shared CLI remains a separate design decision.

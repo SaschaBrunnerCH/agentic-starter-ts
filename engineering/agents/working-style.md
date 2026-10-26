@@ -12,7 +12,7 @@ How to write and how much to change. These rules keep pull requests small enough
 
 ## Before proposing something new
 
-Search before proposing an optimisation, a new tool or a second attempt at something: the ADRs in `engineering/adr/`, the records in `engineering/research/`, the notes in `engineering/designs/`, and closed issues. If it was decided or tried before, say what has changed since; another run of the same experiment does not overturn a recorded result.
+Search before proposing an optimisation, a new tool or a second attempt at something: the relevant engineering guides and code comments, any project ADRs in `engineering/adr/`, the records in `engineering/research/`, the notes in `engineering/designs/`, and closed issues. If it was decided or tried before, say what has changed since; another run of the same experiment does not overturn a recorded result.
 
 ## Writing
 
@@ -24,13 +24,17 @@ Search before proposing an optimisation, a new tool or a second attempt at somet
 
 Use the [visual documentation guide](../diagrams/README.md) when a table, diagram, chart or real screenshot makes an explanation easier to understand. Choose the format for the reader, keep its editable source and text equivalent, and label measured evidence with its provenance.
 
-For lasting findings and rationale, follow [knowledge ownership](decision-workflow.md#knowledge-ownership) and its portability review. Research, proposals and accepted decisions have distinct tracked homes; issues and pull requests coordinate the work.
+For lasting findings and rationale, follow [knowledge ownership](decision-workflow.md#knowledge-ownership) and its portability review. Keep current tooling explanations in maintained guides or code comments; research, proposals and consequential project decisions have their own tracked homes. Issues and pull requests coordinate the work.
 
 ## Development environment
 
 Run coding-agent sessions and the development toolchain on WSL2, macOS or Linux. On Windows, follow [WSL2 setup](../../README.md#windows-development-with-wsl2) before starting a task: use Linux executables and a Linux-filesystem checkout with its own dependencies. The Windows editor may connect through WSL integration. Full workflow guards check the Node.js OS; setup must verify WSL2 because Node also reports WSL1 as Linux.
 
-Use a separate Windows checkout/toolchain for explicit native Windows [browser/GPU acceptance](browser-device-coverage.md#install-and-launch-on-windows-and-wsl-separately). Record the development-tool OS and tested browser OS separately. The [platform ADR](../adr/0004-use-wsl2-for-windows-development.md) explains the support boundary.
+The complete gate depends on workflow-checking tools with macOS and Linux builds. WSL2 gives Windows development the same supported gate and shell environment; checking task start, the gate and adoption rejects unsupported platforms before claims or expensive work. Full native Windows support would require a Windows path for every gate dependency and process-management behavior. Standalone installation and diagnostic commands remain available, but do not establish full native Windows support. Commands never silently relaunch themselves in WSL or move a checkout. If WSL2 is unavailable, use another supported development environment.
+
+Use a separate Windows checkout/toolchain for explicit native Windows [browser/GPU acceptance](browser-device-coverage.md#install-and-launch-on-windows-and-wsl-separately), with independently installed dependencies and browser caches. This preserves evidence of native Chrome/Edge and driver behavior at the cost of maintaining another test environment. Record the development-tool OS and tested browser OS separately: WSL rendering cannot establish native Windows behavior or performance.
+
+The Node.js platform guard cannot verify the WSL generation, executable provenance, hardware rendering or host-wide resource exclusion. Setup inspection, browser evidence and cooperative workload coordination address those separately. Revisit the support boundary if every gate dependency and process-management path can be verified on native Windows; adding a standalone command does not change it.
 
 ## Sharing the machine
 

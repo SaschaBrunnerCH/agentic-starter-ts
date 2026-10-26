@@ -16,6 +16,16 @@ For example, one agent runs the complete gate while another starts browser accep
 
 **Local workload coordination makes participating workloads take turns.** It limits concurrent workloads, not CPU/RAM usage, and does not prove the machine is idle. Planning, reading and editing can continue while verification waits for the shared slot.
 
+## Why the reservation uses an OS lock
+
+Checking load before launch cannot reserve capacity atomically: independent sessions can both observe an idle machine. The coordinator uses an OS advisory lock on a permanent file inode so cooperating repositories share one reservation with a kernel-managed lifetime. WSL2/Linux use util-linux `flock --no-fork`; macOS uses Perl's core file-locking interface with bounded acquisition and descriptor inheritance. These OS prerequisites avoid an npm dependency or persistent service while keeping one command interface. See the primary documentation for [flock execution and exit status](https://kernel.googlesource.com/pub/scm/utils/util-linux/util-linux/+/master/sys-utils/flock.1.adoc), [Perl advisory locks](https://perldoc.perl.org/functions/flock) and [descriptor inheritance](https://perldoc.perl.org/variables/%24%5EF).
+
+The Node supervisor retains the reservation across the complete workload. Ownership is published atomically before work starts, and nested commands verify ancestry and register groups before execution. The separate browser GPU lock keeps its own resource lifecycle and is acquired after the shared slot. Reusing it for all verification would couple standalone tests and builds to browser state.
+
+A directory/PID lock implemented only in Node would need to resolve stale-recovery races itself. Kernel lock release still cannot prove that a crashed supervisor's children have ended, so recorded survivors and uncertain ownership block new work under the [recovery procedure](#cancellation-and-recovery). Stale records never authorize signalling. This conservative boundary can require owner reconciliation; avoiding overlap takes precedence over automatic recovery.
+
+A native locking package, machine service or resource scheduler adds installation and allocation commitments beyond one cooperative slot. Revisit those options only when measurements show that the current boundary is insufficient. Neither process-name scanning nor this reservation proves machine-wide exclusion; [supported boundaries](#supported-boundary-and-verification) remain explicit.
+
 ## Where workloads fit
 
 | Development activity | Examples                                                    | Shared slot?                                                 |
@@ -134,5 +144,3 @@ Normal foreground processes whose children inherit their process group are cover
 There is no FIFO guarantee, persistent queue, automatic retry, priority, CPU/RAM allocation or permission to increase simultaneous workloads. Waiting does not survive a reboot.
 
 Bounded process tests use private temporary state and owned fixtures, never the live shared slot or another session's processes. They exercise argument/result preservation, real pnpm gate/test/build nesting, cancellation and escalation, frontend/command/supervisor SIGKILL, foreground survivors, invalid state, reboot and identity-reuse cases. macOS parser fixtures and a real Perl-driver check complement platform-native runs; they do not establish physical macOS acceptance. Record the actual tested platforms and commit in the PR. The existing browser cache/API/renderer protections and every coverage floor remain in force.
-
-[ADR 0005](../adr/0005-coordinate-local-workloads-with-os-locks.md) records the mechanism and tradeoffs.

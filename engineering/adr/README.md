@@ -1,6 +1,8 @@
 # Architecture Decision Records
 
-One file per decision that constrains later work, named `NNNN-short-title.md` with a four-digit number in order of acceptance.
+New projects start without ADR records. Rationale for inherited tooling belongs in its maintained engineering guide or, for a surprising local implementation choice, a code comment; see [knowledge ownership](../agents/decision-workflow.md#knowledge-ownership).
+
+Create a record when the project makes a consequential decision that constrains later work. Use one file per decision, named `NNNN-short-title.md` with a four-digit number in order of acceptance, starting at `0001`. No initial adoption record is required.
 
 Each record starts with its state, so that accepted and replaced decisions can be told apart without reading them:
 
