@@ -4,16 +4,7 @@ GitHub-hosted runners cost minutes on a private repository, and a plan includes 
 
 ## What a run costs
 
-GitHub rounds every job up to a whole minute. Measured on this starter, with Linux runners:
-
-| Workflow       | When                               | Jobs, with their time                                                              | Billed     |
-| -------------- | ---------------------------------- | ---------------------------------------------------------------------------------- | ---------- |
-| `PR build`     | Every push to a pull request       | One job: code/build checks, about 30 s; browser acceptance runs locally on the GPU | 1–2 min    |
-| `Deploy`       | Every merge                        | Build about 14 s, deploy about 11 s, the test of the deployed site about 45 s      | 3 min      |
-| `PR preview`   | After a green `PR build`           | One job of about 12 s                                                              | 1 min      |
-| Cleanup, audit | When a pull request closes; weekly | One short job each                                                                 | 1 min each |
-
-A merged pull request with one push costs about seven minutes. Every further push adds another `PR build`. In a real project the checks and browser tests grow with the code; the rest stays nearly the same. Local GPU browser acceptance keeps 3D rendering work out of the PR build and reports its evidence on the PR.
+Measure the project's actual runs, job count and frequency rather than inheriting starter timings. Include PR builds, CodeQL, deployment, previews, cleanup, audit and explicit release runs where enabled. Consult the account's current billing terms for runner rates and allowances; elapsed job time alone is not the billed cost.
 
 To see what a run cost:
 
@@ -30,7 +21,7 @@ Most of this is already in place; the rest are options for when a project grows.
 2. **Push less often.** Every push to a pull request is a full `PR build`. Commit as often as you like and push when the work is ready for review. A newer push cancels the run of the older one. Editing a pull request's title or body starts nothing.
 3. **Run broader coverage only when requested.** Routine acceptance uses local Chrome on a verified GPU. When the owner explicitly requests extra engines, systems or devices, `pnpm test:devices --report <pr>` runs the selected coverage and reports it on the pull request. Local runs cost no CI minutes; testing farms can charge separately. PR builds never install or run browser journeys. See [browser testing](../agents/browser-testing.md).
 4. **Keep jobs few.** Every job costs at least a minute and repeats checkout, Node.js and the install. The PR build is therefore one job running the code/build gate. Add a step to an existing job before adding a job, unless the job must hold other permissions or must run in parallel to stay fast; a new PR build job must also become a required status of the main ruleset, which `scripts/checks/workflow-contract.test.ts` checks.
-5. **Linux only.** Windows runners count double and macOS runners ten times. Test other systems on a machine or a farm, as in point 3.
+5. **Choose runners deliberately.** Use Linux for the ordinary gate and check current account rates before adding other hosted runners. Test other systems on a machine or a farm, as in point 3.
 6. **Caches.** The PR build caches the pnpm store; deploy and release builds install fresh on purpose. Browser acceptance uses the [shared local browser cache](../agents/browser-testing.md#on-your-machine), outside the PR build.
 7. **Timeouts.** Every job has one, checked by `scripts/checks/workflow-contract.test.ts`, so a hung job stops early instead of running for six hours.
 

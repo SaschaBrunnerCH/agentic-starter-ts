@@ -4,7 +4,7 @@ Contributor documentation: how work is planned, done, verified and merged. Produ
 
 ## Read first
 
-After the [repository setup](../README.md#start-a-new-repository):
+After the [repository setup](setup.md#start-a-new-repository):
 
 1. [Getting started](getting-started.md): follow a first session and learn what to review before a merge.
 2. [Task lifecycle](agents/task-lifecycle.md) and [working style](agents/working-style.md): start isolated work, keep changes focused and leave a handoff.
@@ -55,6 +55,7 @@ Consult the guides below when their topic applies. For browser changes, start wi
 | [Data handling](agents/data-handling.md)                       | Data classes and what may appear where                                       |
 | [AI tools](agents/ai-tools.md)                                 | Approved agents, MCP servers, provider changes                               |
 | [AI incidents](operations/ai-incidents.md)                     | What counts, what to do, closing the gap                                     |
+| [Project setup](setup.md)                                      | Prerequisites, personalization, adoption and replacing the example           |
 | [GitHub hosted settings](operations/github-hosted-settings.md) | Rulesets, labels and Project that live outside the files                     |
 | [Visual documentation](diagrams/README.md)                     | Choosing formats, editable examples, charts, screenshots and maintenance     |
 | [ADRs](adr/README.md)                                          | Writing the project's own decisions when needed; starts without records      |

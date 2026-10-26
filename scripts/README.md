@@ -6,7 +6,7 @@ The implementation of the repository's engineering commands. Start with the `pnp
 
 | Folder                 | Owns                                                                                                             | Entry points                                                                                                                           | When it is used                                                           |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| [setup/](setup/)       | GitHub settings, preview setup, ruleset drift and token-scope checks                                             | `pnpm setup:github`, `pnpm setup:previews`                                                                                             | Initially and later to repair or reconcile hosted settings                |
+| [setup/](setup/)       | GitHub settings, personalization preflight, previews, ruleset drift and token-scope checks                       | `pnpm setup:github`, `pnpm setup:previews`, `pnpm check:personalization`                                                               | Initially and later to repair or reconcile hosted settings                |
 | [workflow/](workflow/) | Issues, task lifecycle, workload ownership, standup, regression proof and local artifacts                        | `pnpm issue`, `pnpm task`, `pnpm workload`, `pnpm local:init`                                                                          | Throughout development                                                    |
 | [checks/](checks/)     | The local gate, dependency review, agent instructions, links, secrets, workflows, unused code and bundle budgets | `pnpm check:push` and the individual `check:*` commands in package.json, except browser-cache and Git-hook checks below                | Before push and in PR builds; individually during work                    |
 | [browser/](browser/)   | Browser CLI, shared cache, GPU discovery and ownership, profiles, devices and browser evidence                   | `pnpm test:browser`, `pnpm test:browser:install`, `pnpm test:devices`, `pnpm browser:doctor`, `pnpm browser:cli`, `pnpm browser:check` | Browser setup and verification; CI/release runs under the existing policy |
@@ -39,7 +39,7 @@ When relocating a module, update its imports, subprocess/reporter/preload caller
 
 The guides own procedures; this page owns the implementation map:
 
-- [Start a project](../README.md#start-a-new-repository), then use the [task lifecycle](../engineering/agents/task-lifecycle.md).
+- [Start a project](../engineering/setup.md#start-a-new-repository), then use the [task lifecycle](../engineering/agents/task-lifecycle.md).
 - [Run and extend checks](../engineering/agents/local-verification.md).
 - [Test browsers and devices](../engineering/agents/browser-testing.md) and [discover GPU access](../engineering/agents/browser-gpu-discovery.md).
 - [Manage hosted settings](../engineering/operations/github-hosted-settings.md), [previews and deployment](../engineering/operations/deployment.md), and [releases](../engineering/operations/releases.md).

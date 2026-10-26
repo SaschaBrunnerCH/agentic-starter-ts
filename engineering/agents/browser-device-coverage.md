@@ -65,7 +65,7 @@ automatically. Microsoft's [filesystem guidance](https://learn.microsoft.com/en-
 explains why a Windows-drive checkout suits Windows tools and a Linux-filesystem
 checkout suits Linux tools.
 
-After installing the [repository prerequisites](../../README.md#prerequisites),
+After installing the [repository prerequisites](../setup.md#prerequisites),
 run in each environment:
 
 ```sh
@@ -80,7 +80,7 @@ The install command supplies bundled Chromium; verified GPU discovery also needs
 an installed Chrome, Chromium or Edge. Use `pnpm test:browser` for routine local
 Chromium GPU acceptance, or `pnpm test:devices --project firefox` for functional
 Firefox coverage. Follow the [GPU guide](browser-gpu-discovery.md) for API requirements.
-Everyday development and the full repository gate run in WSL2 on Windows; see [WSL2 setup](../../README.md#windows-development-with-wsl2). The separate Windows checkout described here supports explicit native browser acceptance. These setup commands do not add
+Everyday development and the full repository gate run in WSL2 on Windows; see [WSL2 setup](../setup.md#windows-development-with-wsl2). The separate Windows checkout described here supports explicit native browser acceptance. These setup commands do not add
 visible or parallel runs to routine acceptance.
 
 If Node/pnpm or a PowerShell launcher fails before Playwright starts, repair that
