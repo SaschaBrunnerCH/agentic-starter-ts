@@ -6,6 +6,19 @@ import { gh, ghJson, limitEnvironmentToMain, root } from "../shared/github.ts";
 import * as json from "../shared/json-shape.ts";
 import { personalizationProblems } from "./personalization.ts";
 
+import { scriptArguments } from "../shared/script-arguments.ts";
+import { setupMode, setupUsage } from "./setup-arguments.ts";
+import { previewsSetupPlan, printSetupPlan } from "./setup-plan.ts";
+
+const mode = setupMode(scriptArguments());
+if (mode === "help") {
+  console.log(setupUsage("setup:previews"));
+  process.exit(0);
+}
+if (mode === "dry-run") {
+  process.exit(printSetupPlan(previewsSetupPlan(root)) ? 0 : 1);
+}
+
 // Sets up pull-request previews: a separate repository whose GitHub Pages site
 // serves one directory per pull request, a deploy key that may push to it, kept as a
 // secret of the environment "previews" that only main may use, and the variables
