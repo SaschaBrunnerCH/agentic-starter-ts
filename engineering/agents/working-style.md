@@ -28,7 +28,7 @@ For lasting findings and rationale, follow [knowledge ownership](decision-workfl
 
 ## Development environment
 
-Run coding-agent sessions and the development toolchain on WSL2, macOS or Linux. On Windows, follow [WSL2 setup](../../README.md#windows-development-with-wsl2) before starting a task: use Linux executables and a Linux-filesystem checkout with its own dependencies. The Windows editor may connect through WSL integration. Full workflow guards check the Node.js OS; setup must verify WSL2 because Node also reports WSL1 as Linux.
+Run coding-agent sessions and the development toolchain on WSL2, macOS or Linux. On Windows, follow [WSL2 setup](../setup.md#windows-development-with-wsl2) before starting a task: use Linux executables and a Linux-filesystem checkout with its own dependencies. The Windows editor may connect through WSL integration. Full workflow guards check the Node.js OS; setup must verify WSL2 because Node also reports WSL1 as Linux.
 
 The complete gate depends on workflow-checking tools with macOS and Linux builds. WSL2 gives Windows development the same supported gate and shell environment; checking task start, the gate and adoption rejects unsupported platforms before claims or expensive work. Full native Windows support would require a Windows path for every gate dependency and process-management behavior. Standalone installation and diagnostic commands remain available, but do not establish full native Windows support. Commands never silently relaunch themselves in WSL or move a checkout. If WSL2 is unavailable, use another supported development environment.
 

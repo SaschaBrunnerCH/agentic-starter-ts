@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import * as json from "../shared/json-shape.ts";
 
 requireDevelopmentPlatform();
 
@@ -47,9 +48,19 @@ const archive = spawnSync("git", ["archive", "--format=tar", revision], {
   maxBuffer: 16 * 1024 * 1024,
 });
 if (archive.status !== 0) throw new Error("Cannot archive the committed starter");
+const manifest = json.parseJson(
+  readFileSync(join(root, "package.json"), "utf8"),
+  json.object({
+    dependencies: json.optional(json.record(json.string)),
+    devDependencies: json.optional(json.record(json.string)),
+  }),
+  "package.json",
+);
+const dependencies = { ...manifest.dependencies, ...manifest.devDependencies };
+const flavors = dependencies.react === undefined ? ["non-react"] : ["react", "non-react"];
 const directory = mkdtempSync(join(tmpdir(), "starter-adoption-"));
 try {
-  for (const flavor of ["react", "non-react"]) {
+  for (const flavor of flavors) {
     const fixture = join(directory, flavor);
     const origin = join(directory, `${flavor}-origin.git`);
     mkdirSync(fixture);
@@ -70,9 +81,11 @@ try {
       const path = join(fixture, name);
       writeFileSync(path, transform(readFileSync(path, "utf8")));
     };
-    edit("package.json", (text) =>
-      text.replace('"name": "agentic-starter-ts"', `"name": "adopted-${flavor}"`),
-    );
+    edit("package.json", (text) => {
+      const value = json.parseJson(text, json.record(json.anything), "package.json");
+      value.name = `adopted-${flavor}`;
+      return JSON.stringify(value, null, 2) + "\n";
+    });
     edit(".github/CODEOWNERS", () => "# Fixture project owner\n* @example-owner\n");
     edit("index.html", (text) =>
       text
@@ -80,85 +93,97 @@ try {
         .replace(
           "Replace this description with one sentence about the application.",
           "A fixture application.",
+        )
+        .replace(
+          /(<script\b[^>]*\bsrc=)["'][^"']+["']/u,
+          `$1"/src/main.${flavor === "react" ? "tsx" : "ts"}"`,
         ),
     );
-    if (
-      !readFileSync(join(fixture, "index.html"), "utf8").includes(
-        `<title>Adopted ${flavor}</title>`,
-      )
-    )
-      throw new Error("HTML personalization did not apply");
     edit(".github/labels.json", (text) => text.replace('"area:app"', '"area:product"'));
     edit(
-      "CONTEXT.md",
-      (text) => text + "\nFixture product: an adopted application with an editable greeting.\n",
+      "README.md",
+      () =>
+        "# Adopted product\n\nSee [engineering](engineering/README.md) for development guidance.\n",
+    );
+    edit("CONTEXT.md", (text) =>
+      text.replace(
+        /## Product terms[\s\S]*/u,
+        "## Product terms\n\nAn adopted fixture renders a greeting.\n",
+      ),
+    );
+    // These are owned, disposable fixtures. Replace their application completely so
+    // acceptance exercises inherited tools without requiring the starter demo to survive.
+    for (const name of [
+      "src",
+      "e2e",
+      "engineering/designs/blueprint-graphics-example.md",
+      "engineering/diagrams/starter-example.png",
+      "engineering/diagrams/starter-example.json",
+      "engineering/diagrams/capture-starter.mjs",
+    ]) {
+      rmSync(join(fixture, name), { recursive: true, force: true });
+    }
+    edit("engineering/diagrams/README.md", (text) =>
+      text
+        .replace(/### Actual UI capture[\s\S]*?(?=## Review and maintenance)/u, "")
+        .replace(/^.*#actual-ui-capture.*\n/gmu, ""),
+    );
+    edit("engineering/designs/README.md", (text) =>
+      text.replace(/^- \[Blueprint graphics example\].*\n/mu, ""),
+    );
+    edit("vite.config.ts", (text) =>
+      text
+        .replace(/"src\/main\.tsx?"/gu, `"src/main.${flavor === "react" ? "tsx" : "ts"}"`)
+        .replace(
+          /        \/\/ Native canvas[\s\S]*?"src\/graphics\/\{GraphicsLab.tsx,webgl-renderer.ts,webgpu-renderer.ts\}",\n/u,
+          "",
+        ),
     );
     if (flavor === "non-react") {
-      run(fixture, "pnpm", [
-        "remove",
+      const packages = [
         "react",
         "react-dom",
         "@vitejs/plugin-react",
         "@types/react",
         "@types/react-dom",
-      ]);
-      for (const name of [
-        "src/graphics",
-        "src/App.tsx",
-        "src/App.test.tsx",
-        "src/App.interaction.test.tsx",
-        "src/main.tsx",
-        "src/app.css",
-        "e2e/graphics.spec.ts",
-        "e2e/graphics-evidence.ts",
-        "engineering/designs/blueprint-graphics-example.md",
-        "engineering/diagrams/starter-example.png",
-        "engineering/diagrams/starter-example.json",
-        "engineering/diagrams/capture-starter.mjs",
-      ]) {
-        rmSync(join(fixture, name), { recursive: true });
-      }
-      writeFileSync(
-        join(fixture, "src/main.ts"),
-        `import { greeting } from "./greeting.ts";\nconst app = document.querySelector<HTMLElement>("#app");\nif (app === null) throw new Error("Missing #app element");\nconst heading = document.createElement("h1");\nheading.textContent = greeting("agentic starter");\nconst label = document.createElement("label");\nlabel.textContent = "Name";\nlabel.htmlFor = "name";\nconst input = document.createElement("input");\ninput.id = "name";\ninput.value = "agentic starter";\ninput.addEventListener("input", () => { heading.textContent = greeting(input.value); });\napp.append(heading, label, input);\n`,
-      );
-      edit("index.html", (text) => text.replace("/src/main.tsx", "/src/main.ts"));
+      ].filter((name) => dependencies[name] !== undefined);
+      if (packages.length > 0) run(fixture, "pnpm", ["remove", ...packages]);
       edit("vite.config.ts", (text) =>
-        text
-          .replace(/^import react from .+\n/mu, "")
-          .replace("  plugins: [react()],\n", "")
-          .replace('"src/main.tsx"', '"src/main.ts"')
-          .replace(
-            /        \/\/ Native canvas[\s\S]*?"src\/graphics\/\{GraphicsLab.tsx,webgl-renderer.ts,webgpu-renderer.ts\}",\n/u,
-            "",
-          ),
+        text.replace(/^import react from .+\n/mu, "").replace("  plugins: [react()],\n", ""),
       );
       edit("tsconfig.app.json", (text) => text.replace(',\n    "jsx": "react-jsx"', ""));
-      edit(".oxlintrc.json", (text) => {
-        // Use replacements to retain the supported existing JSON formatting.
-        return text.replace(', "react", "jsx-a11y"', "").replace(/^    "react\/[^\n]+\n/gmu, "");
-      });
-      edit("README.md", (text) =>
-        text.replace(/### Replace the example[\s\S]*?(?=### Without React)/u, ""),
+      edit(".oxlintrc.json", (text) =>
+        text.replace(', "react", "jsx-a11y"', "").replace(/^    "react\/[^\n]+\n/gmu, ""),
       );
-      edit("engineering/diagrams/README.md", (text) =>
-        text
-          .replace(/### Actual UI capture[\s\S]*?(?=## Review and maintenance)/u, "")
-          .replace(/^.*#actual-ui-capture.*\n/gmu, ""),
+    }
+    mkdirSync(join(fixture, "src"));
+    mkdirSync(join(fixture, "e2e"));
+    const files: Readonly<Record<string, string>> = {
+      "src/greeting.ts":
+        'export function greeting(name: string): string { return name.trim() ? `Hello, ${name}.` : "Hello."; }\n',
+      "src/greeting.test.ts":
+        'import { expect, it } from "vitest";\nimport { greeting } from "./greeting.ts";\nit("greets a name or a blank input", () => { expect(greeting("fixture")).toBe("Hello, fixture."); expect(greeting(" ")).toBe("Hello."); });\n',
+      "e2e/smoke.spec.ts": readFileSync(join(root, "scripts/checks/adoption-smoke.txt"), "utf8"),
+    };
+    for (const [name, content] of Object.entries(files))
+      writeFileSync(join(fixture, name), content);
+    if (flavor === "react") {
+      writeFileSync(
+        join(fixture, "src/App.tsx"),
+        'import { greeting } from "./greeting.ts";\nexport function App() { return <main><h1>{greeting("fixture")}</h1></main>; }\n',
       );
-      edit("engineering/designs/README.md", (text) =>
-        text.replace(/^- \[Blueprint graphics example\].*\n/mu, ""),
+      writeFileSync(
+        join(fixture, "src/App.test.tsx"),
+        'import { renderToStaticMarkup } from "react-dom/server";\nimport { expect, it } from "vitest";\nimport { App } from "./App.tsx";\nit("renders the adopted application", () => { expect(renderToStaticMarkup(<App />)).toContain("Hello, fixture."); });\n',
       );
-      edit("CONTEXT.md", (text) =>
-        text.replace(
-          /## Product terms[\s\S]*/u,
-          "## Product terms\n\nAn editable greeting demonstrates a small framework-free application.\n",
-        ),
+      writeFileSync(
+        join(fixture, "src/main.tsx"),
+        'import { createRoot } from "react-dom/client";\nimport { App } from "./App.tsx";\nconst element = document.getElementById("app");\nif (element === null) throw new Error("Missing app element");\ncreateRoot(element).render(<App />);\n',
       );
-      // The existing smoke checks exercise the same heading/name contract and axe
-      // on the framework-free page too; their behavior does not depend on React.
-      edit("e2e/smoke.spec.ts", (text) =>
-        text.replace("the built application", "the adopted application"),
+    } else {
+      writeFileSync(
+        join(fixture, "src/main.ts"),
+        'import { greeting } from "./greeting.ts";\nconst app = document.querySelector<HTMLElement>("#app");\nif (app === null) throw new Error("Missing app element");\nconst main = document.createElement("main");\nconst heading = document.createElement("h1");\nheading.textContent = greeting("fixture");\nmain.append(heading);\napp.append(main);\n',
       );
     }
     run(fixture, "pnpm", ["format"]);

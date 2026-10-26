@@ -64,7 +64,7 @@ describe("native Windows rejection before work starts", () => {
     expect(result.error).toBeUndefined();
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("Development workflows require WSL2, macOS or Linux");
-    expect(result.stderr).toContain("README.md#windows-development-with-wsl2");
+    expect(result.stderr).toContain("engineering/setup.md#windows-development-with-wsl2");
     expect(result.stderr).not.toContain("UNEXPECTED_SUBPROCESS");
   });
 });

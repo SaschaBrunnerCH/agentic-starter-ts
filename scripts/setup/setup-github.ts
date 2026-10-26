@@ -12,6 +12,7 @@ import {
 import { labelChanges, loadProjectLabels } from "./project-labels.ts";
 import { pagesInitializationNeeded } from "./pages-initialization.ts";
 import { missingScopes } from "./token-scopes.ts";
+import { personalizationProblems } from "./personalization.ts";
 import * as json from "../shared/json-shape.ts";
 import {
   rulesetDrift,
@@ -113,12 +114,13 @@ const repository = ghJson(
     "repo",
     "view",
     "--json",
-    "id,name,nameWithOwner,owner,squashMergeAllowed,mergeCommitAllowed,rebaseMergeAllowed,deleteBranchOnMerge",
+    "id,name,nameWithOwner,url,owner,squashMergeAllowed,mergeCommitAllowed,rebaseMergeAllowed,deleteBranchOnMerge",
   ],
   json.object({
     id: json.string,
     name: json.string,
     nameWithOwner: json.string,
+    url: json.string,
     owner: json.object({ login: json.string }),
     squashMergeAllowed: json.boolean,
     mergeCommitAllowed: json.boolean,
@@ -126,6 +128,8 @@ const repository = ghJson(
     deleteBranchOnMerge: json.boolean,
   }),
 );
+const personalization = personalizationProblems(root, repository.url);
+if (personalization.length > 0) throw new Error(personalization.join("\n"));
 console.log(`Repository: ${repository.nameWithOwner}`);
 
 // Fail early with the fix, not halfway with a GraphQL error.

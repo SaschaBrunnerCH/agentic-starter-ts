@@ -2,8 +2,9 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { gh, ghJson, limitEnvironmentToMain } from "../shared/github.ts";
+import { gh, ghJson, limitEnvironmentToMain, root } from "../shared/github.ts";
 import * as json from "../shared/json-shape.ts";
+import { personalizationProblems } from "./personalization.ts";
 
 // Sets up pull-request previews: a separate repository whose GitHub Pages site
 // serves one directory per pull request, a deploy key that may push to it, kept as a
@@ -24,9 +25,11 @@ const answers = (args: readonly string[]) => {
 };
 
 const repository = ghJson(
-  ["repo", "view", "--json", "nameWithOwner,visibility"],
-  json.object({ nameWithOwner: json.string, visibility: json.string }),
+  ["repo", "view", "--json", "nameWithOwner,visibility,url"],
+  json.object({ nameWithOwner: json.string, visibility: json.string, url: json.string }),
 );
+const personalization = personalizationProblems(root, repository.url);
+if (personalization.length > 0) throw new Error(personalization.join("\n"));
 const previews = `${repository.nameWithOwner}-previews`;
 const keyTitle = `previews from ${repository.nameWithOwner}`;
 console.log(`Repository: ${repository.nameWithOwner}\nPreviews:   ${previews}`);

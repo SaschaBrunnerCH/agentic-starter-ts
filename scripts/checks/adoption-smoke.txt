@@ -1,0 +1,8 @@
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test } from "@playwright/test";
+
+test("the adopted application", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading")).toHaveText("Hello, fixture.");
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+});
