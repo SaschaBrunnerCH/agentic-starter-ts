@@ -29,11 +29,11 @@ Essential engineering knowledge belongs in version-controlled documentation so a
 
 Keep each substantive explanation in one canonical home. Related records and indexes link to it with the context their readers need. Curate lasting conclusions from discussions and scratch work; preserve useful findings without copying administrative history or entire conversations. Issue and PR links provide supplementary provenance.
 
-The starter ships no ADR records. Its guides explain the reasons, significant alternatives, limitations and revisit conditions needed to maintain the inherited tooling; code comments explain local choices where needed. Keep those explanations current with the behavior. New projects create ADRs for their own consequential decisions when needed, starting at `0001`; no initial ADR or inherited-history archive is required.
+The starter ships no ADR or research records. Its guides explain the reasons, significant alternatives, limitations and revisit conditions needed to maintain the inherited tooling; code comments explain local choices where needed. Keep those explanations current with the behavior. New projects retain their own investigations and acceptance evidence, and create ADRs for consequential decisions when needed, starting at `0001`; no initial ADR or inherited-history archive is required.
 
 Documentation must be sufficient for its purpose. Use the space needed for material evidence, significant alternatives and limitations; there is no fixed word or page target. Remove repetition rather than substance. Put source citations next to the claims they support and explain the relevant result in the documentation itself. Respect licensing, privacy and publication rules when retaining evidence. Private or large inputs may remain unavailable: explain the method and resulting reproduction limits without copying restricted inputs into Git. Automated formatting and link checks cannot establish semantic completeness.
 
-Adopt this incrementally as work touches a topic. Existing dated records remain historical evidence; follow the research and ADR guides when later findings or decisions change them.
+Adopt this incrementally as work touches a topic. Existing dated records remain historical evidence; follow the research and ADR guides when later findings or decisions change them. Revisit the process if repeated work leaves essential findings outside the checkout or duplicated, stale records become a recurring maintenance burden.
 
 ## Portability review
 

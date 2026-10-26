@@ -6,16 +6,16 @@ Start with what the reader needs to understand or decide, then choose a format. 
 
 These are options, not required tools. Prefer tools contributors already use. Excalidraw is one editable-diagram option; another editor or an editable SVG can be equally suitable.
 
-| Need                                              | Format / tool example                                 | Real example here                                                                                                                        |
+| Need                                              | Format / tool example                                 | Example or guidance here                                                                                                                 |
 | ------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | Options, capabilities or support                  | Markdown table                                        | [Browser/device matrix](../agents/browser-device-coverage.md#declare-the-supported-matrix)                                               |
 | Small flow, sequence or relationship              | Mermaid in Markdown                                   | [Engineering workflow](../README.md#read-first)                                                                                          |
 | Richer workflow, architecture or annotated sketch | Editable diagram and rendered export; e.g. Excalidraw | [Workflow SVG](workflow.svg) and [editable source](workflow.excalidraw)                                                                  |
 | Overview or reusable illustration                 | Editable vector graphic                               | [Six highlights](template-highlights.svg), [source](template-highlights.excalidraw) and [stacked layout](template-highlights-narrow.svg) |
-| Measurements, trends or benchmarks                | Chart from data and a plotting script                 | [Recorded coverage](#measured-chart)                                                                                                     |
+| Measurements, trends or benchmarks                | Chart from data and a plotting script                 | [Measured charts](#measured-charts)                                                                                                      |
 | Actual UI or observed bug                         | Screenshot of the running application                 | [Starter capture](#actual-ui-capture)                                                                                                    |
 
-The table, Mermaid workflow and workflow source/SVG predate this guide; the other examples are new. Capability diagrams describe available paths, not passed hardware tests.
+Capability diagrams describe available paths, not passed hardware tests. Measured charts use the project's own results.
 
 ## A starting look and feel
 
@@ -57,13 +57,11 @@ The README also includes a schematic [Project board](project-board.svg) and [nar
 
 The [workload lifecycle](workload-lifecycle.svg), with its [editable Excalidraw source](workload-lifecycle.excalidraw), starts with competing agents sharing CPU, memory, disk and GPU resources, then shows normal execution, cancellation and supervisor-crash recovery. Its central distinction is that a free OS lock does not prove previous work has finished. The [owning guide and text equivalent](../agents/workload-coordination.md#reservation-lifecycle) define workloads, their place in agentic development, adoption, the supported process boundary and safe recovery. The SVG is an Excalidraw 0.18.0 export with an embedded editable scene, a white background and accessible title/description. Both wide/narrow agent and GitHub overview graphics mark local verification as sharing a slot, with planning/editing concurrent and CI separate. Update sources, exports and text together; check both full-size and narrow previews. These describe behavior, not a live process inventory or evidence that any platform passed verification.
 
-### Measured chart
+### Measured charts
 
-![Recorded unit-test coverage: statements 96.73%, branches 91.14%, functions 98.23%, lines 97.16%; required floors 95%, 90%, 95%, 95%.](coverage-example.svg)
+Use the project's own measurements. Keep the source data, generating script and rendered chart together, with the command, date, tested revision, environment, metric definitions, exclusions and limitations. Show thresholds separately from observations and include readable labels plus a data table or text equivalent. A dated chart is a snapshot, not a live dashboard.
 
-This is one **2026-10-18** local gate run at `ab3e1c0` (38 files, 298 tests), not a live dashboard. Coverage excludes command orchestration and browser entry points; it establishes neither browser/GPU acceptance nor performance. [Input data](coverage-example.json) retains counts, floors, command, revision and scope.
-
-With Python and Matplotlib 3.10.7 available in an optional environment, run `python engineering/diagrams/coverage-example.py` from the repository root. The [script](coverage-example.py) writes the SVG beside its input; it is not part of the gate. Update the data and provenance when recording another run, then regenerate. Windows may use `py` instead of `python`. Plotting tools are not project dependencies.
+Choose an existing plotting tool in an optional environment; no plotting package is required by the application or gate. Document its version and regeneration command. For coverage charts, retain counts and denominators from the current `coverage/coverage-summary.json`, and explain the measured groups and exclusions from the [verification guide](../agents/local-verification.md). Coverage does not establish browser/GPU acceptance or performance. Update data and provenance together when recording another run, then regenerate the chart.
 
 ### Actual UI capture
 

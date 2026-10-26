@@ -94,7 +94,7 @@ CI and remote browser connections default to functional mode. `BROWSER_GPU=requi
 | Hardware CI or remote browser | Run discovery/acceptance where the browser renders, rather than inferring from the test-driver OS                                      | Explicit hardware requirements stay requirements; unavailable proof is a blocker                               |
 | WSL driving Windows           | Use an isolated Windows checkout and Windows Node/browser for native acceptance; serve the exact build where that browser can reach it | Record driver OS and browser OS separately; Linux executable discovery does not launch Windows `.exe` browsers |
 
-Candidate logic is not physical-platform verification. Record which machine/engine/API was actually exercised and which remain unverified. [Issue #5](https://github.com/SaschaBrunnerCH/agentic-starter-ts/issues/5) retains the real-platform acceptance work. Native Windows-from-WSL orchestration and non-Chromium hardware probes are not implemented here.
+Candidate logic is not physical-platform verification. Record the project's own acceptance evidence for each machine/engine/API actually exercised and which remain unverified, using the [evidence format](browser-device-coverage.md#record-actual-evidence). Native Windows-from-WSL orchestration and non-Chromium hardware probes are not implemented here.
 
 ## Evidence and recovery
 
