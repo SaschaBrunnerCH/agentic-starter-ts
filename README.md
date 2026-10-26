@@ -73,7 +73,7 @@ Robot icons mark work an agent can carry out or receive by delegation. Person ic
 
 Routine development and browser tests run from WSL2. Broader [browser and device coverage](engineering/agents/browser-device-coverage.md) is optional and documented separately.
 
-The platform check never installs WSL, invokes it automatically, moves a checkout or changes host settings. The [platform decision](engineering/adr/0004-use-wsl2-for-windows-development.md) records the support boundary and tradeoffs.
+The platform check never installs WSL, invokes it automatically, moves a checkout or changes host settings. The [development environment guide](engineering/agents/working-style.md#development-environment) explains the support boundary and tradeoffs.
 
 ## Start a new repository
 

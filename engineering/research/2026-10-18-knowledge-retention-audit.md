@@ -39,4 +39,4 @@ This review establishes what the instructions say, not how consistently contribu
 
 Whether future records are sufficient remains a semantic judgment. Review representative research and decision records without issue/PR links, and report gaps. Revisit the policy if repeated work still leaves essential findings outside the checkout or if duplicated, stale records become a recurring maintenance burden.
 
-No product solution is selected by this investigation. The resulting documentation policy and its reasons are recorded separately in [ADR 0002](../adr/0002-preserve-portable-engineering-knowledge.md).
+No product solution is selected by this investigation. The resulting documentation policy and its reasons are maintained separately under [knowledge ownership](../agents/decision-workflow.md#knowledge-ownership).

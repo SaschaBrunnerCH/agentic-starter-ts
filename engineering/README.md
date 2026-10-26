@@ -57,6 +57,6 @@ Consult the guides below when their topic applies. For browser changes, start wi
 | [AI incidents](operations/ai-incidents.md)                     | What counts, what to do, closing the gap                                     |
 | [GitHub hosted settings](operations/github-hosted-settings.md) | Rulesets, labels and Project that live outside the files                     |
 | [Visual documentation](diagrams/README.md)                     | Choosing formats, editable examples, charts, screenshots and maintenance     |
-| [ADRs](adr/README.md)                                          | Architecture Decision Records                                                |
+| [ADRs](adr/README.md)                                          | Writing the project's own decisions when needed; starts without records      |
 | [Research records](research/README.md)                         | Results of investigations, kept with their tested revision                   |
 | [Design notes](designs/README.md)                              | Options and recommendations before a decision                                |
