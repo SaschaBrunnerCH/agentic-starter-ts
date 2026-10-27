@@ -34,7 +34,11 @@ try {
   } else if (!plan.needsChecks) {
     console.log("Only tags of commits already on a remote branch: nothing new to check.");
   } else {
-    const checks = spawnSync("pnpm", ["check:push"], { cwd: root, stdio: "inherit" });
+    // Validate the push in its actual hook context, then let child repositories
+    // discover their own Git state instead of inheriting this checkout/index.
+    const env = { ...process.env };
+    for (const name of git(["rev-parse", "--local-env-vars"]).split("\n")) delete env[name];
+    const checks = spawnSync("pnpm", ["check:push"], { cwd: root, stdio: "inherit", env });
     // A file edited or a commit made while the checks ran means they tested something
     // other than what is pushed.
     const after = pushPlan(git(["status", "--porcelain"]), head, refs).problems;

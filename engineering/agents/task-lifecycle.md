@@ -20,6 +20,12 @@ Retained drafts and evidence go in the primary checkout's ignored `.local/`, usi
 
 `pnpm install --frozen-lockfile` is needed in every new worktree: the checks and the Git hooks run tools from its `node_modules`.
 
+Task start writes a structured setup receipt inside the existing handoff before claiming, installing or verifying hooks. It records completed steps and the original process failure (exit status, signal or spawn error); command output remains in the terminal. The same receipt block stores safely quoted remaining recovery instructions and replaces them as steps complete. A failed installation or hook check is incomplete setup, not implementation readiness. Keep authored handoff notes outside the receipt block.
+
+`pnpm task inspect <issue>` reads that receipt and checks its branch/worktree identity without installing, claiming, publishing or updating metadata. It exits nonzero for incomplete or unavailable setup and prints the remaining commands. A legacy handoff without a receipt requires manual verification; inspection does not invent a successful state.
+
+After resolving a refusal and verifying task ownership, explicitly run `pnpm task resume <issue>` to retry only the remaining local installation/hook steps. It requires the recorded account and issue assignment, the same worktree/branch and unchanged setup head. It preserves source changes and original failure information until the step succeeds, and never retries a claim or Project write. Changed identity, an uncertain claim or advanced source requires inspection rather than automatic recovery. A completed receipt describes setup only; normal implementation and merge checks still apply.
+
 Worktrees share workstation resources. Supported verification commands acquire the [shared workload reservation](workload-coordination.md); a new worktree does not create another execution slot. Reading, planning and editing can continue while a workload waits.
 
 Naming:

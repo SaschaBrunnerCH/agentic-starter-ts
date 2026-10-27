@@ -6,6 +6,7 @@ import {
   evidenceMarker,
   readRuns,
   withRun,
+  invalidateRun,
   type BrowserRun,
 } from "./browser-evidence.ts";
 
@@ -16,6 +17,8 @@ function run(overrides: Partial<BrowserRun> = {}): BrowserRun {
   return {
     commit: head,
     dirty: false,
+    sourceStable: true,
+    buildCommit: head,
     finishedAt: "2026-10-15T12:00:00.000Z",
     status: "passed",
     gpu: "required",
@@ -50,6 +53,16 @@ describe("the evidence file", () => {
   it("refuses a file of another shape, naming the field", () => {
     expect(() => readRuns('{"runs":[{"commit":1}]}')).toThrow(/commit/u);
   });
+
+  it("invalidates only the current run after parent validation fails, retaining counts", () => {
+    const current = run({ id: "current" });
+    const previous = run({ id: "previous" });
+    const result = readRuns(invalidateRun(withRun([previous], current), "current"));
+    expect(result).toEqual([
+      previous,
+      { ...current, dirty: true, sourceStable: false, status: "failed" },
+    ]);
+  });
 });
 
 describe("count", () => {
@@ -66,6 +79,10 @@ describe("count", () => {
 });
 
 describe("evidenceFor", () => {
+  it("does not hide an invalidated latest run behind an older clean pass", () => {
+    const failed = run({ dirty: true, sourceStable: false, status: "failed" });
+    expect(evidenceFor([run(), failed], head)).toEqual({ kind: "found", run: failed });
+  });
   it("finds the newest clean run on the head commit", () => {
     const runs = [run({ finishedAt: "1" }), run({ finishedAt: "2" }), run({ commit: other })];
     expect(evidenceFor(runs, head)).toEqual({ kind: "found", run: run({ finishedAt: "2" }) });
@@ -114,6 +131,12 @@ describe("evidenceMarkdown", () => {
     );
     expect(evidenceMarkdown(run({ target: "https://example.com/app/" }))).toContain(
       "Application: https://example.com/app/, a deployment that need not be this commit.",
+    );
+    expect(evidenceMarkdown(run({ buildCommit: undefined }))).toContain(
+      "build/source identity is unverified",
+    );
+    expect(evidenceMarkdown(run({ sourceStable: false }))).toContain(
+      "not current-commit acceptance",
     );
   });
 });

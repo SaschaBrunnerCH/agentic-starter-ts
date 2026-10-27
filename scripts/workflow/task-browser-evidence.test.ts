@@ -143,3 +143,20 @@ describe("task ready browser evidence publication", () => {
     expect(fixture.posted).toHaveBeenCalledOnce();
   });
 });
+
+it("publishes invalidated source evidence rather than retaining an older passing report", async () => {
+  const failed = run({
+    dirty: true,
+    sourceStable: false,
+    status: "failed",
+    finishedAt: "2026-10-18T14:00:00Z",
+  });
+  await ready([run(), failed], evidenceMarkdown(run()));
+  expect(fixture.posted).toHaveBeenCalledExactlyOnceWith([
+    "pr",
+    "comment",
+    "123",
+    "--body",
+    expect.stringContaining("not current-commit acceptance"),
+  ]);
+});

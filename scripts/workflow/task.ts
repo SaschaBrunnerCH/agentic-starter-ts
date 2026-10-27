@@ -1,9 +1,18 @@
 import { requireDevelopmentPlatform } from "../shared/development-platform.ts";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 import { basename, dirname, join, resolve } from "node:path";
 import { gh, ghJson, prBuild, root } from "../shared/github.ts";
 import { scriptArguments } from "../shared/script-arguments.ts";
+import {
+  readSetup,
+  setupHandoff,
+  setupRecovery,
+  setupResult,
+  type TaskSetup,
+  type SetupStep,
+} from "./task-setup.ts";
 import {
   EVIDENCE_FILE,
   evidenceFor,
@@ -41,6 +50,8 @@ import {
 const usage = `Usage: pnpm task <command>
 
   start <issue> [feat|fix|docs|chore]   Claim the issue, create its sibling worktree and branch from origin/main, install
+  inspect <issue>                       Read the setup receipt and verify its worktree; make no writes
+  resume <issue>                        Explicitly retry remaining local install/hook steps of your unchanged task
   ready <pr>                            Check that the pull request can be merged; set its issue to In review
   merge <pr> --authorized-by-owner --head <sha> [--admin]
                                         Merge the commit the owner approved, record the authorization, set issues Done
@@ -183,21 +194,45 @@ function start(issueArgument: string, typeArgument?: string): number {
     console.error(`${directory} already exists. Inspect it before reusing or removing it.`);
     return 1;
   }
+  if (existsSync(handoffPath(issue))) {
+    console.error(
+      `A handoff for #${issue} already exists. Preserve it and run pnpm task inspect ${issue}.`,
+    );
+    return 1;
+  }
   // Nothing is written until the issue may be started and the worktree exists,
   // so a refusal or a failed fetch leaves no claim behind.
   if (!issueCommand(["claim", String(issue), "--check"])) return 1;
   mustGit(["fetch", "origin", "main"]);
   const base = mustGit(["rev-parse", "origin/main"]);
+  const owner = gh(["api", "user", "--jq", ".login"]).trim();
+  if (owner === "") throw new Error("Task owner identity is unavailable; nothing was claimed.");
   mustGit(["worktree", "add", "--no-track", "-b", names.branch, directory, "origin/main"]);
-  if (!issueCommand(["claim", String(issue)])) {
+  writeHandoff(issue, { branch: names.branch, directory, base });
+  let setup: TaskSetup = {
+    issue,
+    owner,
+    directory,
+    branch: names.branch,
+    base,
+    stage: "claim",
+    completed: [],
+  };
+  saveSetup(setup);
+  const claim = setupCommand(setup, "claim", process.execPath, [
+    join(root, "scripts/workflow/issue.ts"),
+    "claim",
+    String(issue),
+  ]);
+  setup = claim.setup;
+  if (!claim.ok) {
     // A refused claim leaves the issue unassigned to this account. A claim that failed
     // after assigning may have written more, so its worktree is kept for the record.
-    const me = gh(["api", "user", "--jq", ".login"]).trim();
     const assignees = ghJson(
       ["issue", "view", String(issue), "--json", "assignees"],
       json.object({ assignees: json.array(json.object({ login: json.string })) }),
     ).assignees.map((user) => user.login);
-    if (assignees.includes(me)) {
+    if (assignees.includes(owner)) {
       writeHandoff(issue, { branch: names.branch, directory, base });
       console.error(
         `The claim of #${issue} failed partway: it is assigned to you. Check it with "pnpm issue show ${issue}"; the worktree ${directory} and the handoff are kept.`,
@@ -205,26 +240,122 @@ function start(issueArgument: string, typeArgument?: string): number {
       return 1;
     }
     // Another session took it in between. The worktree and branch are seconds old and empty.
+    if (mustGit(["rev-parse", `refs/heads/${names.branch}`]) !== base) {
+      console.error(
+        "The unclaimed branch advanced; its worktree, branch and failure receipt are retained.",
+      );
+      return 1;
+    }
     mustGit(["worktree", "remove", directory]);
-    mustGit(["branch", "-D", names.branch]);
-    console.error(`Removed the new worktree and branch again; #${issue} was not claimed.`);
-    return 1;
-  }
-  // The handoff exists before anything else can fail.
-  writeHandoff(issue, { branch: names.branch, directory, base });
-  console.log(`\nInstalling dependencies in ${directory}`);
-  if (!run("pnpm", ["install", "--frozen-lockfile"], directory)) {
+    // Compare-and-delete: a changed ref must survive even if it moved after removal.
+    mustGit(["update-ref", "-d", `refs/heads/${names.branch}`, base]);
     console.error(
-      "pnpm install --frozen-lockfile failed in the new worktree; fix it there before working.",
+      `Removed the new worktree and branch again; #${issue} was not claimed. Its failure receipt remains at ${handoffPath(issue)}.`,
     );
     return 1;
   }
+  console.log(`\nInstalling dependencies in ${directory}`);
+  if (!finishSetup(setup)) return 1;
   console.log(`\nStarted issue #${issue}`);
   console.log(`  Worktree: ${directory}`);
   console.log(`  Branch:   ${names.branch} from origin/main ${base.slice(0, 8)}`);
   console.log(`  Handoff:  ${handoffPath(issue)}`);
   console.log(`\nWork in the worktree. When the gate passes: push, open the pull request, then`);
   console.log(`  pnpm task ready <pr>`);
+  return 0;
+}
+
+function saveSetup(setup: TaskSetup): void {
+  const path = handoffPath(setup.issue);
+  const temporary = `${path}.${randomUUID()}.tmp`;
+  writeFileSync(temporary, setupHandoff(readFileSync(path, "utf8"), setup), {
+    flag: "wx",
+    mode: 0o600,
+  });
+  try {
+    renameSync(temporary, path);
+  } finally {
+    if (existsSync(temporary)) rmSync(temporary);
+  }
+}
+
+function setupCommand(setup: TaskSetup, step: SetupStep, command: string, args: string[]) {
+  // Persist the pending step before invoking it. A crashed command remains incomplete.
+  saveSetup(setup);
+  const result = spawnSync(command, args, { cwd: setup.directory, stdio: "inherit" });
+  const ok = result.error === undefined && result.status === 0;
+  const failure = ok
+    ? undefined
+    : `${step}: ${command} ${args.join(" ")} failed (${result.error?.message ?? `exit ${String(result.status)}, signal ${String(result.signal)}`}).`;
+  const next = setupResult(setup, step, failure);
+  saveSetup(next);
+  if (!ok) {
+    console.error(`Setup incomplete: ${next.failure ?? "command failed"}`);
+    console.error(
+      `Receipt: ${handoffPath(setup.issue)}\nRemaining recovery:\n${setupRecovery(next).join("\n")}`,
+    );
+  }
+  return { ok, setup: next };
+}
+
+function finishSetup(initial: TaskSetup): boolean {
+  let setup = initial;
+  if (setup.stage === "install") {
+    const result = setupCommand(setup, "install", "pnpm", ["install", "--frozen-lockfile"]);
+    if (!result.ok) return false;
+    setup = result.setup;
+  }
+  const hooks = setupCommand(setup, "hooks", "pnpm", ["check:hooks"]);
+  return hooks.ok;
+}
+
+function inspectSetup(reference: string, resume: boolean): number {
+  const issue = Number(reference);
+  if (!Number.isSafeInteger(issue) || issue <= 0)
+    throw new Error(`Not an issue number: ${reference}`);
+  const path = handoffPath(issue);
+  const setup = existsSync(path) ? readSetup(readFileSync(path, "utf8")) : undefined;
+  if (setup === undefined) {
+    console.error(
+      `No structured setup receipt for #${issue}. Preserve the handoff and verify setup manually; readiness is not established.`,
+    );
+    return 1;
+  }
+  if (setup.issue !== issue)
+    throw new Error("Setup receipt names another issue; nothing was changed.");
+  const worktree = worktreeOfBranch(mustGit(["worktree", "list", "--porcelain"]), setup.branch);
+  if (worktree !== setup.directory || setup.directory === primaryCheckout)
+    throw new Error("Setup worktree identity differs or is unavailable; nothing was changed.");
+  const head = mustGit(["rev-parse", "HEAD"], setup.directory);
+  console.log(
+    `#${issue} setup: ${setup.stage}\nOwner: ${setup.owner}\nWorktree: ${setup.directory}\nBranch: ${setup.branch}\nBase: ${setup.base}\nCurrent head: ${head}\nCompleted: ${setup.completed.join(", ") || "none"}`,
+  );
+  if (setup.failure !== undefined) console.log(`Original failure: ${setup.failure}`);
+  if (setup.stage === "complete") {
+    console.log(
+      "Recorded setup completed. No setup steps repeated; implementation/merge readiness requires its normal checks.",
+    );
+    return 0;
+  }
+  console.log(`Setup remains incomplete. Remaining recovery:\n${setupRecovery(setup).join("\n")}`);
+  if (!resume) return 1;
+  if (setup.stage === "claim")
+    throw new Error(
+      "Resolve the incomplete claim first; resume makes no remote claim/status writes.",
+    );
+  if (head !== setup.base)
+    throw new Error(
+      "Source advanced since incomplete setup; inspect the handoff before recovery. Nothing was changed.",
+    );
+  const me = gh(["api", "user", "--jq", ".login"]).trim();
+  const assignees = ghJson(
+    ["issue", "view", reference, "--json", "assignees"],
+    json.object({ assignees: json.array(json.object({ login: json.string })) }),
+  ).assignees;
+  if (me !== setup.owner || !assignees.some((person) => person.login === me))
+    throw new Error("Task ownership differs; resume does not transfer or reclaim work.");
+  if (!finishSetup(setup)) return 1;
+  console.log("Local setup completed; no remote writes were retried.");
   return 0;
 }
 
@@ -624,6 +755,8 @@ function cleanup(reference: string, flags: readonly string[]): number {
 const [command, first, ...rest] = scriptArguments();
 try {
   if (command === "start" && first) process.exitCode = start(first, rest[0]);
+  else if (command === "inspect" && first) process.exitCode = inspectSetup(first, false);
+  else if (command === "resume" && first) process.exitCode = inspectSetup(first, true);
   else if (command === "ready" && first) process.exitCode = ready(first);
   else if (command === "merge" && first) process.exitCode = merge(first, rest);
   else if (command === "cleanup" && first) process.exitCode = cleanup(first, rest);
