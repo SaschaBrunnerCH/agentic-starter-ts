@@ -11,7 +11,7 @@ A tracked repository change moves from a goal to a merged pull request through t
 7. **Verification.** The author checks the diff against the issue's "Done when" criteria and the applicable ADRs, performs the [portability review](#portability-review) for lasting findings or decisions, then passes the pre-push gate; see [local verification](local-verification.md). A failing check is fixed, never bypassed.
 8. **Pull request.** The body names its issue and states what changed, the evidence, and any deviation from the issue or an ADR. CI runs the same checks remotely. Set the issue's Project Status to **In review** once the pull request is ready.
 9. **Merge.** A pull request needs a green `PR build` on a current base and the owner's explicit authorization for that pull request at its head commit; no separate review step is required. A [review by a second agent](review.md) is optional evidence for that decision. See "Requesting merge authorization" below. A new commit needs a new authorization. A changed test tolerance or guardrail needs its own decision, recorded in the pull request; the guardrail table in `AGENTS.md` changes in the same pull request.
-10. **Cleanup and follow-up.** After the merge, remove the worktree and branch and close the handoff, following "Post-merge cleanup" in `AGENTS.md`. File findings outside the scope as new issues.
+10. **Cleanup and follow-up.** After the merge, remove the worktree and branch and close the handoff, following [post-merge cleanup](task-lifecycle.md#post-merge-cleanup). File findings outside the scope as new issues.
 
 ## Knowledge ownership
 
@@ -44,7 +44,7 @@ For a change that produces lasting findings or decisions, the author reads the r
 3. Follow reproduction instructions where applicable, or understand which inputs are unavailable and how that limits the conclusions.
 4. Tell what remains undecided, what would justify revisiting the findings and whether further work is authorized.
 
-Follow links between tracked records as needed; each record serves its own purpose without repeating all supporting detail. Report the records, tested revision, result and gaps in the pull request using the manual-check format in [local verification](local-verification.md#rules). Formatting and link checks do not prove semantic completeness.
+Follow links between tracked records as needed; each record serves its own purpose without repeating all supporting detail. Record the review once using the manual-check format in [local verification](local-verification.md#rules), including records, tested revision, result and gaps; link that result from the PR instead of copying it. Changes with no lasting findings or decisions need no portability non-applicability statement. Retain required verification and explain material gaps. Formatting and link checks do not prove semantic completeness.
 
 ## Requesting merge authorization
 

@@ -26,7 +26,7 @@ A skill is a saved procedure an agent follows when a person names it. The reposi
 
 Each skill lives once, in `.agents/skills/<name>/`, where Codex reads it; Claude Code reads it through the link `.claude/skills/<name>`. Other agents follow the file when told to: "follow `.agents/skills/review/SKILL.md` for pull request 12".
 
-Skills run only when a person names them, never on an agent's own decision: a review costs time and tokens, and an issue is the owner's call. `disable-model-invocation: true` in `SKILL.md` keeps Claude Code from starting one, and keeps its description out of every session's context; `allow_implicit_invocation: false` in `agents/openai.yaml` does the same for Codex. `pnpm check:agents` refuses a skill without both, without its link, or one only Claude Code reads. A new skill is added like a tool, by an issue the owner decides, when a procedure has been repeated by hand.
+Skills run only when a person names them, never on an agent's own decision: a review costs time and tokens, and an issue is the owner's call. `disable-model-invocation: true` in `SKILL.md` keeps Claude Code from starting one, and keeps its description out of every session's context; `allow_implicit_invocation: false` in `agents/openai.yaml` does the same for Codex. `pnpm check:agents` refuses a skill without both, without its link, or one only Claude Code reads. These checks enforce the metadata and shared-source layout; they do not prove that every approved client or agent follows the invocation policy. Other clients depend on their own controls and review. A new skill is added like a tool, by an issue the owner decides, when a procedure has been repeated by hand.
 
 ## MCP servers and other tool extensions
 
