@@ -2,6 +2,8 @@
 
 The maintained setup and adoption procedure. The root README can describe the product without carrying these instructions.
 
+For an existing application or a selectively adapted starter, use the optional [adoption record and mixed-language patterns](agents/adoption-patterns.md). They describe how to retain project differences and verify the adopted scope; they do not replace the setup or enable excluded capabilities.
+
 ## Prerequisites
 
 - **Node.js 24**, **Git** and **pnpm 12**. The pnpm version is pinned in `packageManager` in `package.json`; install it with `npm install --global pnpm@12.10.1`. Node.js 24 still ships Corepack, so `corepack enable` works too.

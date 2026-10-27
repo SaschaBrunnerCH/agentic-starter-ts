@@ -19,3 +19,7 @@ The content of a private repository is Internal: approved agents may read it, an
 - Share with a service only what the task needs, and only with services the task needs; the approved AI tools are listed in [AI tools](ai-tools.md).
 - A credential that appeared anywhere it should not have is compromised: report it to the owner, who revokes it first, then remove it. Rewriting history does not undo exposure. This is an [AI incident](../operations/ai-incidents.md).
 - An application that will hold personal or regulated data needs its own record of what it stores, where and for how long, before it stores any.
+
+## Public build boundaries
+
+When only selected data may be published, use the optional [public-build validation pattern](adoption-patterns.md#public-build-data-validation) to define permitted exports, inspect the actual artifact and test synthetic violations, including bundled data. It explains detection limits and does not install a scanner. Secret scanning and technical accessibility do not establish publication permission; existing classification, redaction and owner approval remain required.
