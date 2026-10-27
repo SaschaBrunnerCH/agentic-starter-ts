@@ -71,4 +71,4 @@ Keep lasting findings and decisions in the tracked records named by [knowledge o
 - **Secrets.** Never commit a credential or a `.env` file; commit the placeholders as `env.example`, without the leading dot, since Claude Code is denied every `.env` and `.env.*` file. A credential that reached a commit is revoked first and removed second; say so to the owner at once.
 - **Changing a guardrail, a hook, a workflow or `AGENTS.md`.** This needs its own issue and the owner's explicit decision in the pull request. The owner reads every line of such a change.
 - **The required check cannot run.** When `PR build` itself is broken or renamed, no pull request can merge, including the repair. Only the owner can resolve that; see "Emergency recovery" in [GitHub hosted settings](../operations/github-hosted-settings.md).
-- **The same mistake a second time.** Propose a check or a rule for it in a new issue; do not rely on remembering.
+- **The same mistake a second time.** Follow [incident corrective action](../operations/ai-incidents.md#what-to-do): verify a correction to the failed or missing control rather than relying on memory or necessarily adding another rule.
