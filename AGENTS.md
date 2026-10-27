@@ -52,7 +52,7 @@ Pass `--authorized-by-owner` and `--head` only for the commit the owner said yes
 | Clean up locally after a merge, preserving wanted browser diagnostics before explicit discard. | `pnpm task cleanup`; [safe cleanup and fallback](engineering/agents/task-lifecycle.md#post-merge-cleanup). | Mixed |
 | Use the domain terms of `CONTEXT.md`; work only with the approved AI tools and no unapproved MCP server. | Review; [approved tools](engineering/agents/ai-tools.md). | Review-only |
 | Escalate a test believed wrong with measured evidence; keep its tolerance. | Record measurements in the issue or PR; [verification rules](engineering/agents/local-verification.md#rules). | Review-only |
-| Verify task ownership and base, and leave resumable handoffs with verified states. | [Task lifecycle](engineering/agents/task-lifecycle.md). | Review-only |
+| Verify task ownership and base, and leave resumable handoffs with verified states. | `scripts/workflow/task.ts` preserves setup failures and guards explicit local recovery; session ownership remains [reviewed](engineering/agents/task-lifecycle.md). | Mixed |
 | Verify effective corrective action for every AI incident within a week. | `engineering/operations/ai-incidents.md`. | Review-only |
 
 Change this table in the pull request that changes a guardrail. Enforced: a named script, hook, workflow or ruleset blocks it. Mixed: a mechanism covers part, people the rest. Review-only: only people check it.
