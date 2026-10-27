@@ -54,7 +54,7 @@ An issue is claimed when it is assigned to someone and its Status is In progress
   - it is assigned to someone else or already In progress under another session;
   - four issues are already In progress.
 - **The issue is `ready-for-human` and you are an agent.** Prepare what you can, such as research or a draft, only if the owner asked you to; the label means a person does the work.
-- **No issue exists for the work.** If the owner asked for the work, create the issue with `pnpm issue create`, then claim it. An issue you propose yourself goes to Backlog without a readiness label, and you do not start it: the owner decides what is built and sets Ready. A pull request without an issue is not accepted, except Dependabot's.
+- **No issue exists for the work.** Explicitly requested read-only research and reports or drafts confined to the primary checkout's ignored `.local/` need no issue; see [local-only work](working-style.md#working-without-publishing). This exception authorizes neither tracked changes nor remote writes. Before implementing tracked repository changes, create the issue with `pnpm issue create`, then claim it and start its task worktree. An issue you propose yourself goes to Backlog without a readiness label, and you do not start it: the owner decides what is built and sets Ready. A pull request without an issue is not accepted, except Dependabot's.
 - **You stop without finishing.** Leave a handoff; keep the claim if you will resume, otherwise remove your assignment and set the Status back to Ready.
 
 ## Images

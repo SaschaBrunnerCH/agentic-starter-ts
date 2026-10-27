@@ -46,7 +46,9 @@ Several sessions, and other projects, often share one machine.
 
 ## Working without publishing
 
-The owner can ask for local-only work: "draft it, do not create it" or "do not push". Then leave changes uncommitted or unpushed as asked, write drafts of issues and pull-request text to files, and make no remote write. Preparing something locally never implies permission to publish it.
+Explicitly requested read-only research and reports or drafts confined to the primary checkout's ignored `.local/` need no GitHub issue. This avoids publishing a task merely to answer a bounded local request. The exception authorizes neither tracked changes nor remote writes: implementing tracked repository changes still needs an issue and its task worktree. Lasting findings useful to future contributors still belong in maintained records through that workflow; a local report does not authorize implementation or publication.
+
+The owner can also restrict an implementation task to local work: "do not push". Use its issue and task worktree, leave changes uncommitted or unpushed as asked, and make no remote write. Preparing something locally never implies permission to publish it.
 
 ## Local artifacts
 

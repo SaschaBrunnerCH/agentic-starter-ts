@@ -1,6 +1,6 @@
 # Decision workflow
 
-A change moves from a goal to a merged pull request through ten steps. Each step names the page that owns its details; this page orders the steps and defines shared knowledge ownership. Small changes skip steps 2 to 4.
+A tracked repository change moves from a goal to a merged pull request through ten steps. Explicitly requested read-only research and ignored local reports can stop outside this issue/PR workflow; see [local-only work](working-style.md#working-without-publishing). Each step names the page that owns its details; this page orders the steps and defines shared knowledge ownership. Small changes skip steps 2 to 4.
 
 1. **Goal.** The owner states the goal and its constraints. It is recorded as an epic, using the [Epic template](../../.github/ISSUE_TEMPLATE/epic.md): problem, users, goals, non-goals and success measures. See [the issue tracker](issue-tracker.md).
 2. **Research and design.** Retain useful investigation findings in a [research record](../research/README.md), even when no solution is selected. When proposing a solution, write a [design note](../designs/README.md) with options, a recommendation and open questions. Research may finish here; completing it does not authorize implementation.

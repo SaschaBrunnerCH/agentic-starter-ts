@@ -102,7 +102,7 @@ Working with coding agents fails in ways that working alone does not. This page 
 
 **Looks like:** a plan of two dozen issues where a third would do; a feature kept because an old version had it, though nobody wanted it; tests for a format that is being removed.
 
-**Handled by:** every task starts from an issue with observable "Done when" criteria; [working style](working-style.md) asks for the smallest complete change; issues an agent proposes go to Backlog for the owner to decide.
+**Handled by:** tracked changes start from an issue with observable "Done when" criteria; [working style](working-style.md) asks for the smallest complete change; issues an agent proposes go to Backlog for the owner to decide.
 
 **Left to people:** challenge the scope before a large build, and ask where an inherited requirement came from before keeping it.
 

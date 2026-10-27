@@ -67,7 +67,7 @@ If you know this work as PRDs, specs or spec-driven development: the same things
 | "Add login, profile and settings" | Three outcomes, one pull request nobody can review | An epic with one issue per outcome                                                                           |
 | "Use the best library for charts" | A decision disguised as a task                     | Label it `decision-needed`, ask the agent for a design note with options, then decide                        |
 
-If you are unsure how to specify something, ask the agent for an `investigation` issue first. Its result is a tracked [research record](research/README.md) of findings and uncertainty; it can finish without a recommendation or selected solution. Further implementation needs its own authorized scope. [Knowledge ownership](agents/decision-workflow.md#knowledge-ownership) explains where research, proposals and decisions belong.
+For explicitly requested read-only research or an ignored local report, [no issue is needed](agents/working-style.md#working-without-publishing). If the investigation will produce tracked repository changes, ask the agent for an `investigation` issue first. Its result is a tracked [research record](research/README.md) of findings and uncertainty; it can finish without a recommendation or selected solution. Further implementation needs its own authorized scope. [Knowledge ownership](agents/decision-workflow.md#knowledge-ownership) explains where research, proposals and decisions belong.
 
 ## Things to say
 
@@ -93,7 +93,7 @@ If you are unsure how to specify something, ask the agent for an `investigation`
 - **It stopped halfway.** Say `Resume issue #<number>.` If the handoff is missing, `pnpm issue show <number>`, the open pull request and `git worktree list` show the state.
 - **`main` moved and the pull request is behind.** The agent updates the branch and waits for a new build. Your earlier yes does not carry over to the new commit.
 - **You want two agents at once.** Give each its own issue. They work in separate worktrees; at most four issues are In progress at a time.
-- **The same mistake happens twice.** Turn the lesson into a check or a rule: see "Adding a check" in [local verification](agents/local-verification.md). A rule only in your head does not survive the next session.
+- **The same mistake happens twice.** Follow [incident corrective action](operations/ai-incidents.md#what-to-do). Repair the failed control, remove conflicting instructions or add a control as needed, and verify the correction. A reminder to be careful is not enough.
 
 ## Which agent
 

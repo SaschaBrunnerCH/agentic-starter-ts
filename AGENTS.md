@@ -6,7 +6,7 @@ The one instruction source for every coding agent and contributor here. GitHub C
 
 The owner decides what is built and authorizes every merge. You do the rest, one issue at a time, with the commands below.
 
-1. **Take an issue:** the one you were given, or the first `ready-for-agent` issue of `pnpm issue ready`; `ready-for-human` work is a person's. Work the owner asked for without an issue gets one first (`pnpm issue create`); an issue you propose yourself goes to Backlog for the owner to decide.
+1. **Take an issue:** the one assigned, or the first `ready-for-agent` issue of `pnpm issue ready`; `ready-for-human` is for people. Tracked changes need an issue (`pnpm issue create`); proposals go to Backlog. Explicitly requested read-only research and ignored `.local/` reports need none.
 2. **Start:** `pnpm task start <number>` claims the issue, creates a sibling worktree and branch from `main`, installs and writes the handoff file. If it refuses, report why and stop. Leave the shared checkout untouched.
 3. **Work** in the worktree against the issue's "Done when" criteria. Documentation changes in the same pull request as the behaviour. Preserve lasting findings and rationale in tracked records; see [knowledge ownership](engineering/agents/decision-workflow.md#knowledge-ownership). Keep scratch artifacts in the primary checkout's `.local/`; see [local artifacts](engineering/agents/working-style.md#local-artifacts).
 4. **Run the gate:** `pnpm check:push` must pass. Fix failures; never skip a hook or weaken a check, except for a hook that is itself broken, as `engineering/agents/local-verification.md` describes.
@@ -53,7 +53,7 @@ Pass `--authorized-by-owner` and `--head` only for the commit the owner said yes
 | Use the domain terms of `CONTEXT.md`; work only with the approved AI tools and no unapproved MCP server. | Review; tools are listed in `engineering/agents/ai-tools.md`. | Review-only |
 | Escalate a test believed wrong with measured evidence; keep its tolerance. | The author records the measurements in the pull request or issue. | Review-only |
 | Verify task ownership and base, and leave resumable handoffs with verified states. | `engineering/agents/task-lifecycle.md`. | Review-only |
-| Turn every AI incident into a check or rule within a week. | `engineering/operations/ai-incidents.md`. | Review-only |
+| Verify effective corrective action for every AI incident within a week. | `engineering/operations/ai-incidents.md`. | Review-only |
 
 Change this table in the pull request that changes a guardrail. Enforced: a named script, hook, workflow or ruleset blocks it. Mixed: a mechanism covers part, people the rest. Review-only: only people check it.
 
