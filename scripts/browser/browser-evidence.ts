@@ -17,9 +17,12 @@ const countsShape = json.object({
   flaky: json.number,
 });
 const runShape = json.object({
+  id: json.optional(json.string),
   commit: json.string,
   /** Uncommitted changes when the run started: it then tested something else than the commit. */
   dirty: json.boolean,
+  sourceStable: json.optional(json.boolean),
+  buildCommit: json.optional(json.string),
   finishedAt: json.string,
   /** Playwright's overall status: passed, failed, timedout or interrupted. */
   status: json.string,
@@ -60,6 +63,19 @@ export function withRun(runs: readonly BrowserRun[], run: BrowserRun): string {
   return `${JSON.stringify({ runs: [...runs, run].slice(-KEPT_RUNS) }, null, 2)}\n`;
 }
 
+/** Parent validation can fail after Playwright has already written its counts. */
+export function invalidateRun(text: string, id: string): string {
+  return `${JSON.stringify(
+    {
+      runs: readRuns(text).map((run) =>
+        run.id === id ? { ...run, dirty: true, sourceStable: false, status: "failed" } : run,
+      ),
+    },
+    null,
+    2,
+  )}\n`;
+}
+
 /** The outcome of one test, as Playwright reports it, added to a project's counts. */
 export function count(
   counts: Readonly<Record<string, Counts>>,
@@ -85,6 +101,10 @@ export type EvidenceVerdict =
  */
 export function evidenceFor(runs: readonly BrowserRun[], head: string): EvidenceVerdict {
   const onHead = runs.filter((run) => run.commit === head);
+  // A run invalidated after starting clean must remain visible; an older pass
+  // must not hide its source-validation failure.
+  const invalidated = onHead.at(-1);
+  if (invalidated?.sourceStable === false) return { kind: "found", run: invalidated };
   const clean = onHead.filter((run) => !run.dirty).at(-1);
   if (clean !== undefined) return { kind: "found", run: clean };
   const dirty = onHead.at(-1);
@@ -126,7 +146,9 @@ export function evidenceMarkdown(run: BrowserRun): string {
       : `${run.renderer} (${run.rendererKind ?? "unknown"}${run.display === null ? "" : `, ${run.display}`})`;
   const application =
     run.target === undefined
-      ? "the commit's production build, served locally"
+      ? run.buildCommit === run.commit && run.sourceStable === true && !run.dirty
+        ? "the commit's production build, served locally"
+        : "a local production build; build/source identity is unverified"
       : `${run.target}, a deployment that need not be this commit`;
   const rows = Object.entries(run.projects).map(
     ([project, c]) => `| ${project} | ${c.passed} | ${c.failed} | ${c.skipped} | ${c.flaky} |`,
@@ -139,6 +161,9 @@ export function evidenceMarkdown(run: BrowserRun): string {
     ...(run.remote ? ["Rendering OS/device: not established by this remote run record."] : []),
     "",
     `Application: ${application}.`,
+    ...(run.sourceStable === false
+      ? ["Source validation failed; this run is not current-commit acceptance."]
+      : []),
     "",
     // The GPU check probes Chromium; other browsers' renderers are not known.
     `Renderer (Chromium's GPU check): ${renderer}.`,

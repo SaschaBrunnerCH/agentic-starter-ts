@@ -1,15 +1,10 @@
-import { spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import type { FullResult, Reporter, TestCase } from "@playwright/test/reporter";
 import { count, EVIDENCE_FILE, readRuns, withRun, type Counts } from "./browser-evidence.ts";
+import { guardBrowserSource } from "./browser-source.ts";
 
 const root = resolve(import.meta.dirname, "../..");
-
-function git(args: readonly string[]): string {
-  const result = spawnSync("git", args, { cwd: root, encoding: "utf8" });
-  return result.status === 0 ? result.stdout.trim() : "";
-}
 
 /**
  * Records each local browser run in .local/browser-evidence.json: the commit, the renderer
@@ -17,9 +12,10 @@ function git(args: readonly string[]): string {
  * project. `pnpm task ready` puts the run for the head commit into the pull request.
  */
 export default class BrowserEvidenceReporter implements Reporter {
-  // Read when the run starts: a file changed during the run does not make it clean.
-  private readonly commit = git(["rev-parse", "HEAD"]);
-  private readonly dirty = git(["status", "--porcelain"]) !== "";
+  private readonly source =
+    process.env.CI === "true" || process.env.CI === "1" || process.argv.includes("--list")
+      ? undefined
+      : guardBrowserSource(root);
   private counts: Record<string, Counts> = {};
 
   onTestEnd(test: TestCase): void {
@@ -27,9 +23,17 @@ export default class BrowserEvidenceReporter implements Reporter {
     this.counts = count(this.counts, project, test.outcome());
   }
 
-  onEnd(result: FullResult): void {
-    // CI keeps its own results; the record is for runs on a developer's machine.
-    if (this.commit === "" || process.env.CI === "true") return;
+  async onEnd(result: FullResult): Promise<void | { status: FullResult["status"] }> {
+    // CI keeps its own results; discovery executes no tests and creates no acceptance record.
+    if (this.source === undefined) return;
+    let stable = true;
+    try {
+      this.source.assertStable();
+    } catch {
+      stable = false;
+    } finally {
+      this.source.close();
+    }
     const file = resolve(root, EVIDENCE_FILE);
     let previous: string | undefined;
     try {
@@ -42,10 +46,17 @@ export default class BrowserEvidenceReporter implements Reporter {
     writeFileSync(
       file,
       withRun(readRuns(previous), {
-        commit: this.commit,
-        dirty: this.dirty,
+        ...(environment.BROWSER_TEST_RUN_ID === undefined
+          ? {}
+          : { id: environment.BROWSER_TEST_RUN_ID }),
+        commit: this.source.commit,
+        dirty: this.source.dirty || !stable,
+        sourceStable: stable,
+        ...(environment.BROWSER_TEST_BUILD_COMMIT === undefined
+          ? {}
+          : { buildCommit: environment.BROWSER_TEST_BUILD_COMMIT }),
         finishedAt: new Date().toISOString(),
-        status: result.status,
+        status: stable ? result.status : "failed",
         gpu: environment.BROWSER_GPU_SETTING ?? "off",
         renderer: environment.BROWSER_GPU_RENDERER ?? null,
         rendererKind: environment.BROWSER_GPU_KIND ?? null,
@@ -70,5 +81,6 @@ export default class BrowserEvidenceReporter implements Reporter {
         projects: this.counts,
       }),
     );
+    if (!stable) return { status: "failed" };
   }
 }

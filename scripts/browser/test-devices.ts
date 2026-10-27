@@ -1,7 +1,5 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
-import { dirname, join } from "node:path";
 import { arch, type } from "node:os";
 import { gh, ghJson, root } from "../shared/github.ts";
 import { scriptArguments } from "../shared/script-arguments.ts";
@@ -114,20 +112,7 @@ function main(): number {
       return 1;
     }
   }
-  // The local build of exactly this commit, unless a deployed URL is tested.
-  if (
-    target === undefined &&
-    spawnSync(
-      process.execPath,
-      [
-        join(dirname(createRequire(import.meta.url).resolve("vite/package.json")), "bin/vite.js"),
-        "build",
-      ],
-      { cwd: root, stdio: "inherit" },
-    ).status !== 0
-  ) {
-    return 1;
-  }
+  // Each supported browser invocation builds and guards its own local source.
 
   const results: DeviceResult[] = [];
   for (const device of devices) {
