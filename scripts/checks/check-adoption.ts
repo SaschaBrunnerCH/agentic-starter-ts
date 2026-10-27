@@ -16,7 +16,8 @@ const root = resolve(import.meta.dirname, "../..");
 const environment = {
   ...Object.fromEntries(
     Object.entries(process.env).filter(
-      ([name]) => !name.startsWith("GIT_") && !name.startsWith("VITEST_"),
+      ([name]) =>
+        !name.startsWith("GIT_") && (!name.startsWith("VITEST_") || name === "VITEST_MAX_WORKERS"),
     ),
   ),
   STARTER_ADOPTION_FIXTURE: "true",
