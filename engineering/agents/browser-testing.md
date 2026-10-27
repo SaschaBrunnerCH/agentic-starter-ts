@@ -12,6 +12,8 @@ The PR build runs the code/build gate without browser installation or journeys, 
 
 `BROWSER_GPU` defaults to `required` locally; see [On the GPU](#on-the-gpu). Explicit [release verification](../operations/releases.md), deployment checks and owner-requested testing-farm runs have separate procedures. Their functional results do not replace local GPU evidence.
 
+For projects with external integrations, the optional [offline routine-test pattern](adoption-patterns.md#offline-routine-tests) describes synthetic fixtures, separate live checks, negative controls and interception limits. It changes neither browser applicability nor the current test inventory.
+
 ## As the suite grows
 
 Run the whole existing smoke suite while it is small. Before introducing selection, measure executed test counts and elapsed time for representative changes, including shared code; discovery counts and discovery time are not execution evidence.

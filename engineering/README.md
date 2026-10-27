@@ -55,6 +55,7 @@ Consult the guides below when their topic applies. For browser changes, start wi
 | [Data handling](agents/data-handling.md)                       | Data classes and what may appear where                                       |
 | [AI tools](agents/ai-tools.md)                                 | Approved agents, MCP servers, provider changes                               |
 | [AI incidents](operations/ai-incidents.md)                     | What counts, what to do, closing the gap                                     |
+| [Adoption patterns](agents/adoption-patterns.md)               | Selective updates, offline tests, mixed toolchains and data publication      |
 | [Project setup](setup.md)                                      | Prerequisites, personalization, adoption and replacing the example           |
 | [GitHub hosted settings](operations/github-hosted-settings.md) | Rulesets, labels and Project that live outside the files                     |
 | [Visual documentation](diagrams/README.md)                     | Choosing formats, editable examples, charts, screenshots and maintenance     |
