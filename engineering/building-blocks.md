@@ -19,7 +19,7 @@ The picture groups responsibilities, rather than showing isolated packages or ev
 - **Coordinate local work:** participating builds, tests and GPU runs share a workload slot. Planning and editing can continue while they wait; CI runs separately.
 - **Owner decisions:** the owner chooses scope and authorizes the exact merge head and release version. Checks support those decisions.
 
-For the sequence through these blocks, see the [agent workflow](../README.md#how-the-agent-workflow-fits-together) and [GitHub workflow](../README.md#through-github-issues-projects-and-pull-requests) illustrations. The sections below link the more detailed diagrams for verification, devices and workload recovery.
+For the sequence through these blocks, see the [agent workflow](diagrams/agent-workflow.svg) and [GitHub workflow](diagrams/github-workflow.svg) illustrations, with their [layout and meaning notes](diagrams/README.md#edit-sources-and-exports-together). The sections below link the more detailed diagrams for verification, devices and workload recovery. Diagram links point into the retained engineering documentation so they survive replacing the root README with a product README.
 
 ## Find a block
 
@@ -40,7 +40,7 @@ For the sequence through these blocks, see the [agent workflow](../README.md#how
 
 **Purpose and entry points.** [AGENTS.md](../AGENTS.md) is the common instruction source, [CONTEXT.md](../CONTEXT.md) supplies vocabulary, and the [engineering index](README.md) routes contributors to the relevant guide. Agent-specific entry files point to the shared rules. The named skills are described in [AI tools](agents/ai-tools.md#skills).
 
-**Connections and reuse.** Instructions refer to real commands, checks and approval boundaries throughout the repository. In another project, reconcile its existing policy and command names before adopting guidance. Copying the text does not install its enforcement mechanisms or establish that an agent follows it. The [agent workflow illustration](../README.md#how-the-agent-workflow-fits-together) shows instructions and retained knowledge feeding the session.
+**Connections and reuse.** Instructions refer to real commands, checks and approval boundaries throughout the repository. In another project, reconcile its existing policy and command names before adopting guidance. Copying the text does not install its enforcement mechanisms or establish that an agent follows it. The [agent workflow illustration](diagrams/agent-workflow.svg) shows instructions and retained knowledge feeding the session.
 
 ## Issue handling
 
@@ -48,7 +48,7 @@ For the sequence through these blocks, see the [agent workflow](../README.md#how
 
 **Connections and reuse.** It uses `gh`, shared GitHub/JSON helpers and a linked Project with the starter's labels, statuses and Priority options. Claiming work assigns an issue and changes its status; these are remote writes. Task orchestration calls this capability. Selective adoption needs compatible hosted APIs and explicit choices about metadata and publication permissions; the present CLI is not a generic issue-tracker adapter.
 
-See the [issue guide and status diagram](agents/issue-tracker.md), and the [Project board and GitHub workflow](../README.md#through-github-issues-projects-and-pull-requests) for how metadata, tasks and PRs fit together.
+See the [issue guide and status diagram](agents/issue-tracker.md), [Project board](diagrams/project-board.svg) and [GitHub workflow](diagrams/github-workflow.svg) for how metadata, tasks and PRs fit together.
 
 ## Worktrees and handoffs
 
@@ -56,7 +56,7 @@ See the [issue guide and status diagram](agents/issue-tracker.md), and the [Proj
 
 **Connections and reuse.** `start` combines local Git/worktree operations with issue claiming and dependency installation. `ready` examines PR/build state, browser evidence and applicable regression proof; `merge` records authorization and updates hosted state. The commands depend on more than Git: current issue conventions, pnpm, the named PR check and project policy are part of the contract. Local worktree operations are not currently offered as a separately supported, GitHub-free package.
 
-Use the [task lifecycle](agents/task-lifecycle.md) for recovery, handoffs and cleanup, and the [GitHub workflow illustration](../README.md#through-github-issues-projects-and-pull-requests) for the owner decision between readiness and merge.
+Use the [task lifecycle](agents/task-lifecycle.md) for recovery, handoffs and cleanup, and the [GitHub workflow illustration](diagrams/github-workflow.svg) for the owner decision between readiness and merge.
 
 ## Git hooks
 
@@ -90,15 +90,13 @@ See [browser testing](agents/browser-testing.md), [GPU discovery](agents/browser
 
 **Connections and reuse.** The app supplies the output consumed by browser testing, the bundle budget and delivery workflows. [Setup](setup.md#replace-the-example) documents replacement and the framework-free route. That route still builds a web application; a Node tool, library or project with several outputs needs its own adaptation and verification. A static review website and a compiled CLI need not share the starter's build layout.
 
-The [example application](../README.md#example-application) and its [capture provenance](diagrams/README.md#actual-ui-capture) show what the starter renders, with the scope of that observation.
-
 ## GitHub setup
 
 **Purpose and entry points.** `pnpm setup:github` applies hosted labels, Project configuration, merge settings, rulesets and environments. Its `--help` and `--dry-run` modes explain or inspect setup before applying it. `pnpm check:personalization` checks project identity. Implementation lives in `scripts/setup/`, supported by checked-in `.github/` configuration.
 
 **Connections and reuse.** Issue/task commands depend on hosted conventions; deployment depends on provisioned hosting and environments. These settings are not inherited merely by creating a repository from the template. Applying setup makes remote changes and needs the appropriate rights. A different host or existing repository needs a capability/configuration review: a successful local fixture or read-only plan does not prove hosted application will succeed.
 
-Use [GitHub hosted settings](operations/github-hosted-settings.md) for the supported modes and readbacks. The [GitHub workflow illustration](../README.md#through-github-issues-projects-and-pull-requests) shows how those settings support issue and PR delivery.
+Use [GitHub hosted settings](operations/github-hosted-settings.md) for the supported modes and readbacks. The [GitHub workflow illustration](diagrams/github-workflow.svg) shows how those settings support issue and PR delivery.
 
 ## Deployment and releases
 
