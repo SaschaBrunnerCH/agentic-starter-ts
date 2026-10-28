@@ -20,7 +20,7 @@ function repository(trackedIgnore = false) {
   const parent = mkdtempSync(join(tmpdir(), "local-artifacts-"));
   made.push(parent);
   const primary = join(parent, "primary");
-  const task = join(parent, "task");
+  const task = join(parent, "primary.worktrees", "42-task");
   mkdirSync(primary);
   git(primary, "init", "-q", "-b", "main");
   if (trackedIgnore) writeFileSync(join(primary, ".gitignore"), "other-output/\n.local/\n");

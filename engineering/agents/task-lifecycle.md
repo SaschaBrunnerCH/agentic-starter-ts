@@ -3,7 +3,7 @@
 ## Start or resume
 
 1. Read the issue, linked pull request, accepted decisions and any handoff. Confirm that the task is yours: the issue is assigned to you or was given to you by the owner, and its Status is In progress under your claim; see [picking and claiming work](issue-tracker.md#picking-and-claiming-work). Another session's unfinished work is not unclaimed work.
-2. Verify `pwd`, `git worktree list`, branch, commit and working-tree status before editing. Fetch the intended target base. Create a new sibling worktree from that fetched revision unless a declared task dependency requires another branch; record that dependency. For resumed work, verify its recorded branch and changes before deciding whether it needs updating. Read `AGENTS.md` and the linked guidance from the task revision, and check the fetched base for newer guidance: the rules on `main` apply, not those of an old branch. An assignment you were given stays valid across sessions; do not ask for it again.
+2. Verify `pwd`, `git worktree list`, branch, commit and working-tree status before editing. Fetch the intended target base. Create a new task worktree under `../<repo-name>.worktrees/` beside the primary checkout from that fetched revision unless a declared task dependency requires another branch; record that dependency. For resumed work, verify its recorded branch and changes before deciding whether it needs updating. Read `AGENTS.md` and the linked guidance from the task revision, and check the fetched base for newer guidance: the rules on `main` apply, not those of an old branch. An assignment you were given stays valid across sessions; do not ask for it again.
 3. Keep the shared checkout unchanged. Treat other sessions' modifications as owned work: read-only inspection is allowed, but editing, formatting, staging, committing or taking over them requires an explicit assignment by the owner or a handoff from that session.
 4. Record the issue or pull request, worktree, branch and base for the task. For migration or refactor work, list the affected existing workflows and required outcomes before implementation. Use the issue's accepted scope.
 
@@ -11,12 +11,31 @@
 
 ```sh
 git fetch origin main
-git worktree add --no-track -b feat/42-short-title ../<repository>-42-short-title origin/main
-cd ../<repository>-42-short-title
+git worktree add --no-track -b feat/42-short-title ../<repo-name>.worktrees/42-short-title origin/main
+cd ../<repo-name>.worktrees/42-short-title
 pnpm install --frozen-lockfile
 ```
 
-Retained drafts and evidence go in the primary checkout's ignored `.local/`, using the [local artifact conventions](working-style.md#local-artifacts). Run `pnpm local:init` from any checkout to initialize its local README; issue/PR folders stay stable, with UTC dates inside them. This does not change sibling worktree names or the Git-common-directory handoff below.
+The worktrees folder sits beside the primary repository, with a clearly named folder for each task:
+
+```text
+projects/
+├── <repo-name>/
+└── <repo-name>.worktrees/
+    └── <issue>-<short-title>/
+```
+
+This is our chosen convention; Git does not mandate a layout. Grouping worktrees keeps the projects directory readable as tasks accumulate. Use `git worktree add`, `git worktree list`, `git worktree move` and `git worktree remove` to manage registered worktrees. From the primary checkout, an intentional relocation of an existing task uses:
+
+```sh
+mkdir -p ../<repo-name>.worktrees
+git worktree move ../<repo-name>-42-short-title ../<repo-name>.worktrees/42-short-title
+git worktree list
+```
+
+After a move, update the task's recorded worktree path in its handoff. A structured setup receipt also records the directory in its recovery commands; update those paths together after verifying Git's registration and branch. Existing worktrees remain usable at their registered locations; task start does not move them automatically, and cleanup finds them through Git's registry. After a verified merge, use `pnpm task cleanup <pr>` for the guarded `git worktree remove` and branch/handoff cleanup described below.
+
+Retained drafts and evidence go in the primary checkout's ignored `.local/`, using the [local artifact conventions](working-style.md#local-artifacts). Run `pnpm local:init` from any checkout to initialize its local README; issue/PR folders stay stable, with UTC dates inside them. This does not change task worktree names or the Git-common-directory handoff below.
 
 `pnpm install --frozen-lockfile` is needed in every new worktree: the checks and the Git hooks run tools from its `node_modules`.
 
@@ -31,7 +50,7 @@ Worktrees share workstation resources. Supported verification commands acquire t
 Naming:
 
 - **Branch:** `<type>/<issue>-<short-title>`, with the type `feat`, `fix`, `docs` or `chore`.
-- **Worktree:** a sibling directory `../<repository>-<issue>-<short-title>`.
+- **Worktree:** `../<repo-name>.worktrees/<issue>-<short-title>/`, relative to the primary checkout, including when starting from a linked worktree.
 - **Commit and pull-request title:** an imperative sentence stating the outcome, without a type prefix, such as "Show the route length in the summary". Dependabot's titles keep their `chore` prefix. The pull request is squashed, so its title becomes the commit on `main`.
 
 The task is ready for edits when its ownership, starting revision and required outcomes are known. Follow [the issue tracker](issue-tracker.md) for Project updates.
@@ -57,7 +76,7 @@ Before cleanup, copy wanted browser traces, screenshots and reports from `test-r
 
 ## Handoff with unfinished work
 
-Keep a local handoff under `agent-handoffs/issue-<number>.md` in Git's common directory, found with `git rev-parse --path-format=absolute --git-common-dir`. `pnpm task start` creates it with the headings below; `pnpm task handoff <issue>` creates it when missing and prints its path, and `pnpm task cleanup` removes it after the merge. It survives removal of a sibling worktree and is outside tracked files. Update it before transferring ownership or stopping with work still pending, including an open pull request awaiting merge. A session without persistent local files puts the same content in the pull-request description or an issue comment.
+Keep a local handoff under `agent-handoffs/issue-<number>.md` in Git's common directory, found with `git rev-parse --path-format=absolute --git-common-dir`. `pnpm task start` creates it with the headings below; `pnpm task handoff <issue>` creates it when missing and prints its path, and `pnpm task cleanup` removes it after the merge. It survives removal of a task worktree and is outside tracked files. Update it before transferring ownership or stopping with work still pending, including an open pull request awaiting merge. A session without persistent local files puts the same content in the pull-request description or an issue comment.
 
 Include:
 

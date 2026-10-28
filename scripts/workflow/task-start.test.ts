@@ -26,9 +26,9 @@ function git(cwd: string, args: string[]) {
   expect(result.status, result.stderr).toBe(0);
   return result.stdout.trim();
 }
-function run(args: string[], extra: NodeJS.ProcessEnv = {}) {
-  return spawnSync(process.execPath, [join(main, "scripts/workflow/task.ts"), ...args], {
-    cwd: main,
+function run(args: string[], extra: NodeJS.ProcessEnv = {}, checkout = main) {
+  return spawnSync(process.execPath, [join(checkout, "scripts/workflow/task.ts"), ...args], {
+    cwd: checkout,
     env: { ...env, ...extra },
     encoding: "utf8",
   });
@@ -37,7 +37,7 @@ const journal = () => readFileSync(events, "utf8").trim().split("\n").filter(Boo
 beforeEach(() => {
   temporary = mkdtempSync(join(tmpdir(), "task-start-"));
   main = join(temporary, "app");
-  worktree = join(temporary, "app-9-fixture");
+  worktree = join(temporary, "app.worktrees", "9-fixture");
   handoff = join(main, ".git/agent-handoffs/issue-9.md");
   events = join(temporary, "events.jsonl");
   writeFileSync(events, "");
@@ -202,4 +202,26 @@ it("retains commits that appear during a failed claim instead of deleting an adv
   expect(existsSync(worktree)).toBe(true);
   expect(readFileSync(join(worktree, "wanted-commit.txt"), "utf8")).toBe("wanted commit");
   expect(readSetup(readFileSync(handoff, "utf8"))?.stage).toBe("claim");
+});
+
+it("starts from a linked checkout using the primary repository name and parent", () => {
+  const linked = join(temporary, "app.worktrees", "review");
+  git(main, ["worktree", "add", "--detach", linked, "main"]);
+  const result = run(["start", "9"], {}, linked);
+  expect(result.status, result.stderr).toBe(0);
+  expect(existsSync(join(worktree, ".git"))).toBe(true);
+  expect(readSetup(readFileSync(handoff, "utf8"))?.directory).toBe(worktree);
+  expect(git(main, ["worktree", "list", "--porcelain"])).toContain(`worktree ${worktree}`);
+});
+
+it("retains an existing task registered at its old location", () => {
+  const legacy = join(temporary, "app-9-fixture");
+  git(main, ["worktree", "add", "-b", "fix/9-fixture", legacy, "main"]);
+  writeFileSync(join(legacy, "wanted.txt"), "Existing task");
+  const result = run(["start", "9"]);
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain("already exists");
+  expect(readFileSync(join(legacy, "wanted.txt"), "utf8")).toBe("Existing task");
+  expect(existsSync(worktree)).toBe(false);
+  expect(git(main, ["worktree", "list", "--porcelain"])).toContain(`worktree ${legacy}`);
 });
