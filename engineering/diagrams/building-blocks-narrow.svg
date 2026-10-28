@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="460" height="2074" viewBox="0 0 460 2074" role="img" aria-labelledby="title desc">
+<title id="title">The starter building blocks</title>
+<desc id="desc">The complete starter groups guidance, issue handling and worktrees; Git hooks, the quality gate and browser testing; and the application, GitHub setup and delivery. Issue handling connects to task worktree creation; push hooks invoke the quality gate. Local builds, tests and GPU runs share workload coordination. The owner decides scope and authorizes merges and releases. These capabilities share code and configuration; they are not standalone packages.</desc>
+<!-- Directly editable SVG. Keep both layouts and engineering/building-blocks.md synchronized. -->
+<defs>
+<symbol id="guide" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6 H13 L16 9 L19 6 H28 V26 H19 L16 29 L13 26 H4 Z M16 9 V29 M8 12 H12 M8 17 H12 M20 12 H24 M20 17 H24"/></g></symbol>
+<symbol id="issue" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="20" height="24" rx="3"/><path d="M12 3 H20 V8 H12 Z M11 14 L13 16 L17 12 M19 15 H22 M11 22 H22"/></g></symbol>
+<symbol id="branch" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="6" r="3"/><circle cx="24" cy="9" r="3"/><circle cx="8" cy="26" r="3"/><path d="M8 9 V23 M8 20 C8 13 24 21 24 12"/></g></symbol>
+<symbol id="hook" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8 H23 V21 A7 7 0 0 1 9 21 V17 M5 21 L9 17 L13 21"/><circle cx="5" cy="8" r="3"/></g></symbol>
+<symbol id="check" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3 L28 8 V17 C28 24 21 28 16 30 C11 28 4 24 4 17 V8 Z M9 16 L14 21 L23 11"/></g></symbol>
+<symbol id="browser" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="26" height="23" rx="3"/><path d="M3 12 H29 M8 8 H9 M13 8 H14 M9 18 L5 21 L9 24 M23 18 L27 21 L23 24 M18 16 L14 26"/></g></symbol>
+<symbol id="app" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="26" height="24" rx="3"/><path d="M3 11 H29 M10 11 V28 M15 16 H24 M15 21 H22"/></g></symbol>
+<symbol id="setup" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7 H27 M5 16 H27 M5 25 H27"/><rect x="10" y="4" width="5" height="6" rx="1"/><rect x="20" y="13" width="5" height="6" rx="1"/><rect x="8" y="22" width="5" height="6" rx="1"/></g></symbol>
+<symbol id="delivery" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="17" width="24" height="12" rx="2"/><path d="M16 22 V3 M9 10 L16 3 L23 10 M9 25 H23"/></g></symbol>
+<symbol id="workload" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="7" height="6" rx="1"/><rect x="3" y="21" width="7" height="6" rx="1"/><path d="M10 8 H14 V16 H21 M10 24 H14 V16"/><rect x="21" y="12" width="8" height="8" rx="2"/></g></symbol>
+<symbol id="person" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="9" r="5"/><path d="M6 28 V24 A10 10 0 0 1 26 24 V28 Z"/></g></symbol>
+<marker id="blue-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#1971C2"/></marker>
+<marker id="green-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#2F9E44"/></marker>
+</defs>
+<rect width="460" height="2074" fill="#F8FAFC"/>
+<g font-family="Arial, Helvetica, sans-serif">
+<text x="24" y="44" font-size="28" fill="#0F172A" font-weight="700">The starter building blocks</text>
+<text x="24" y="76" font-size="19" fill="#475569">One complete, connected template.</text>
+<rect x="12" y="100" width="436" height="1900" rx="13" fill="#F8FAFC" stroke="#DCE3EC" stroke-width="1.4"/>
+<text x="24" y="126" font-size="13" fill="#475569" font-weight="700">THE COMPLETE STARTER</text>
+<rect x="24" y="144" width="412" height="112" rx="7" fill="#FFF4EB" stroke="#F0D4BF" stroke-width="1.4"/>
+<use href="#person" x="40" y="160" width="28" height="28" color="#C05621"/>
+<text x="80" y="182" font-size="23" fill="#C05621" font-weight="700">Owner decisions</text>
+<text x="40" y="213" font-size="19" fill="#475569">Choose scope; authorize the exact</text>
+<text x="40" y="239" font-size="19" fill="#475569">merge head and release version.</text>
+<text x="24" y="292" font-size="16" fill="#1971C2" font-weight="700">PLAN AND GUIDE</text>
+<rect x="24" y="310" width="412" height="142" rx="7" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4"/>
+<path d="M25 325 V437" stroke="#1971C2" stroke-width="3" stroke-linecap="round"/>
+<use href="#guide" x="42" y="328" width="28" height="28" color="#1971C2"/>
+<text x="82" y="350" font-size="22" fill="#0F172A" font-weight="700">Agent guidance</text>
+<text x="44" y="382" font-size="18" fill="#475569">Rules, vocabulary and guides</text>
+<text x="44" y="407" font-size="18" fill="#475569">Context for every coding agent</text>
+<text x="44" y="435" font-size="15" fill="#475569" font-family="Consolas, monospace">AGENTS.md · CONTEXT.md</text>
+<rect x="24" y="468" width="412" height="142" rx="7" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4"/>
+<path d="M25 483 V595" stroke="#1971C2" stroke-width="3" stroke-linecap="round"/>
+<use href="#issue" x="42" y="486" width="28" height="28" color="#1971C2"/>
+<text x="82" y="508" font-size="22" fill="#0F172A" font-weight="700">Issue handling</text>
+<text x="44" y="540" font-size="18" fill="#475569">Scope, priority and blockers</text>
+<text x="44" y="565" font-size="18" fill="#475569">GitHub Issues + Project</text>
+<text x="44" y="593" font-size="15" fill="#475569" font-family="Consolas, monospace">pnpm issue</text>
+<rect x="24" y="650" width="412" height="142" rx="7" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4"/>
+<path d="M25 665 V777" stroke="#1971C2" stroke-width="3" stroke-linecap="round"/>
+<use href="#branch" x="42" y="668" width="28" height="28" color="#1971C2"/>
+<text x="82" y="690" font-size="22" fill="#0F172A" font-weight="700">Worktrees &amp; handoffs</text>
+<text x="44" y="722" font-size="18" fill="#475569">Isolated branch and handoff</text>
+<text x="44" y="747" font-size="18" fill="#475569">Issue-linked task lifecycle</text>
+<text x="44" y="775" font-size="15" fill="#475569" font-family="Consolas, monospace">pnpm task</text>
+<text x="24" y="834" font-size="16" fill="#475569" font-weight="700">CHECK AND RUN</text>
+<rect x="24" y="852" width="412" height="142" rx="7" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4"/>
+<path d="M25 867 V979" stroke="#2F9E44" stroke-width="3" stroke-linecap="round"/>
+<use href="#hook" x="42" y="870" width="28" height="28" color="#2F9E44"/>
+<text x="82" y="892" font-size="22" fill="#0F172A" font-weight="700">Git hooks</text>
+<text x="44" y="924" font-size="18" fill="#475569">Check commits and pushes</text>
+<text x="44" y="949" font-size="18" fill="#475569">Validate source before the gate</text>
+<text x="44" y="977" font-size="15" fill="#475569" font-family="Consolas, monospace">pnpm prepare · check:hooks</text>
+<rect x="24" y="1034" width="412" height="142" rx="7" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4"/>
+<path d="M25 1049 V1161" stroke="#2F9E44" stroke-width="3" stroke-linecap="round"/>
+<use href="#check" x="42" y="1052" width="28" height="28" color="#2F9E44"/>
+<text x="82" y="1074" font-size="22" fill="#0F172A" font-weight="700">Quality gate</text>
+<text x="44" y="1106" font-size="18" fill="#475569">Types, lint, unit tests and build</text>
+<text x="44" y="1131" font-size="18" fill="#475569">Same code/build gate in PR CI</text>
+<text x="44" y="1159" font-size="15" fill="#475569" font-family="Consolas, monospace">pnpm check:push</text>
+<rect x="24" y="1192" width="412" height="142" rx="7" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4"/>
+<path d="M25 1207 V1319" stroke="#0F766E" stroke-width="3" stroke-linecap="round"/>
+<use href="#browser" x="42" y="1210" width="28" height="28" color="#0F766E"/>
+<text x="82" y="1232" font-size="22" fill="#0F172A" font-weight="700">Browser testing</text>
+<text x="44" y="1264" font-size="18" fill="#475569">Real browsers and GPU evidence</text>
+<text x="44" y="1289" font-size="18" fill="#475569">Project build, server and tests</text>
+<text x="44" y="1317" font-size="15" fill="#475569" font-family="Consolas, monospace">pnpm test:browser</text>
+<text x="24" y="1376" font-size="16" fill="#7C3AED" font-weight="700">BUILD AND DELIVER</text>
+<rect x="24" y="1394" width="412" height="142" rx="7" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4"/>
+<path d="M25 1409 V1521" stroke="#7C3AED" stroke-width="3" stroke-linecap="round"/>
+<use href="#app" x="42" y="1412" width="28" height="28" color="#7C3AED"/>
+<text x="82" y="1434" font-size="22" fill="#0F172A" font-weight="700">Application foundation</text>
+<text x="44" y="1466" font-size="18" fill="#475569">Replaceable React + Vite app</text>
+<text x="44" y="1491" font-size="18" fill="#475569">Unit tests and browser journeys</text>
+<text x="44" y="1519" font-size="15" fill="#475569" font-family="Consolas, monospace">pnpm dev · build · preview</text>
+<rect x="24" y="1552" width="412" height="142" rx="7" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4"/>
+<path d="M25 1567 V1679" stroke="#7C3AED" stroke-width="3" stroke-linecap="round"/>
+<use href="#setup" x="42" y="1570" width="28" height="28" color="#7C3AED"/>
+<text x="82" y="1592" font-size="22" fill="#0F172A" font-weight="700">GitHub setup</text>
+<text x="44" y="1624" font-size="18" fill="#475569">Labels, Project and rulesets</text>
+<text x="44" y="1649" font-size="18" fill="#475569">Hosting and protected environments</text>
+<text x="44" y="1677" font-size="15" fill="#475569" font-family="Consolas, monospace">pnpm setup:github</text>
+<rect x="24" y="1710" width="412" height="142" rx="7" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4"/>
+<path d="M25 1725 V1837" stroke="#7C3AED" stroke-width="3" stroke-linecap="round"/>
+<use href="#delivery" x="42" y="1728" width="28" height="28" color="#7C3AED"/>
+<text x="82" y="1750" font-size="22" fill="#0F172A" font-weight="700">Deployment &amp; releases</text>
+<text x="44" y="1782" font-size="18" fill="#475569">Previews, main deploys and releases</text>
+<text x="44" y="1807" font-size="18" fill="#475569">Verified output + publication controls</text>
+<text x="44" y="1835" font-size="15" fill="#475569" font-family="Consolas, monospace">Workflows · pnpm release</text>
+<path d="M60 613 V642" stroke="#1971C2" stroke-width="1.8" fill="none" marker-end="url(#blue-arrow)"/>
+<text x="74" y="632" font-size="15" fill="#475569">task start claims issue</text>
+<path d="M60 997 V1026" stroke="#2F9E44" stroke-width="1.8" fill="none" marker-end="url(#green-arrow)"/>
+<text x="74" y="1016" font-size="15" fill="#475569">push invokes gate</text>
+<rect x="24" y="1876" width="412" height="102" rx="7" fill="#EAF5F3" stroke="#B5D6D0" stroke-width="1.4"/>
+<use href="#workload" x="40" y="1890" width="28" height="28" color="#0F766E"/>
+<text x="80" y="1913" font-size="22" fill="#0F766E" font-weight="700">Workload coordination</text>
+<text x="40" y="1942" font-size="18" fill="#475569">Local builds, tests and GPU: one slot.</text>
+<text x="40" y="1966" font-size="18" fill="#475569">Planning stays concurrent; CI separate.</text>
+<text x="24" y="2029" font-size="18" fill="#475569">Shared code and configuration;</text>
+<text x="24" y="2055" font-size="18" fill="#475569">selective adoption needs verification.</text>
+</g>
+</svg>

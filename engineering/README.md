@@ -2,6 +2,8 @@
 
 Contributor documentation: how work is planned, done, verified and merged. Product usage documentation does not belong here.
 
+The illustrated [building blocks](building-blocks.md) map explains the starter's capabilities, how they connect and what reusing selected parts requires.
+
 ## Read first
 
 After the [repository setup](setup.md#start-a-new-repository):
@@ -39,6 +41,7 @@ Consult the guides below when their topic applies. For browser changes, start wi
 | [Local workload coordination](agents/workload-coordination.md) | Cross-repository reservation, ownership, cancellation and recovery           |
 | [Working style](agents/working-style.md)                       | How much to change, how to write, local-only work                            |
 | [Engineering scripts](../scripts/README.md)                    | Tooling responsibilities, command entry points and lifecycle                 |
+| [Building blocks](building-blocks.md)                          | Illustrated capability map, dependencies and selective-reuse limits          |
 | [Issue tracker](agents/issue-tracker.md)                       | Issue metadata, the Project's statuses and priorities                        |
 | [Triage labels](agents/triage-labels.md)                       | Label vocabulary                                                             |
 | [Local verification](agents/local-verification.md)             | What runs at commit, at push and in CI                                       |

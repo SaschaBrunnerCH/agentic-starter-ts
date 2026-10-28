@@ -13,6 +13,8 @@ A repository template for agent-driven TypeScript development, including graphic
 
 New to working with agents? Complete setup below, then follow [your first session](engineering/getting-started.md). The [engineering index](engineering/README.md) gives the reading order and specialist guides.
 
+Explore the [building blocks](engineering/building-blocks.md) for an illustrated map of the complete starter, each capability's dependencies and what selective reuse would involve.
+
 <picture>
   <source media="(max-width: 600px)" srcset="engineering/diagrams/template-highlights-narrow.svg">
   <img src="engineering/diagrams/template-highlights.svg" alt="Six starter highlights: small app, agent workflow, early verification, real hardware, owner control and repeatable delivery. The bullets above provide the text equivalent.">
