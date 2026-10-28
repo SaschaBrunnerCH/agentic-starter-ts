@@ -2,6 +2,8 @@
 
 The implementation of the repository's engineering commands. Start with the `pnpm` commands in [package.json](../package.json); their names stay stable as files move. Application code belongs in `src/`.
 
+For the capabilities these folders provide, their connections and selective-reuse limits, see the illustrated [building blocks](../engineering/building-blocks.md). This page maps their implementation owners.
+
 ## Find the owner
 
 | Folder                 | Owns                                                                                                              | Entry points                                                                                                                           | When it is used                                                           |

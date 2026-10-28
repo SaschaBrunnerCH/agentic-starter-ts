@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="1038" viewBox="0 0 1360 1038" role="img" aria-labelledby="title desc">
+<title id="title">The starter building blocks</title>
+<desc id="desc">The complete starter groups guidance, issue handling and worktrees; Git hooks, the quality gate and browser testing; and the application, GitHub setup and delivery. Issue handling connects to task worktree creation; push hooks invoke the quality gate. Local builds, tests and GPU runs share workload coordination. The owner decides scope and authorizes merges and releases. These capabilities share code and configuration; they are not standalone packages.</desc>
+<!-- Directly editable SVG. Keep both layouts and engineering/building-blocks.md synchronized. -->
+<defs>
+<symbol id="guide" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6 H13 L16 9 L19 6 H28 V26 H19 L16 29 L13 26 H4 Z M16 9 V29 M8 12 H12 M8 17 H12 M20 12 H24 M20 17 H24"/></g></symbol>
+<symbol id="issue" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="20" height="24" rx="3"/><path d="M12 3 H20 V8 H12 Z M11 14 L13 16 L17 12 M19 15 H22 M11 22 H22"/></g></symbol>
+<symbol id="branch" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="6" r="3"/><circle cx="24" cy="9" r="3"/><circle cx="8" cy="26" r="3"/><path d="M8 9 V23 M8 20 C8 13 24 21 24 12"/></g></symbol>
+<symbol id="hook" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8 H23 V21 A7 7 0 0 1 9 21 V17 M5 21 L9 17 L13 21"/><circle cx="5" cy="8" r="3"/></g></symbol>
+<symbol id="check" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3 L28 8 V17 C28 24 21 28 16 30 C11 28 4 24 4 17 V8 Z M9 16 L14 21 L23 11"/></g></symbol>
+<symbol id="browser" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="26" height="23" rx="3"/><path d="M3 12 H29 M8 8 H9 M13 8 H14 M9 18 L5 21 L9 24 M23 18 L27 21 L23 24 M18 16 L14 26"/></g></symbol>
+<symbol id="app" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="26" height="24" rx="3"/><path d="M3 11 H29 M10 11 V28 M15 16 H24 M15 21 H22"/></g></symbol>
+<symbol id="setup" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7 H27 M5 16 H27 M5 25 H27"/><rect x="10" y="4" width="5" height="6" rx="1"/><rect x="20" y="13" width="5" height="6" rx="1"/><rect x="8" y="22" width="5" height="6" rx="1"/></g></symbol>
+<symbol id="delivery" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="17" width="24" height="12" rx="2"/><path d="M16 22 V3 M9 10 L16 3 L23 10 M9 25 H23"/></g></symbol>
+<symbol id="workload" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="7" height="6" rx="1"/><rect x="3" y="21" width="7" height="6" rx="1"/><path d="M10 8 H14 V16 H21 M10 24 H14 V16"/><rect x="21" y="12" width="8" height="8" rx="2"/></g></symbol>
+<symbol id="person" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="9" r="5"/><path d="M6 28 V24 A10 10 0 0 1 26 24 V28 Z"/></g></symbol>
+<marker id="blue-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#1971C2"/></marker>
+<marker id="green-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#2F9E44"/></marker>
+</defs>
+<rect width="1360" height="1038" fill="#F8FAFC"/>
+<g font-family="Arial, Helvetica, sans-serif">
+<text x="40" y="58" font-size="36" fill="#0F172A" font-weight="700">One starter. Connected building blocks.</text>
+<text x="40" y="96" font-size="21" fill="#475569">Use the complete template, or explore a capability before adopting selected parts.</text>
+<rect x="20" y="126" width="1320" height="850" rx="17" fill="#F8FAFC" stroke="#DCE3EC" stroke-width="1.4"/>
+<text x="40" y="151" font-size="14" fill="#475569" font-weight="700">THE COMPLETE STARTER</text>
+<rect x="40" y="170" width="1280" height="66" rx="7" fill="#FFF4EB" stroke="#F0D4BF" stroke-width="1.4"/>
+<use href="#person" x="60" y="187" width="30" height="30" color="#C05621"/>
+<text x="106" y="198" font-size="21" fill="#C05621" font-weight="700">Owner decisions</text>
+<text x="304" y="198" font-size="20" fill="#0F172A">Choose scope · authorize the exact merge head and release version</text>
+<text x="106" y="222" font-size="17" fill="#475569">Checks and evidence support the decision.</text>
+<text x="40" y="270" font-size="16" fill="#1971C2" font-weight="700">PLAN AND GUIDE</text>
+<text x="480" y="270" font-size="16" fill="#475569" font-weight="700">CHECK AND RUN</text>
+<text x="920" y="270" font-size="16" fill="#7C3AED" font-weight="700">BUILD AND DELIVER</text>
+<rect x="40" y="290" width="400" height="142" rx="7" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4"/>
+<path d="M41 305 V417" stroke="#1971C2" stroke-width="3" stroke-linecap="round"/>
+<use href="#guide" x="58" y="308" width="28" height="28" color="#1971C2"/>
+<text x="98" y="330" font-size="22" fill="#0F172A" font-weight="700">Agent guidance</text>
+<text x="60" y="362" font-size="18" fill="#475569">Rules, vocabulary and guides</text>
+<text x="60" y="387" font-size="18" fill="#475569">Context for every coding agent</text>
+<text x="60" y="415" font-size="15" fill="#475569" font-family="Consolas, monospace">AGENTS.md · CONTEXT.md</text>
+<rect x="40" y="472" width="400" height="142" rx="7" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4"/>
+<path d="M41 487 V599" stroke="#1971C2" stroke-width="3" stroke-linecap="round"/>
+<use href="#issue" x="58" y="490" width="28" height="28" color="#1971C2"/>
+<text x="98" y="512" font-size="22" fill="#0F172A" font-weight="700">Issue handling</text>
+<text x="60" y="544" font-size="18" fill="#475569">Scope, priority and blockers</text>
+<text x="60" y="569" font-size="18" fill="#475569">GitHub Issues + Project</text>
+<text x="60" y="597" font-size="15" fill="#475569" font-family="Consolas, monospace">pnpm issue</text>
+<rect x="40" y="654" width="400" height="142" rx="7" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4"/>
+<path d="M41 669 V781" stroke="#1971C2" stroke-width="3" stroke-linecap="round"/>
+<use href="#branch" x="58" y="672" width="28" height="28" color="#1971C2"/>
+<text x="98" y="694" font-size="22" fill="#0F172A" font-weight="700">Worktrees &amp; handoffs</text>
+<text x="60" y="726" font-size="18" fill="#475569">Isolated branch and handoff</text>
+<text x="60" y="751" font-size="18" fill="#475569">Issue-linked task lifecycle</text>
+<text x="60" y="779" font-size="15" fill="#475569" font-family="Consolas, monospace">pnpm task</text>
+<rect x="480" y="290" width="400" height="142" rx="7" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4"/>
+<path d="M481 305 V417" stroke="#2F9E44" stroke-width="3" stroke-linecap="round"/>
+<use href="#hook" x="498" y="308" width="28" height="28" color="#2F9E44"/>
+<text x="538" y="330" font-size="22" fill="#0F172A" font-weight="700">Git hooks</text>
+<text x="500" y="362" font-size="18" fill="#475569">Check commits and pushes</text>
+<text x="500" y="387" font-size="18" fill="#475569">Validate source before the gate</text>
+<text x="500" y="415" font-size="15" fill="#475569" font-family="Consolas, monospace">pnpm prepare · check:hooks</text>
+<rect x="480" y="472" width="400" height="142" rx="7" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4"/>
+<path d="M481 487 V599" stroke="#2F9E44" stroke-width="3" stroke-linecap="round"/>
+<use href="#check" x="498" y="490" width="28" height="28" color="#2F9E44"/>
+<text x="538" y="512" font-size="22" fill="#0F172A" font-weight="700">Quality gate</text>
+<text x="500" y="544" font-size="18" fill="#475569">Types, lint, unit tests and build</text>
+<text x="500" y="569" font-size="18" fill="#475569">Same code/build gate in PR CI</text>
+<text x="500" y="597" font-size="15" fill="#475569" font-family="Consolas, monospace">pnpm check:push</text>
+<rect x="480" y="654" width="400" height="142" rx="7" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4"/>
+<path d="M481 669 V781" stroke="#0F766E" stroke-width="3" stroke-linecap="round"/>
+<use href="#browser" x="498" y="672" width="28" height="28" color="#0F766E"/>
+<text x="538" y="694" font-size="22" fill="#0F172A" font-weight="700">Browser testing</text>
+<text x="500" y="726" font-size="18" fill="#475569">Real browsers and GPU evidence</text>
+<text x="500" y="751" font-size="18" fill="#475569">Project build, server and tests</text>
+<text x="500" y="779" font-size="15" fill="#475569" font-family="Consolas, monospace">pnpm test:browser</text>
+<rect x="920" y="290" width="400" height="142" rx="7" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4"/>
+<path d="M921 305 V417" stroke="#7C3AED" stroke-width="3" stroke-linecap="round"/>
+<use href="#app" x="938" y="308" width="28" height="28" color="#7C3AED"/>
+<text x="978" y="330" font-size="22" fill="#0F172A" font-weight="700">Application foundation</text>
+<text x="940" y="362" font-size="18" fill="#475569">Replaceable React + Vite app</text>
+<text x="940" y="387" font-size="18" fill="#475569">Unit tests and browser journeys</text>
+<text x="940" y="415" font-size="15" fill="#475569" font-family="Consolas, monospace">pnpm dev · build · preview</text>
+<rect x="920" y="472" width="400" height="142" rx="7" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4"/>
+<path d="M921 487 V599" stroke="#7C3AED" stroke-width="3" stroke-linecap="round"/>
+<use href="#setup" x="938" y="490" width="28" height="28" color="#7C3AED"/>
+<text x="978" y="512" font-size="22" fill="#0F172A" font-weight="700">GitHub setup</text>
+<text x="940" y="544" font-size="18" fill="#475569">Labels, Project and rulesets</text>
+<text x="940" y="569" font-size="18" fill="#475569">Hosting and protected environments</text>
+<text x="940" y="597" font-size="15" fill="#475569" font-family="Consolas, monospace">pnpm setup:github</text>
+<rect x="920" y="654" width="400" height="142" rx="7" fill="#FFFFFF" stroke="#DCE3EC" stroke-width="1.4"/>
+<path d="M921 669 V781" stroke="#7C3AED" stroke-width="3" stroke-linecap="round"/>
+<use href="#delivery" x="938" y="672" width="28" height="28" color="#7C3AED"/>
+<text x="978" y="694" font-size="22" fill="#0F172A" font-weight="700">Deployment &amp; releases</text>
+<text x="940" y="726" font-size="18" fill="#475569">Previews, main deploys and releases</text>
+<text x="940" y="751" font-size="18" fill="#475569">Verified output + publication controls</text>
+<text x="940" y="779" font-size="15" fill="#475569" font-family="Consolas, monospace">Workflows · pnpm release</text>
+<path d="M240 617 V646" stroke="#1971C2" stroke-width="1.8" fill="none" marker-end="url(#blue-arrow)"/>
+<text x="254" y="636" font-size="15" fill="#475569">task start claims issue</text>
+<path d="M680 435 V464" stroke="#2F9E44" stroke-width="1.8" fill="none" marker-end="url(#green-arrow)"/>
+<text x="694" y="454" font-size="15" fill="#475569">push invokes gate</text>
+<rect x="40" y="836" width="1280" height="112" rx="7" fill="#EAF5F3" stroke="#B5D6D0" stroke-width="1.4"/>
+<use href="#workload" x="60" y="856" width="32" height="32" color="#0F766E"/>
+<text x="108" y="878" font-size="24" fill="#0F766E" font-weight="700">Workload coordination</text>
+<text x="108" y="908" font-size="21" fill="#475569">Local builds, tests and GPU runs share one slot; planning and editing can continue.</text>
+<text x="108" y="933" font-size="17" fill="#475569">pnpm workload · compatible participating repositories · CI runs separately</text>
+<text x="40" y="1008" font-size="19" fill="#475569">Capabilities share code and configuration. Selected connections shown; these are not standalone packages.</text>
+</g>
+</svg>
