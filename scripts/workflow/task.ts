@@ -49,7 +49,7 @@ import {
 
 const usage = `Usage: pnpm task <command>
 
-  start <issue> [feat|fix|docs|chore]   Claim the issue, create its sibling worktree and branch from origin/main, install
+  start <issue> [feat|fix|docs|chore]   Claim the issue, create its task worktree and branch from origin/main, install
   inspect <issue>                       Read the setup receipt and verify its worktree; make no writes
   resume <issue>                        Explicitly retry remaining local install/hook steps of your unchanged task
   ready <pr>                            Check that the pull request can be merged; set its issue to In review

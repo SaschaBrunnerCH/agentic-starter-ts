@@ -9,7 +9,7 @@ import { gpuSetting } from "./scripts/browser/browser-gpu.ts";
 // REMOTE_BROWSER_WS_ENDPOINT  A remote browser to drive, as offered by testing farms.
 //                             Unset: a local Chromium is launched.
 // BROWSER_TEST_PORT           The port of the local server. Unset: a port derived
-//                             from this directory, so sibling worktrees do not collide.
+//                             from this directory, so task worktrees do not collide.
 // BROWSER_GPU=required requests verified hardware. Defaults: local required; CI/remote off.
 // BROWSER_GPU_EXECUTABLE selects an installed Chromium browser exclusively.
 // BROWSER_GPU_APIS lists required webgl, webgl2 and/or webgpu APIs.

@@ -8,7 +8,7 @@ Working with coding agents fails in ways that working alone does not. This page 
 
 **Looks like:** edits land in the shared checkout instead of the task's; one session's half-finished change shows up in another's diff or test run; a branch is switched under a running session.
 
-**Handled by:** `pnpm task start` creates a sibling worktree and branch per issue, and every rule keeps the primary checkout untouched. A claim assigns the issue, so two sessions cannot start the same one; a claim that races another steps back. `pnpm task cleanup` removes only the task's own clean worktree and refuses anything uncertain. See the [task lifecycle](task-lifecycle.md).
+**Handled by:** `pnpm task start` creates a task worktree under the sibling `<repo-name>.worktrees/` directory and a branch per issue, and every rule keeps the primary checkout untouched. A claim assigns the issue, so two sessions cannot start the same one; a claim that races another steps back. `pnpm task cleanup` removes only the task's own clean worktree and refuses anything uncertain. See the [task lifecycle](task-lifecycle.md).
 
 **Left to people:** a session that edits files by absolute path can still reach the primary checkout. Look at `git worktree list` and `git status` there when something seems wrong.
 

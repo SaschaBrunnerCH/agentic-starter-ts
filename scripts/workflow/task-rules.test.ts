@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   authorizationComment,
@@ -43,9 +44,12 @@ describe("slug", () => {
 });
 
 describe("taskNames", () => {
-  it("builds the branch and the sibling directory", () => {
+  it("builds the branch and a task folder under the repository worktrees directory", () => {
     expect(taskNames("my-app", 42, "Fix the date parser", branchType(["bug", "area:app"]))).toEqual(
-      { branch: "fix/42-fix-the-date-parser", directory: "my-app-42-fix-the-date-parser" },
+      {
+        branch: "fix/42-fix-the-date-parser",
+        directory: join("my-app.worktrees", "42-fix-the-date-parser"),
+      },
     );
   });
 
@@ -151,14 +155,14 @@ describe("authorization", () => {
 describe("worktreeOfBranch", () => {
   const porcelain = [
     "worktree /work/app\nHEAD 1111\nbranch refs/heads/main",
-    "worktree /work/app-12-foo-bar\nHEAD 2222\nbranch refs/heads/feat/12-foo-bar",
+    "worktree /work/app.worktrees/12-foo-bar\nHEAD 2222\nbranch refs/heads/feat/12-foo-bar",
     "worktree /work/app-12-foo\nHEAD 3333\nbranch refs/heads/feat/12-foo",
     "worktree /work/app-detached\nHEAD 4444\ndetached",
   ].join("\n\n");
 
   it("finds the worktree of exactly this branch", () => {
     expect(worktreeOfBranch(porcelain, "feat/12-foo")).toBe("/work/app-12-foo");
-    expect(worktreeOfBranch(porcelain, "feat/12-foo-bar")).toBe("/work/app-12-foo-bar");
+    expect(worktreeOfBranch(porcelain, "feat/12-foo-bar")).toBe("/work/app.worktrees/12-foo-bar");
   });
 
   it("does not return the worktree of a branch that only starts with the name", () => {
@@ -204,20 +208,23 @@ describe("cleanupDecision", () => {
     mergedHead: "a".repeat(40),
     branch: "feat/7-x",
     branchTip: "a".repeat(40),
-    worktree: "/work/app-7-x",
+    worktree: "/work/app.worktrees/7-x",
     primaryCheckout: "/work/app",
     workingDirectory: "/work/app",
     worktreeStatus: "!! node_modules/\n",
     discardIgnored: false,
   };
 
-  it("removes the worktree and branch of a merged task", () => {
-    expect(cleanupDecision(merged)).toEqual({
-      retained: [],
-      removeWorktree: true,
-      deleteBranch: true,
-    });
-  });
+  it.each(["/work/app.worktrees/7-x", "/work/app-7-x"])(
+    "removes a merged task at %s",
+    (worktree) => {
+      expect(cleanupDecision({ ...merged, worktree })).toEqual({
+        retained: [],
+        removeWorktree: true,
+        deleteBranch: true,
+      });
+    },
+  );
 
   it("retains browser diagnostics without requiring a .local directory", () => {
     for (const path of [
@@ -252,7 +259,7 @@ describe("cleanupDecision", () => {
       { worktreeStatus: "?? notes.txt\n!! playwright-report/\n" },
       { worktreeStatus: undefined },
       { worktree: "/work/app" },
-      { workingDirectory: "/work/app-7-x/src" },
+      { workingDirectory: "/work/app.worktrees/7-x/src" },
     ]) {
       const decision = cleanupDecision({ ...merged, ...change, discardIgnored: true });
       expect(decision.removeWorktree || decision.deleteBranch).toBe(false);
@@ -291,7 +298,7 @@ describe("cleanupDecision", () => {
     for (const [change, reason] of [
       [{ branchTip: "b".repeat(40) }, "holds commits outside the merged work"],
       [{ worktree: "/work/app" }, "it is the primary checkout"],
-      [{ workingDirectory: "/work/app-7-x/src" }, "not from inside it"],
+      [{ workingDirectory: "/work/app.worktrees/7-x/src" }, "not from inside it"],
       [{ worktreeStatus: undefined }, "its status could not be read"],
       [{ worktreeStatus: " M src/main.ts\n" }, "uncommitted or untracked files"],
       [{ worktreeStatus: "?? notes.txt\n" }, "uncommitted or untracked files"],
@@ -305,7 +312,8 @@ describe("cleanupDecision", () => {
 
   it("does not take a sibling directory with a longer name for the worktree", () => {
     expect(
-      cleanupDecision({ ...merged, workingDirectory: "/work/app-7-x-other" }).removeWorktree,
+      cleanupDecision({ ...merged, workingDirectory: "/work/app.worktrees/7-x-other" })
+        .removeWorktree,
     ).toBe(true);
   });
 

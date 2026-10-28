@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { attributionLine } from "../git/attribution.ts";
 
 /** A title as a short lower-case path segment. */
@@ -23,10 +24,10 @@ export function branchType(labels: readonly string[]): BranchType {
   return "feat";
 }
 
-/** Branch and sibling worktree directory for an issue, as the task lifecycle names them. */
+/** Branch and relative task worktree path for an issue, as the task lifecycle names them. */
 export function taskNames(repository: string, issue: number, title: string, type: BranchType) {
   const suffix = `${issue}-${slug(title)}`;
-  return { branch: `${type}/${suffix}`, directory: `${repository}-${suffix}` };
+  return { branch: `${type}/${suffix}`, directory: join(`${repository}.worktrees`, suffix) };
 }
 
 /**

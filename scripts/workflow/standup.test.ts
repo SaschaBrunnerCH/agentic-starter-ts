@@ -6,7 +6,12 @@ describe("standupReport", () => {
     const report = standupReport({
       limit: 4,
       inProgress: [
-        { reference: "#26", title: "Standup", worktree: "../repo-26-standup", blockers: [] },
+        {
+          reference: "#26",
+          title: "Standup",
+          worktree: "../repo.worktrees/26-standup",
+          blockers: [],
+        },
         { reference: "#30", title: "Elsewhere", blockers: [] },
       ],
       inReview: [
@@ -29,7 +34,7 @@ describe("standupReport", () => {
     });
     expect(report).toEqual([
       "In progress: 2 of 4",
-      "- #26 Standup · ../repo-26-standup",
+      "- #26 Standup · ../repo.worktrees/26-standup",
       "- #30 Elsewhere · no worktree here",
       "",
       "In review: 2",
