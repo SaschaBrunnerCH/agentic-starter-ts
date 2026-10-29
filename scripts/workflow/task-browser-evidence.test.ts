@@ -7,6 +7,12 @@ const fixture = vi.hoisted(() => ({
   comments: "",
   posted: vi.fn(),
 }));
+vi.mock("../shared/local-artifact-paths.ts", () => ({
+  localArtifactPaths: () => ({
+    directory: "/fixture/.local/gh-00059-issue-fixture",
+    primaryLocal: "/fixture/.local",
+  }),
+}));
 vi.mock("../shared/script-arguments.ts", () => ({ scriptArguments: () => ["ready", "123"] }));
 vi.mock("node:child_process", () => ({
   spawnSync: () => ({ status: 0, stdout: "/fixture/.git", stderr: "" }),

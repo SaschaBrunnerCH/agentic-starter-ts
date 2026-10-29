@@ -1,3 +1,5 @@
+import { execFileSync } from "node:child_process";
+import { initializeTaskArtifacts } from "../workflow/local-artifacts.ts";
 import {
   existsSync,
   mkdtempSync,
@@ -508,4 +510,48 @@ describe("discovery ownership and failure paths", () => {
       expect(existsSync(lock)).toBe(!exited);
     },
   );
+});
+
+it("writes default GPU evidence to the primary task folder from a linked worktree", async () => {
+  const primary = join(home, "primary");
+  const task = join(home, "task");
+  mkdirSync(primary);
+  const git = (args: string[]) =>
+    execFileSync("git", args, {
+      cwd: primary,
+      encoding: "utf8",
+      env: Object.fromEntries(
+        Object.entries(process.env).filter(([name]) => !name.startsWith("GIT_")),
+      ),
+    });
+  git(["init", "-q", "-b", "main"]);
+  git([
+    "-c",
+    "user.name=Test",
+    "-c",
+    "user.email=test@example.test",
+    "-c",
+    "core.hooksPath=",
+    "-c",
+    "commit.gpgsign=false",
+    "commit",
+    "--allow-empty",
+    "-qm",
+    "Start",
+  ]);
+  git(["worktree", "add", "-qb", "task", task]);
+  const target = initializeTaskArtifacts(task, 9, "GPU evidence", "url", "task");
+  process.chdir(task);
+  const gpu = await commands.discoverGpu(
+    { BROWSER_GPU_EXECUTABLE: "/chosen", BROWSER_GPU_APIS: "webgl2" },
+    new AbortController().signal,
+  );
+  try {
+    expect(gpu.report.startsWith(join(target, "browser-gpu"))).toBe(true);
+    expect(existsSync(join(task, ".local"))).toBe(false);
+    expect(readFileSync(gpu.report, "utf8")).toContain('"status"');
+  } finally {
+    await gpu.close();
+    process.chdir(home);
+  }
 });

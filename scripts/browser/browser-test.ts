@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { closeSync, ftruncateSync, openSync, readFileSync, writeSync } from "node:fs";
 import { resolve } from "node:path";
 import { guardBrowserSource } from "./browser-source.ts";
-import { EVIDENCE_FILE, invalidateRun } from "./browser-evidence.ts";
+import { browserEvidenceFile, invalidateRun } from "./browser-evidence.ts";
 import { gpuSetting } from "./browser-gpu.ts";
 import {
   chromiumSelection,
@@ -141,7 +141,7 @@ try {
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
-  const evidence = resolve(root, EVIDENCE_FILE);
+  const evidence = browserEvidenceFile(root);
   try {
     // Open directly and retain the descriptor across read/write: a pathname
     // replacement must not redirect invalidation to a different file.

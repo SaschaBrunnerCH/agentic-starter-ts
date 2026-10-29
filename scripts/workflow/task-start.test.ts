@@ -69,7 +69,7 @@ beforeEach(() => {
   );
   writeFileSync(
     join(binaries, "gh"),
-    `#!/usr/bin/env node\nimport {appendFileSync} from 'node:fs';${log}const args=process.argv.slice(2);log('gh',args);if(args[0]==='api'&&args[1]==='user')console.log(process.env.FIXTURE_USER);else if(args[0]==='issue'&&args.includes('title,labels'))console.log(JSON.stringify({title:'Fixture',labels:[{name:'bug'}]}));else if(args[0]==='issue'&&args.includes('assignees'))console.log(JSON.stringify({assignees:[{login:process.env.FIXTURE_ASSIGNEE}]}));else process.exit(91);`,
+    `#!/usr/bin/env node\nimport {appendFileSync} from 'node:fs';${log}const args=process.argv.slice(2);log('gh',args);if(args[0]==='api'&&args[1]==='user')console.log(process.env.FIXTURE_USER);else if(args[0]==='issue'&&(args.includes('title,url,labels')||args.includes('title,url')))console.log(JSON.stringify({title:'Fixture',url:'https://example.test/issues/9',labels:[{name:'bug'}]}));else if(args[0]==='issue'&&args.includes('assignees'))console.log(JSON.stringify({assignees:[{login:process.env.FIXTURE_ASSIGNEE}]}));else if(args[0]==='repo')console.log(JSON.stringify({nameWithOwner:'example/app',defaultBranchRef:{name:'main'}}));else if(args[0]==='pr'&&args[1]==='view')console.log(process.env.FIXTURE_PR);else if(args[0]==='api'&&args.some(a=>a.includes('/compare/')))console.log('0');else if(args[0]==='api'&&args.includes('--paginate'))console.log('1\\tcompleted\\tsuccess');else if(args[0]==='issue'&&args.includes('title'))console.log(JSON.stringify({title:'Renamed fixture'}));else process.exit(91);`,
     { mode: 0o755 },
   );
   writeFileSync(
@@ -102,6 +102,14 @@ it("starts a real worktree, installs frozen dependencies, checks hooks and recor
     completed: ["claim", "install", "hooks"],
     owner: "owner",
   });
+  const artifacts = join(main, ".local/gh-00009-issue-fixture");
+  expect(readFileSync(join(artifacts, "README.md"), "utf8")).toContain(
+    "https://example.test/issues/9",
+  );
+  expect(readFileSync(join(artifacts, "README.md"), "utf8")).toContain("fix/9-fixture");
+  expect(existsSync(join(main, ".local/README.md"))).toBe(true);
+  expect(existsSync(join(worktree, ".local"))).toBe(false);
+  expect(git(main, ["status", "--porcelain"])).toBe("");
   const calls = journal();
   expect(calls.filter((line) => line.includes('"kind":"pnpm"'))).toEqual([
     JSON.stringify({ kind: "pnpm", args: ["install", "--frozen-lockfile"], cwd: worktree }),
@@ -225,3 +233,53 @@ it("retains an existing task registered at its old location", () => {
   expect(existsSync(worktree)).toBe(false);
   expect(git(main, ["worktree", "list", "--porcelain"])).toContain(`worktree ${legacy}`);
 });
+
+it.each([true, false])(
+  "preserves cleanup evidence and records completion only for the closed issue (closes=%s)",
+  (closes) => {
+    expect(run(["start", "9"]).status).toBe(0);
+    const head = git(worktree, ["rev-parse", "HEAD"]);
+    const pr = {
+      number: 10,
+      url: "https://example.test/pull/10",
+      title: "Retain evidence",
+      body: closes ? "Closes #9" : "Part of #9",
+      state: "MERGED",
+      isDraft: false,
+      author: { login: "owner" },
+      headRefOid: head,
+      headRefName: "fix/9-fixture",
+      baseRefName: "main",
+      isCrossRepository: false,
+      closingIssuesReferences: closes ? [{ number: 9 }] : [],
+      commits: [],
+    };
+    const extra = { FIXTURE_PR: JSON.stringify(pr) };
+    const issueFolder = join(main, ".local/gh-00009-issue-fixture");
+    const target = closes ? issueFolder : join(main, ".local/gh-00010-pr-retain-evidence");
+    mkdirSync(join(worktree, ".local"));
+    writeFileSync(join(worktree, ".local/notes.txt"), "wanted evidence");
+    const refused = run(["cleanup", "10"], extra);
+    expect(refused.status, refused.stderr).toBe(1);
+    expect(refused.stdout).toContain(`Copy wanted evidence to ${target}`);
+    expect(existsSync(worktree)).toBe(true);
+    expect(readFileSync(join(issueFolder, "README.md"), "utf8")).not.toContain("merged by PR");
+    mkdirSync(target, { recursive: true });
+    cpSync(join(worktree, ".local/notes.txt"), join(target, "notes.txt"));
+    expect(readFileSync(join(target, "notes.txt"), "utf8")).toBe("wanted evidence");
+    const cleaned = run(["cleanup", "10", "--discard-ignored"], extra);
+    expect(cleaned.status, cleaned.stderr).toBe(0);
+    expect(existsSync(worktree)).toBe(false);
+    expect(readFileSync(join(target, "README.md"), "utf8")).toContain(
+      `Status: merged by PR #10 at ${head}`,
+    );
+    expect(existsSync(handoff)).toBe(!closes);
+    if (closes) {
+      const before = readFileSync(join(target, "README.md"), "utf8");
+      expect(run(["cleanup", "10"], extra).status).toBe(0);
+      expect(readFileSync(join(target, "README.md"), "utf8")).toBe(before);
+    } else {
+      expect(readFileSync(join(issueFolder, "README.md"), "utf8")).not.toContain("merged by PR");
+    }
+  },
+);

@@ -7,7 +7,14 @@ const fixture = vi.hoisted(() => ({
   stable: true,
   previous: undefined as string | undefined,
   written: "",
+  writtenPath: "",
   close: vi.fn(),
+}));
+vi.mock("../shared/local-artifact-paths.ts", () => ({
+  localArtifactPaths: () => ({
+    directory: "/fixture/.local/gh-00059-issue-fixture",
+    primaryLocal: "/fixture/.local",
+  }),
 }));
 vi.mock("./browser-source.ts", () => ({
   guardBrowserSource: () => ({
@@ -21,11 +28,13 @@ vi.mock("./browser-source.ts", () => ({
 }));
 vi.mock("node:fs", () => ({
   mkdirSync: () => {},
+  existsSync: () => fixture.previous !== undefined,
   readFileSync: () => {
     if (fixture.previous === undefined) throw new Error("missing");
     return fixture.previous;
   },
-  writeFileSync: (_path: string, text: string) => {
+  writeFileSync: (path: string, text: string) => {
+    fixture.writtenPath = path;
     fixture.written = text;
   },
 }));
@@ -84,6 +93,7 @@ it("records a fresh guarded source and optional renderer fields", async () => {
     target: "https://example.test/app/",
     status: "passed",
   });
+  expect(fixture.writtenPath).toBe("/fixture/.local/gh-00059-issue-fixture/browser-evidence.json");
   expect(fixture.close).toHaveBeenCalledOnce();
 });
 it("overrides passing counts when source validation fails", async () => {

@@ -35,6 +35,8 @@ git worktree list
 
 After a move, update the task's recorded worktree path in its handoff. A structured setup receipt also records the directory in its recovery commands; update those paths together after verifying Git's registration and branch. Existing worktrees remain usable at their registered locations; task start does not move them automatically, and cleanup finds them through Git's registry. After a verified merge, use `pnpm task cleanup <pr>` for the guarded `git worktree remove` and branch/handoff cleanup described below.
 
+`pnpm task start` initializes the primary artifact README and a stable issue folder containing the issue link, branch and in-progress status; it prints the destination. The worktree’s Git metadata remembers that folder.
+
 Retained drafts and evidence go in the primary checkout's ignored `.local/`, using the [local artifact conventions](working-style.md#local-artifacts). Run `pnpm local:init` from any checkout to initialize its local README; issue/PR folders stay stable, with UTC dates inside them. This does not change task worktree names or the Git-common-directory handoff below.
 
 `pnpm install --frozen-lockfile` is needed in every new worktree: the checks and the Git hooks run tools from its `node_modules`.
@@ -72,7 +74,7 @@ After a merge, or on finding a pull request already merged, clean up before the 
 
 ## Preserve browser diagnostics
 
-Before cleanup, copy wanted browser traces, screenshots and reports from `test-results/` and `playwright-report/` to the primary checkout's ignored task folder, for example `.local/issue-42/browser/`. Compare the copied bytes or checksums before discarding originals, and record the location in the existing handoff when work continues. Ordinary cleanup lists and retains these diagnostics; after preserving what is needed, use the existing `--discard-ignored` option to discard ignored originals. Dirty, locked, uncertain or mismatched worktrees remain protected. A local path gives remote reviewers no access; sharing diagnostics is a separate action subject to the data-handling and publication rules.
+Default browser run records and GPU reports already live in the primary task folder. Before cleanup, copy wanted browser traces, screenshots and reports from `test-results/` and `playwright-report/` to the primary checkout's ignored task folder, for example `.local/gh-00042-issue-<title-slug>/browser/`. Compare the copied bytes or checksums before discarding originals, and record the location in the existing handoff when work continues. Ordinary cleanup lists and retains these diagnostics and names the exact primary artifact destination; after preserving what is needed, use the existing `--discard-ignored` option to discard ignored originals. Successful cleanup appends a merged PR/head status event to the retained issue README; a PR slice that does not close the issue uses a PR folder instead. Dirty, locked, uncertain or mismatched worktrees remain protected. A local path gives remote reviewers no access; sharing diagnostics is a separate action subject to the data-handling and publication rules.
 
 ## Handoff with unfinished work
 

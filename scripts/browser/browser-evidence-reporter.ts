@@ -1,13 +1,19 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import type { FullResult, Reporter, TestCase } from "@playwright/test/reporter";
-import { count, EVIDENCE_FILE, readRuns, withRun, type Counts } from "./browser-evidence.ts";
+import {
+  count,
+  browserEvidenceFile,
+  readBrowserRuns,
+  withRun,
+  type Counts,
+} from "./browser-evidence.ts";
 import { guardBrowserSource } from "./browser-source.ts";
 
 const root = resolve(import.meta.dirname, "../..");
 
 /**
- * Records each local browser run in .local/browser-evidence.json: the commit, the renderer
+ * Records each local browser run in the primary checkout’s task artifact folder: the commit, the renderer
  * the GPU check found (browser-test.ts leaves it in the environment) and the counts per
  * project. `pnpm task ready` puts the run for the head commit into the pull request.
  */
@@ -34,18 +40,12 @@ export default class BrowserEvidenceReporter implements Reporter {
     } finally {
       this.source.close();
     }
-    const file = resolve(root, EVIDENCE_FILE);
-    let previous: string | undefined;
-    try {
-      previous = readFileSync(file, "utf8");
-    } catch {
-      previous = undefined;
-    }
+    const file = browserEvidenceFile(root);
     const environment = process.env;
     mkdirSync(dirname(file), { recursive: true });
     writeFileSync(
       file,
-      withRun(readRuns(previous), {
+      withRun(readBrowserRuns(root), {
         ...(environment.BROWSER_TEST_RUN_ID === undefined
           ? {}
           : { id: environment.BROWSER_TEST_RUN_ID }),

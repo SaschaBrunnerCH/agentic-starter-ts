@@ -167,6 +167,8 @@ export type CleanupFacts = Readonly<{
   /** `git status --porcelain --ignored` of that worktree; undefined when it could not be read. */
   worktreeStatus: string | undefined;
   discardIgnored: boolean;
+  /** Exact retained-artifact destination, when known by the command. */
+  artifactDestination?: string;
 }>;
 
 export type CleanupDecision = Readonly<{
@@ -224,7 +226,7 @@ export function cleanupDecision(facts: CleanupFacts): CleanupDecision {
       );
     } else if (ignored.length > 0 && !facts.discardIgnored) {
       retained.push(
-        `worktree ${worktree}: it holds ignored files that cannot be recreated:\n${ignored.join("\n")}\nKeep what is evidence, then rerun with --discard-ignored`,
+        `worktree ${worktree}: it holds ignored files that cannot be recreated:\n${ignored.join("\n")}\nCopy wanted evidence to ${facts.artifactDestination ?? "the primary checkout’s .local/ issue folder"} and verify its bytes, then rerun with --discard-ignored`,
       );
     }
   }

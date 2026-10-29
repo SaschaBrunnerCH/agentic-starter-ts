@@ -1,3 +1,6 @@
+import { existsSync, readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { localArtifactPaths } from "../shared/local-artifact-paths.ts";
 import { readProfile } from "./browser-gpu-profile.ts";
 import * as json from "../shared/json-shape.ts";
 
@@ -5,8 +8,35 @@ import * as json from "../shared/json-shape.ts";
 // numbers there are the ones a run produced, for the commit it ran on, and not copied by hand.
 // See engineering/agents/browser-testing.md.
 
-/** Where the runs are recorded, relative to the repository root; ignored by Git. */
-export const EVIDENCE_FILE = ".local/browser-evidence.json";
+/** Legacy location; still read for existing worktrees. */
+const EVIDENCE_FILE = ".local/browser-evidence.json";
+/** Canonical record shared by the reporter and task readiness. */
+export function browserEvidenceFile(cwd: string): string {
+  return join(localArtifactPaths(cwd).directory, "browser-evidence.json");
+}
+
+/** Preserve legacy records without moving or renaming existing artifacts. */
+export function readBrowserRuns(cwd: string): BrowserRun[] {
+  const paths = localArtifactPaths(cwd);
+  const files = new Set([
+    resolve(cwd, EVIDENCE_FILE),
+    join(paths.primaryLocal, "browser-evidence.json"),
+    browserEvidenceFile(cwd),
+  ]);
+  const runs = [...files].flatMap((file) =>
+    readRuns(existsSync(file) ? readFileSync(file, "utf8") : undefined),
+  );
+  const seen = new Set<string>();
+  return runs
+    .filter((run) => {
+      const key = JSON.stringify(run);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .toSorted((a, b) => a.finishedAt.localeCompare(b.finishedAt));
+}
+
 /** Runs kept in the file, newest last. */
 const KEPT_RUNS = 20;
 
@@ -180,6 +210,6 @@ export function evidenceMarkdown(run: BrowserRun): string {
     "| --- | --- | --- | --- | --- |",
     ...rows,
     "",
-    "Recorded by the local run in `.local/browser-evidence.json` and posted by `pnpm task ready`.",
+    "Recorded by the local run in the primary checkout’s artifact directory (`browser-evidence.json`) and posted by `pnpm task ready`.",
   ].join("\n");
 }
