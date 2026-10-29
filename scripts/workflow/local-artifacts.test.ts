@@ -1,8 +1,16 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   initializeLocalArtifacts,
   initializeTaskArtifacts,
@@ -16,6 +24,19 @@ import {
   withRun,
   type BrowserRun,
 } from "../browser/browser-evidence.ts";
+
+const race = vi.hoisted(() => ({ afterRead: () => {} }));
+vi.mock("node:fs", async (original) => {
+  const fs = await original<typeof import("node:fs")>();
+  return {
+    ...fs,
+    readFileSync: (...args: Parameters<typeof fs.readFileSync>) => {
+      const contents = fs.readFileSync(...args);
+      race.afterRead();
+      return contents;
+    },
+  };
+});
 
 const made: string[] = [];
 const env = {
@@ -46,6 +67,7 @@ function isIgnored(cwd: string, path: string): boolean {
   return spawnSync("git", ["check-ignore", "--quiet", "--", path], { cwd, env }).status === 0;
 }
 afterEach(() => {
+  race.afterRead = () => {};
   for (const path of made.splice(0)) rmSync(path, { recursive: true, force: true });
 });
 
@@ -222,5 +244,22 @@ it("reuses retained issue folders after metadata removal and refuses ambiguous f
   mkdirSync(join(primary, ".local/gh-00004-issue-duplicate"));
   expect(() => initializeTaskArtifacts(task, 4, "Renamed", "url", "branch")).toThrow(
     "Multiple artifact folders",
+  );
+});
+
+it("appends merge status to the opened README when its pathname is replaced", () => {
+  const { primary } = repository(true);
+  const directory = initializeLocalArtifacts(primary);
+  const path = join(directory, "README.md");
+  const original = readFileSync(path, "utf8");
+  race.afterRead = () => {
+    race.afterRead = () => {};
+    renameSync(path, join(directory, "original.md"));
+    writeFileSync(path, "Replacement notes must stay untouched\n");
+  };
+  recordArtifactMerge(directory, 8, "a".repeat(40));
+  expect(readFileSync(path, "utf8")).toBe("Replacement notes must stay untouched\n");
+  expect(readFileSync(join(directory, "original.md"), "utf8")).toBe(
+    `${original}\nStatus: merged by PR #8 at ${"a".repeat(40)}\n`,
   );
 });

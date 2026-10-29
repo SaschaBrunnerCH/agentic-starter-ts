@@ -95,20 +95,24 @@ export function initializeLocalArtifacts(cwd: string, localExclude = false): str
 
   const directory = join(primary, ".local");
   mkdirSync(directory, { recursive: true });
-  const path = join(directory, "README.md");
+  createArtifactReadme(join(directory, "README.md"), readme);
+  return directory;
+}
+
+/** Open exclusively so an existing note (or a replaced pathname) is never overwritten. */
+function createArtifactReadme(path: string, contents: string): void {
   let descriptor: number;
   try {
     descriptor = openSync(path, "wx");
   } catch (error) {
-    if (error instanceof Error && "code" in error && error.code === "EEXIST") return directory;
+    if (error instanceof Error && "code" in error && error.code === "EEXIST") return;
     throw error;
   }
   try {
-    writeFileSync(descriptor, readme);
+    writeFileSync(descriptor, contents);
   } finally {
     closeSync(descriptor);
   }
-  return directory;
 }
 
 /** A portable, stable issue folder; GitHub IDs larger than five digits stay intact. */
@@ -150,14 +154,10 @@ export function initializeTaskArtifacts(
     throw new Error("Task artifact reference names another issue; inspect its Git metadata.");
   }
   mkdirSync(directory, { recursive: true });
-  const readmePath = join(directory, "README.md");
-  if (!existsSync(readmePath)) {
-    writeFileSync(
-      readmePath,
-      `# Task artifacts\n\nIssue: ${url}\nBranch: ${branch}\n\nStatus: in progress\n`,
-      { flag: "wx" },
-    );
-  }
+  createArtifactReadme(
+    join(directory, "README.md"),
+    `# Task artifacts\n\nIssue: ${url}\nBranch: ${branch}\n\nStatus: in progress\n`,
+  );
   writeFileSync(paths.taskFile, `${basename(directory)}\n`);
   return directory;
 }
@@ -167,6 +167,12 @@ export function recordArtifactMerge(directory: string, pr: number, head: string)
   mkdirSync(directory, { recursive: true });
   const path = join(directory, "README.md");
   const event = `Status: merged by PR #${pr} at ${head}`;
-  const previous = existsSync(path) ? readFileSync(path, "utf8") : "";
-  if (!previous.split("\n").includes(event)) appendFileSync(path, `\n${event}\n`);
+  // Read and append through the same open file, even if the pathname changes.
+  const descriptor = openSync(path, "a+");
+  try {
+    const previous = readFileSync(descriptor, "utf8");
+    if (!previous.split("\n").includes(event)) appendFileSync(descriptor, `\n${event}\n`);
+  } finally {
+    closeSync(descriptor);
+  }
 }
