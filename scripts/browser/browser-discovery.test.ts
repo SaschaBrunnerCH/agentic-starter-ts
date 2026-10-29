@@ -3,9 +3,10 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { expect, it } from "vitest";
+import { browserEvidenceFile } from "./browser-evidence.ts";
 
 const root = resolve(import.meta.dirname, "../..");
-const evidence = join(root, ".local/browser-evidence.json");
+const evidence = browserEvidenceFile(root);
 const recorded = () => {
   try {
     return readFileSync(evidence, "utf8");

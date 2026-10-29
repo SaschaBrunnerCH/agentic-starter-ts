@@ -26,7 +26,7 @@ Projects can read and edit these tools independently, but must adopt relevant st
 
 ## How the groups connect
 
-The groups own their commands and rule modules. `shared/` supplies infrastructure without importing a command group. `workflow/` reads browser evidence from `browser/` and checks attribution through `git/`; the browser runner does not import task orchestration. Other command groups use `shared/` where needed. Test fixtures and configuration are allowed to exercise entry points across groups.
+The groups own their commands and rule modules. `shared/` supplies infrastructure without importing a command group, including primary/task artifact path resolution shared by workflow and browser commands. `workflow/` reads browser evidence from `browser/` and checks attribution through `git/`; the browser runner does not import task orchestration. Other command groups use `shared/` where needed. Test fixtures and configuration are allowed to exercise entry points across groups.
 
 The root package scripts and configuration connect these groups to tools:
 

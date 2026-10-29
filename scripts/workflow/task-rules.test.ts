@@ -243,6 +243,18 @@ describe("cleanupDecision", () => {
     }
   });
 
+  it("names the exact primary task folder when retaining ignored evidence", () => {
+    const target = "/work/app/.local/gh-00007-issue-x";
+    const decision = cleanupDecision({
+      ...merged,
+      worktreeStatus: "!! .local/",
+      artifactDestination: target,
+    });
+    expect(decision.removeWorktree || decision.deleteBranch).toBe(false);
+    expect(decision.retained.join("\n")).toContain(`Copy wanted evidence to ${target}`);
+    expect(decision.retained.join("\n")).toContain("verify its bytes");
+  });
+
   it("still removes a worktree containing only disposable outputs", () => {
     expect(
       cleanupDecision({

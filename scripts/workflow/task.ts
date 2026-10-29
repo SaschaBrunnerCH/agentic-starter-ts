@@ -1,3 +1,10 @@
+import { localArtifactPaths } from "../shared/local-artifact-paths.ts";
+import {
+  initializeTaskArtifacts,
+  issueArtifactDirectory,
+  initializeLocalArtifacts,
+  recordArtifactMerge,
+} from "./local-artifacts.ts";
 import { requireDevelopmentPlatform } from "../shared/development-platform.ts";
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
@@ -14,11 +21,11 @@ import {
   type SetupStep,
 } from "./task-setup.ts";
 import {
-  EVIDENCE_FILE,
+  browserEvidenceFile,
+  readBrowserRuns,
   evidenceFor,
   evidenceMarker,
   evidenceMarkdown,
-  readRuns,
 } from "../browser/browser-evidence.ts";
 import {
   browserTestFiles,
@@ -38,6 +45,7 @@ import {
   linkedIssues,
   readinessProblems,
   taskNames,
+  slug,
   worktreeOfBranch,
   type BranchType,
   type PullRequestFacts,
@@ -176,8 +184,12 @@ function start(issueArgument: string, typeArgument?: string): number {
     throw new Error(`Unknown branch type "${typeArgument}". Use one of: ${branchTypes.join(", ")}`);
   }
   const found = ghJson(
-    ["issue", "view", String(issue), "--json", "title,labels"],
-    json.object({ title: json.string, labels: json.array(json.object({ name: json.string })) }),
+    ["issue", "view", String(issue), "--json", "title,url,labels"],
+    json.object({
+      title: json.string,
+      url: json.string,
+      labels: json.array(json.object({ name: json.string })),
+    }),
   );
   const type = typeArgument ?? branchType(found.labels.map((label) => label.name));
   const names = taskNames(basename(primaryCheckout), issue, found.title, type);
@@ -254,6 +266,8 @@ function start(issueArgument: string, typeArgument?: string): number {
     );
     return 1;
   }
+  const artifacts = initializeTaskArtifacts(directory, issue, found.title, found.url, names.branch);
+  console.log(`  Artifacts: ${artifacts}`);
   console.log(`\nInstalling dependencies in ${directory}`);
   if (!finishSetup(setup)) return 1;
   console.log(`\nStarted issue #${issue}`);
@@ -354,6 +368,11 @@ function inspectSetup(reference: string, resume: boolean): number {
   ).assignees;
   if (me !== setup.owner || !assignees.some((person) => person.login === me))
     throw new Error("Task ownership differs; resume does not transfer or reclaim work.");
+  const details = ghJson(
+    ["issue", "view", reference, "--json", "title,url"],
+    json.object({ title: json.string, url: json.string }),
+  );
+  initializeTaskArtifacts(setup.directory, issue, details.title, details.url, setup.branch);
   if (!finishSetup(setup)) return 1;
   console.log("Local setup completed; no remote writes were retried.");
   return 0;
@@ -458,13 +477,10 @@ function labelPullRequest(found: PullRequest, issues: readonly number[]): string
 // Publish the latest clean browser result for the head, deduplicating the same result rather
 // than the commit. A later failure or different engine coverage must reach the reviewer too.
 function postBrowserEvidence(number: number, head: string): string {
-  const file = resolve(root, EVIDENCE_FILE);
-  const verdict = evidenceFor(
-    readRuns(existsSync(file) ? readFileSync(file, "utf8") : undefined),
-    head,
-  );
+  const file = browserEvidenceFile(root);
+  const verdict = evidenceFor(readBrowserRuns(root), head);
   if (verdict.kind === "none") {
-    return `No browser run is recorded in ${EVIDENCE_FILE}. If this change needs one, run pnpm test:browser and pnpm task ready again; otherwise say in the pull request why none is needed.`;
+    return `No browser run is recorded in ${file}. If this change needs one, run pnpm test:browser and pnpm task ready again; otherwise say in the pull request why none is needed.`;
   }
   if (verdict.kind === "other-commit") {
     return `The latest recorded browser run is for ${verdict.run.commit.slice(0, 7)}, not the head ${head.slice(0, 7)}. Run the browser tests again, or say in the pull request why the earlier run still holds.`;
@@ -680,6 +696,23 @@ function cleanup(reference: string, flags: readonly string[]): number {
   const tip = git(["rev-parse", "--verify", "--quiet", `refs/heads/${branch}`]);
   const status =
     worktree === undefined ? undefined : git(["status", "--porcelain", "--ignored"], worktree);
+  const artifactPaths = localArtifactPaths(worktree ?? root);
+  const targets =
+    artifactPaths.directory !== artifactPaths.primaryLocal && issuesOf(found).closes.length > 0
+      ? [artifactPaths.directory]
+      : issuesOf(found).closes.map((issue) => {
+          const details = ghJson(
+            ["issue", "view", String(issue), "--json", "title"],
+            json.object({ title: json.string }),
+          );
+          return issueArtifactDirectory(artifactPaths.primaryLocal, issue, details.title);
+        });
+  const artifactDestination =
+    targets[0] ??
+    join(
+      artifactPaths.primaryLocal,
+      `gh-${String(found.number).padStart(5, "0")}-pr-${slug(found.title, 200)}`,
+    );
   const decision = cleanupDecision({
     number: found.number,
     state: found.state,
@@ -694,6 +727,7 @@ function cleanup(reference: string, flags: readonly string[]): number {
     workingDirectory: process.cwd(),
     worktreeStatus: status?.ok === true ? status.out : undefined,
     discardIgnored: flags.includes("--discard-ignored"),
+    artifactDestination,
   });
   if (decision.refusal !== undefined) {
     console.error(`${decision.refusal} Nothing was removed.`);
@@ -728,6 +762,11 @@ function cleanup(reference: string, flags: readonly string[]): number {
     return 1;
   }
   if (retained.length === 0) {
+    initializeLocalArtifacts(root, true);
+    for (const target of targets.length > 0 ? targets : [artifactDestination]) {
+      recordArtifactMerge(target, found.number, found.headRefOid);
+      console.log(`Retained artifacts: ${target}`);
+    }
     // A slice leaves its parent's handoff alone: that work is not finished.
     for (const issue of issuesOf(found).closes) {
       if (existsSync(handoffPath(issue))) {

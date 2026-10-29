@@ -20,15 +20,18 @@ const fixture = vi.hoisted(() => ({
   record: "",
   onFork: undefined as ((env: NodeJS.ProcessEnv) => void) | undefined,
 }));
+vi.mock("../shared/local-artifact-paths.ts", () => ({
+  localArtifactPaths: () => ({
+    directory: "/fixture/.local/gh-00059-issue-fixture",
+    primaryLocal: "/fixture/.local",
+  }),
+}));
 vi.mock("node:fs", async (original) => {
   const actual = await original<typeof import("node:fs")>();
   return {
     ...actual,
     openSync: (path: string, flags: string) =>
-      actual.openSync(
-        path.endsWith("/.local/browser-evidence.json") ? fixture.record : path,
-        flags,
-      ),
+      actual.openSync(path.endsWith("/browser-evidence.json") ? fixture.record : path, flags),
   };
 });
 vi.mock("../shared/script-arguments.ts", () => ({ scriptArguments: () => fixture.args }));

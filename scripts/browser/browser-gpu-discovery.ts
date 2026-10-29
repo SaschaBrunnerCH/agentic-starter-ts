@@ -1,3 +1,4 @@
+import { localArtifactPaths } from "../shared/local-artifact-paths.ts";
 // Owns the discovery lock, disposable browser processes, private display and reports.
 import { spawn, type ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
@@ -404,8 +405,9 @@ export async function discoverGpu(
           browserCandidates(process.platform, env, existsSync),
         )
       : [{ ...preferred, display: undefined }];
+  // Resolve fallible task metadata before taking ownership of the GPU.
+  const directory = resolve(localArtifactPaths().directory, "browser-gpu", randomUUID());
   const unlock = acquireLock();
-  const directory = resolve(".local", "browser-gpu", randomUUID());
   let display: { child: ChildProcess; display: string } | undefined;
   let cleanupProved = true;
   let acceptedBrowser: { server: BrowserServer; directory: string } | undefined;

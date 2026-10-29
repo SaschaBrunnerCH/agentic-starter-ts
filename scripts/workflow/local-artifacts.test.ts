@@ -1,9 +1,42 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
-import { initializeLocalArtifacts } from "./local-artifacts.ts";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  initializeLocalArtifacts,
+  initializeTaskArtifacts,
+  issueArtifactFolder,
+  recordArtifactMerge,
+} from "./local-artifacts.ts";
+import { localArtifactPaths } from "../shared/local-artifact-paths.ts";
+import {
+  browserEvidenceFile,
+  readBrowserRuns,
+  withRun,
+  type BrowserRun,
+} from "../browser/browser-evidence.ts";
+
+const race = vi.hoisted(() => ({ afterRead: () => {} }));
+vi.mock("node:fs", async (original) => {
+  const fs = await original<typeof import("node:fs")>();
+  return {
+    ...fs,
+    readFileSync: (...args: Parameters<typeof fs.readFileSync>) => {
+      const contents = fs.readFileSync(...args);
+      race.afterRead();
+      return contents;
+    },
+  };
+});
 
 const made: string[] = [];
 const env = {
@@ -34,6 +67,7 @@ function isIgnored(cwd: string, path: string): boolean {
   return spawnSync("git", ["check-ignore", "--quiet", "--", path], { cwd, env }).status === 0;
 }
 afterEach(() => {
+  race.afterRead = () => {};
   for (const path of made.splice(0)) rmSync(path, { recursive: true, force: true });
 });
 
@@ -124,4 +158,108 @@ describe("local artifacts", () => {
     expect(git(primary, "ls-files", "--", ".local")).toBe(".local/published.md\n");
     expect(existsSync(join(primary, ".local", "README.md"))).toBe(false);
   });
+});
+
+it("pads issue IDs without truncating and creates portable title slugs", () => {
+  expect(issueArtifactFolder(4, "Scaffold: Über cool / browser!")).toBe(
+    "gh-00004-issue-scaffold-uber-cool-browser",
+  );
+  expect(issueArtifactFolder(123456, "Unicode 中文")).toBe("gh-123456-issue-unicode");
+  expect(issueArtifactFolder(5, "中文")).toBe("gh-00005-issue-task");
+  expect(() => issueArtifactFolder(-1, "Wrong")).toThrow("Invalid issue");
+});
+
+it("routes task evidence through Git metadata, preserves notes and survives worktree removal", () => {
+  const { primary, task } = repository(true);
+  expect(localArtifactPaths(task).directory).toBe(join(primary, ".local"));
+  const directory = initializeTaskArtifacts(
+    task,
+    4,
+    "Über browser",
+    "https://example.test/issues/4",
+    "feat/4-browser",
+  );
+  expect(directory).toBe(join(primary, ".local/gh-00004-issue-uber-browser"));
+  expect(localArtifactPaths(task).directory).toBe(directory);
+  expect(() => initializeTaskArtifacts(task, 5, "Other", "url", "branch")).toThrow("another issue");
+  const path = join(directory, "README.md");
+  const initial = readFileSync(path, "utf8");
+  expect(initial).toContain("Status: in progress");
+  writeFileSync(path, `${initial}\nMy wanted notes\n`);
+  expect(initializeTaskArtifacts(task, 4, "Changed title", "url", "branch")).toBe(directory);
+  const beforeMerge = readFileSync(path, "utf8");
+  recordArtifactMerge(directory, 8, "a".repeat(40));
+  recordArtifactMerge(directory, 8, "a".repeat(40));
+  expect(readFileSync(path, "utf8")).toBe(
+    `${beforeMerge}\nStatus: merged by PR #8 at ${"a".repeat(40)}\n`,
+  );
+  expect(browserEvidenceFile(task)).toBe(join(directory, "browser-evidence.json"));
+  git(primary, "worktree", "remove", task);
+  expect(readFileSync(path, "utf8")).toContain("My wanted notes");
+  expect(localArtifactPaths(primary).directory).toBe(join(primary, ".local"));
+});
+
+it("rejects invalid task pointers and falls back to cwd only outside Git", () => {
+  const { primary, task } = repository(true);
+  const paths = localArtifactPaths(task);
+  if (paths.taskFile === undefined) throw new Error("Missing metadata path");
+  writeFileSync(paths.taskFile, "../../elsewhere");
+  expect(() => localArtifactPaths(task)).toThrow("Invalid task artifact folder");
+  const outside = join(primary, "..");
+  expect(localArtifactPaths(outside).directory).toBe(join(outside, ".local"));
+});
+
+it("reads legacy and canonical evidence in time order without duplicating copied records", () => {
+  const { primary, task } = repository(true);
+  const directory = initializeTaskArtifacts(task, 9, "Browser", "url", "branch");
+  const run: BrowserRun = {
+    commit: "a".repeat(40),
+    dirty: false,
+    finishedAt: "2026-10-29T10:00:00Z",
+    status: "passed",
+    gpu: "off",
+    renderer: null,
+    rendererKind: null,
+    display: null,
+    remote: false,
+    platform: "linux x64",
+    projects: {},
+  };
+  mkdirSync(join(task, ".local"));
+  writeFileSync(join(task, ".local/browser-evidence.json"), withRun([], run));
+  const next = { ...run, finishedAt: "2026-10-29T11:00:00Z", status: "failed" };
+  writeFileSync(join(directory, "browser-evidence.json"), withRun([run], next));
+  expect(readBrowserRuns(task)).toEqual([run, next]);
+  expect(existsSync(join(primary, ".local/browser-evidence.json"))).toBe(false);
+});
+
+it("reuses retained issue folders after metadata removal and refuses ambiguous folders", () => {
+  const { primary, task } = repository(true);
+  const original = initializeTaskArtifacts(task, 4, "Original", "url", "branch");
+  const { taskFile } = localArtifactPaths(task);
+  if (taskFile === undefined) throw new Error("Missing metadata path");
+  rmSync(taskFile);
+  expect(initializeTaskArtifacts(task, 4, "Renamed", "url", "branch")).toBe(original);
+  rmSync(taskFile);
+  mkdirSync(join(primary, ".local/gh-00004-issue-duplicate"));
+  expect(() => initializeTaskArtifacts(task, 4, "Renamed", "url", "branch")).toThrow(
+    "Multiple artifact folders",
+  );
+});
+
+it("appends merge status to the opened README when its pathname is replaced", () => {
+  const { primary } = repository(true);
+  const directory = initializeLocalArtifacts(primary);
+  const path = join(directory, "README.md");
+  const original = readFileSync(path, "utf8");
+  race.afterRead = () => {
+    race.afterRead = () => {};
+    renameSync(path, join(directory, "original.md"));
+    writeFileSync(path, "Replacement notes must stay untouched\n");
+  };
+  recordArtifactMerge(directory, 8, "a".repeat(40));
+  expect(readFileSync(path, "utf8")).toBe("Replacement notes must stay untouched\n");
+  expect(readFileSync(join(directory, "original.md"), "utf8")).toBe(
+    `${original}\nStatus: merged by PR #8 at ${"a".repeat(40)}\n`,
+  );
 });

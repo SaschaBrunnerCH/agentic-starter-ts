@@ -1,13 +1,18 @@
+import { localArtifactPaths } from "../shared/local-artifact-paths.ts";
+import { slug } from "./task-rules.ts";
 import { execFileSync, spawnSync } from "node:child_process";
 import {
+  appendFileSync,
+  existsSync,
   closeSync,
   ftruncateSync,
   mkdirSync,
   openSync,
   readFileSync,
+  readdirSync,
   writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 
 const readme = `# Local artifacts
 
@@ -90,18 +95,84 @@ export function initializeLocalArtifacts(cwd: string, localExclude = false): str
 
   const directory = join(primary, ".local");
   mkdirSync(directory, { recursive: true });
-  const path = join(directory, "README.md");
+  createArtifactReadme(join(directory, "README.md"), readme);
+  return directory;
+}
+
+/** Open exclusively so an existing note (or a replaced pathname) is never overwritten. */
+function createArtifactReadme(path: string, contents: string): void {
   let descriptor: number;
   try {
     descriptor = openSync(path, "wx");
   } catch (error) {
-    if (error instanceof Error && "code" in error && error.code === "EEXIST") return directory;
+    if (error instanceof Error && "code" in error && error.code === "EEXIST") return;
     throw error;
   }
   try {
-    writeFileSync(descriptor, readme);
+    writeFileSync(descriptor, contents);
   } finally {
     closeSync(descriptor);
   }
+}
+
+/** A portable, stable issue folder; GitHub IDs larger than five digits stay intact. */
+export function issueArtifactFolder(issue: number, title: string): string {
+  if (!Number.isSafeInteger(issue) || issue <= 0) throw new Error("Invalid issue number.");
+  return `gh-${String(issue).padStart(5, "0")}-issue-${slug(title, 200)}`;
+}
+
+/** Reuse a retained issue folder even after its title changes; never guess between duplicates. */
+export function issueArtifactDirectory(local: string, issue: number, title: string): string {
+  const name = issueArtifactFolder(issue, title);
+  const prefix = `gh-${String(issue).padStart(5, "0")}-issue-`;
+  const matches = existsSync(local)
+    ? readdirSync(local, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory() && entry.name.startsWith(prefix))
+        .map((entry) => entry.name)
+    : [];
+  if (matches.length > 1)
+    throw new Error(
+      `Multiple artifact folders for issue #${issue}; inspect ${local} before continuing.`,
+    );
+  return join(local, matches[0] ?? name);
+}
+
+/** Initialize task retention and remember its folder in this worktree's Git metadata. */
+export function initializeTaskArtifacts(
+  cwd: string,
+  issue: number,
+  title: string,
+  url: string,
+  branch: string,
+): string {
+  const local = initializeLocalArtifacts(cwd, true);
+  const paths = localArtifactPaths(cwd);
+  if (paths.taskFile === undefined) throw new Error("Task artifacts need a Git checkout.");
+  const directory =
+    paths.directory === local ? issueArtifactDirectory(local, issue, title) : paths.directory;
+  if (!basename(directory).startsWith(`gh-${String(issue).padStart(5, "0")}-issue-`)) {
+    throw new Error("Task artifact reference names another issue; inspect its Git metadata.");
+  }
+  mkdirSync(directory, { recursive: true });
+  createArtifactReadme(
+    join(directory, "README.md"),
+    `# Task artifacts\n\nIssue: ${url}\nBranch: ${branch}\n\nStatus: in progress\n`,
+  );
+  writeFileSync(paths.taskFile, `${basename(directory)}\n`);
   return directory;
+}
+
+/** Append an idempotent completion event without replacing contributors' local notes. */
+export function recordArtifactMerge(directory: string, pr: number, head: string): void {
+  mkdirSync(directory, { recursive: true });
+  const path = join(directory, "README.md");
+  const event = `Status: merged by PR #${pr} at ${head}`;
+  // Read and append through the same open file, even if the pathname changes.
+  const descriptor = openSync(path, "a+");
+  try {
+    const previous = readFileSync(descriptor, "utf8");
+    if (!previous.split("\n").includes(event)) appendFileSync(descriptor, `\n${event}\n`);
+  } finally {
+    closeSync(descriptor);
+  }
 }

@@ -21,7 +21,8 @@ Discover verified browser GPU access on this machine: Windows, WSL, Linux or mac
 Default: WebGL. Repeat --api to require multiple APIs; --profile rechecks a saved choice.
 WebGPU defaults to core. Compatibility is explicit and does not change application requests.
 Uses installed Chrome, Chromium or Edge. Reports attempted backends, readback,
-failures and next steps under .local/browser-gpu/. Installs no drivers or tools.
+failures and next steps under the primary task artifact folder’s browser-gpu/
+(primary .local/browser-gpu/ without a task). Installs no drivers or tools.
 
 Run app tests: pnpm build, then pnpm test:browser [--api webgl2]
 Other engines and device targets: pnpm test:devices --help
