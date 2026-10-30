@@ -206,6 +206,7 @@ describe("cleanupDecision", () => {
     baseRefName: "main",
     defaultBranch: "main",
     mergedHead: "a".repeat(40),
+    mergeInBase: true,
     branch: "feat/7-x",
     branchTip: "a".repeat(40),
     worktree: "/work/app.worktrees/7-x",
@@ -297,6 +298,8 @@ describe("cleanupDecision", () => {
   it("refuses a pull request that is open, from a fork or merged into another base", () => {
     for (const [change, reason] of [
       [{ state: "OPEN" }, "#7 is open, not merged."],
+      [{ mergeInBase: false }, "merge commit is not reachable"],
+      [{ branch: "main" }, "protected from task cleanup"],
       [{ isCrossRepository: true }, "#7 came from a fork"],
       [{ baseRefName: "feat/6-y" }, "#7 was merged into feat/6-y, not main"],
     ] as const) {

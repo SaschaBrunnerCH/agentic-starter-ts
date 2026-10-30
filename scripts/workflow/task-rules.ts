@@ -155,6 +155,8 @@ export type CleanupFacts = Readonly<{
   isCrossRepository: boolean;
   baseRefName: string;
   defaultBranch: string;
+  /** The recorded merge commit is reachable from the fetched default branch. */
+  mergeInBase: boolean;
   /** The head commit of the merged pull request. */
   mergedHead: string;
   branch: string;
@@ -197,6 +199,15 @@ export function cleanupDecision(facts: CleanupFacts): CleanupDecision {
     return {
       ...nothing,
       refusal: `${pr} was merged into ${facts.baseRefName}, not ${facts.defaultBranch}; its work is not on ${facts.defaultBranch} yet.`,
+    };
+  }
+  if (facts.branch === facts.defaultBranch) {
+    return { ...nothing, refusal: `Branch ${facts.branch} is protected from task cleanup.` };
+  }
+  if (!facts.mergeInBase) {
+    return {
+      ...nothing,
+      refusal: `${pr}'s merge commit is not reachable from origin/${facts.defaultBranch}.`,
     };
   }
   if (facts.branchTip !== undefined && facts.branchTip !== facts.mergedHead) {

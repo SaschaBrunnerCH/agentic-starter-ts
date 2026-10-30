@@ -101,6 +101,7 @@ type PullRequest = PullRequestFacts & {
   headRefOid: string;
   headRefName: string;
   isCrossRepository: boolean;
+  mergeCommitOid: string | undefined;
 };
 
 function pullRequest(reference: string): PullRequest {
@@ -117,7 +118,7 @@ function pullRequest(reference: string): PullRequest {
       "view",
       reference,
       "--json",
-      "number,url,title,body,state,isDraft,author,headRefOid,headRefName,baseRefName,isCrossRepository,closingIssuesReferences,commits",
+      "number,url,title,body,state,isDraft,author,headRefOid,headRefName,baseRefName,isCrossRepository,closingIssuesReferences,commits,mergeCommit",
     ],
     json.object({
       number: json.number,
@@ -133,6 +134,7 @@ function pullRequest(reference: string): PullRequest {
       isCrossRepository: json.boolean,
       closingIssuesReferences: json.array(json.object({ number: json.number })),
       commits: json.array(json.object({ messageHeadline: json.string, messageBody: json.string })),
+      mergeCommit: json.nullable(json.object({ oid: json.string })),
     }),
   );
   const behindBy = Number(
@@ -154,6 +156,7 @@ function pullRequest(reference: string): PullRequest {
     author: found.author.login,
     headRefOid: found.headRefOid,
     headRefName: found.headRefName,
+    mergeCommitOid: found.mergeCommit?.oid,
     baseRefName: found.baseRefName,
     isCrossRepository: found.isCrossRepository,
     defaultBranch: repository.defaultBranchRef.name,
@@ -719,6 +722,10 @@ function cleanup(reference: string, flags: readonly string[]): number {
     isCrossRepository: found.isCrossRepository,
     baseRefName: found.baseRefName,
     defaultBranch: found.defaultBranch,
+    mergeInBase:
+      found.mergeCommitOid !== undefined &&
+      git(["merge-base", "--is-ancestor", found.mergeCommitOid, `origin/${found.defaultBranch}`])
+        .ok,
     mergedHead: found.headRefOid,
     branch,
     branchTip: tip.ok ? tip.out : undefined,
@@ -735,25 +742,27 @@ function cleanup(reference: string, flags: readonly string[]): number {
   }
   const retained = decision.retained;
   const removed: string[] = [];
+  // The script checkout may be removed; subsequent operations use the primary checkout.
   if (decision.removeWorktree && worktree !== undefined) {
     // Not forced: git removes ignored files, and still refuses a locked worktree
     // or a file that appeared since the status above.
-    mustGit(["worktree", "remove", worktree]);
+    mustGit(["worktree", "remove", worktree], primaryCheckout);
     removed.push(`worktree ${worktree}`);
   }
   if (decision.deleteBranch) {
     // A squash merge leaves no ancestry; the rule compared the tip with the merged head.
-    mustGit(["branch", "-D", branch]);
+    mustGit(["branch", "-D", branch], primaryCheckout);
     removed.push(`branch ${branch}`);
   }
   // Read back what was removed.
   const left = [
     ...(decision.removeWorktree &&
-    worktreeOfBranch(mustGit(["worktree", "list", "--porcelain"]), branch) !== undefined
+    worktreeOfBranch(mustGit(["worktree", "list", "--porcelain"], primaryCheckout), branch) !==
+      undefined
       ? [`worktree of ${branch}`]
       : []),
     ...(decision.deleteBranch &&
-    git(["rev-parse", "--verify", "--quiet", `refs/heads/${branch}`]).ok
+    git(["rev-parse", "--verify", "--quiet", `refs/heads/${branch}`], primaryCheckout).ok
       ? [`branch ${branch}`]
       : []),
   ];
@@ -762,7 +771,7 @@ function cleanup(reference: string, flags: readonly string[]): number {
     return 1;
   }
   if (retained.length === 0) {
-    initializeLocalArtifacts(root, true);
+    initializeLocalArtifacts(primaryCheckout, true);
     for (const target of targets.length > 0 ? targets : [artifactDestination]) {
       recordArtifactMerge(target, found.number, found.headRefOid);
       console.log(`Retained artifacts: ${target}`);
