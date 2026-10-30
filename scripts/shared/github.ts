@@ -2,12 +2,12 @@ import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import * as json from "./json-shape.ts";
 import { object, parseJson, type Shape } from "./json-shape.ts";
+import { githubArguments, repositoryContext, type RepositoryContext } from "./github-context.ts";
 
 export const root = resolve(import.meta.dirname, "../..");
 
-/** Runs the GitHub CLI in the repository and returns its output; throws with gh's own message. */
-export function gh(args: readonly string[], input?: string): string {
-  const result = spawnSync("gh", args, { cwd: root, encoding: "utf8", input });
+function invoke(args: readonly string[], env: NodeJS.ProcessEnv, input?: string): string {
+  const result = spawnSync("gh", args, { cwd: root, encoding: "utf8", input, env });
   if (result.error) {
     throw new Error(`Could not run gh (${result.error.message}). Install the GitHub CLI.`);
   }
@@ -15,6 +15,36 @@ export function gh(args: readonly string[], input?: string): string {
     throw new Error(`gh ${args.slice(0, 3).join(" ")} failed:\n${result.stderr}${result.stdout}`);
   }
   return result.stdout;
+}
+
+let knownContext: RepositoryContext | undefined;
+function context(): RepositoryContext {
+  if (knownContext === undefined) {
+    const env = { ...process.env };
+    delete env.GH_HOST;
+    delete env.GH_REPO;
+    const repository = parseJson(
+      invoke(["repo", "view", "--json", "url"], env),
+      object({ url: json.string }),
+      "checkout repository identity",
+    );
+    knownContext = repositoryContext(repository.url);
+  }
+  return knownContext;
+}
+
+/** Bind calls to this script checkout; preserve explicitly named API repository paths. */
+export function gh(args: readonly string[], input?: string): string {
+  const target = context();
+  return invoke(
+    githubArguments(args, target),
+    {
+      ...process.env,
+      GH_HOST: target.hostname,
+      GH_REPO: `${target.hostname}/${target.repository}`,
+    },
+    input,
+  );
 }
 
 /** Runs gh and checks the JSON it prints against `shape`. */

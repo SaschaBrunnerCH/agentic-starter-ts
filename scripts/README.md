@@ -47,3 +47,11 @@ The guides own procedures; this page owns the implementation map:
 - [Manage hosted settings](../engineering/operations/github-hosted-settings.md), [previews and deployment](../engineering/operations/deployment.md), and [releases](../engineering/operations/releases.md).
 
 Folders improve navigation; they do not automatically enforce import boundaries. Add an enforced boundary only when a demonstrated problem warrants it, following [dependency-direction guidance](../engineering/agents/dependency-rules.md). A generator or shared CLI remains a separate design decision.
+
+## GitHub target selection
+
+The shared `gh` wrapper resolves the script checkout with `gh repo view --json url`, removing ambient `GH_HOST` and `GH_REPO` for that read. It caches the validated HTTPS host/repository identity for the process, then sets both variables on each child command and adds the API hostname explicitly. Other environment settings and standard input are preserved; the caller environment is not changed. Setup help still exits before identity discovery.
+
+Explicit host/repository options and issue or pull-request URLs must match that identity. Target inspection skips the payload/format options used by shared callers, so comment bodies and field values remain data. New CLI option forms need matching target-selection tests. Use server-relative API endpoints: absolute API URLs are refused. Explicit API paths and GraphQL inputs may still name other repositories on the same server, and preview setup may explicitly create its companion repository. These deliberate operations remain subject to publication approval; this routing helper is not a general authorization boundary.
+
+An invalid identity or conflicting explicit target fails before the requested operation; authentication and hosted-capability errors are reported by the CLI. Selecting an enterprise server does not establish support for its hosted setup, workflows or API versions.
