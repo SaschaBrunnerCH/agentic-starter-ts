@@ -70,3 +70,7 @@ Every change of a hosted setting is recorded in the issue or pull request that c
 ## Verifying
 
 Run `pnpm setup:github` again: "No changes." without a "Not applied" list confirms that labels, merge settings, Project fields, views, Dependabot settings, Actions permissions and rulesets match. A "Not available here" list names what the repository's plan does not offer; it is not an error. Record the date and account of the last verification in the pull request or issue that changed a setting.
+
+## Repository identity
+
+Setup uses the [shared GitHub target selection](../../scripts/README.md#github-target-selection). Ambient `GH_HOST` and `GH_REPO` do not select its destination: the script checkout does. API requests use that server, including explicitly named preview-repository endpoints. A conflicting explicit host/repository option is refused. Help performs no identity lookup; dry-run still requires repository read access. Host routing alone does not verify enterprise feature compatibility or grant publication approval.

@@ -157,13 +157,13 @@ describe("personalization preflight", () => {
         const rejected = run();
         expect(rejected.status).not.toBe(0);
         expect(rejected.stderr).toContain("package.json");
-        expect(readFileSync(log, "utf8").trim().split("\n")).toHaveLength(1);
+        expect(readFileSync(log, "utf8").trim().split("\n")).toHaveLength(2);
         writeFileSync(join(root, "package.json"), '{"name":"product"}');
         const accepted = run();
         expect(accepted.stderr).toContain("sentinel beyond preflight");
         const calls = readFileSync(log, "utf8").trim().split("\n");
-        expect(calls.length).toBeGreaterThanOrEqual(3);
-        expect(calls[2]).toContain('"api"');
+        expect(calls.length).toBeGreaterThanOrEqual(5);
+        expect(calls[4]).toContain('"api"');
       } finally {
         rmSync(root, { recursive: true, force: true });
       }
