@@ -26,8 +26,13 @@ function git(cwd: string, args: string[]) {
   expect(result.status, result.stderr).toBe(0);
   return result.stdout.trim();
 }
-function run(args: string[], extra: NodeJS.ProcessEnv = {}, checkout = main) {
-  return spawnSync(process.execPath, [join(checkout, "scripts/workflow/task.ts"), ...args], {
+function run(
+  args: string[],
+  extra: NodeJS.ProcessEnv = {},
+  checkout = main,
+  scriptCheckout = checkout,
+) {
+  return spawnSync(process.execPath, [join(scriptCheckout, "scripts/workflow/task.ts"), ...args], {
     cwd: checkout,
     env: { ...env, ...extra },
     encoding: "utf8",
@@ -235,10 +240,35 @@ it("retains an existing task registered at its old location", () => {
 });
 
 it.each([true, false])(
-  "preserves cleanup evidence and records completion only for the closed issue (closes=%s)",
+  "cleans up its own script worktree and retains evidence only for the closed issue (closes=%s)",
   (closes) => {
     expect(run(["start", "9"]).status).toBe(0);
+    writeFileSync(join(worktree, "task-output.txt"), "Completed task");
+    git(worktree, ["add", "task-output.txt"]);
+    git(worktree, [
+      "-c",
+      "user.name=Fixture",
+      "-c",
+      "user.email=fixture@example.test",
+      "commit",
+      "-qm",
+      "Complete task",
+    ]);
     const head = git(worktree, ["rev-parse", "HEAD"]);
+    git(main, ["merge", "--squash", "fix/9-fixture"]);
+    git(main, [
+      "-c",
+      "user.name=Fixture",
+      "-c",
+      "user.email=fixture@example.test",
+      "commit",
+      "-qm",
+      "Squash task",
+    ]);
+    git(main, ["push", "-q", "origin", "main"]);
+    const merge = git(main, ["rev-parse", "HEAD"]);
+    mkdirSync(join(main, ".git/agent-handoffs"), { recursive: true });
+    writeFileSync(join(main, ".git/agent-handoffs/issue-11.md"), "Unrelated task");
     const pr = {
       number: 10,
       url: "https://example.test/pull/10",
@@ -253,6 +283,7 @@ it.each([true, false])(
       isCrossRepository: false,
       closingIssuesReferences: closes ? [{ number: 9 }] : [],
       commits: [],
+      mergeCommit: { oid: merge },
     };
     const extra = { FIXTURE_PR: JSON.stringify(pr) };
     const issueFolder = join(main, ".local/gh-00009-issue-fixture");
@@ -267,13 +298,19 @@ it.each([true, false])(
     mkdirSync(target, { recursive: true });
     cpSync(join(worktree, ".local/notes.txt"), join(target, "notes.txt"));
     expect(readFileSync(join(target, "notes.txt"), "utf8")).toBe("wanted evidence");
-    const cleaned = run(["cleanup", "10", "--discard-ignored"], extra);
+    const cleaned = run(["cleanup", "10", "--discard-ignored"], extra, main, worktree);
     expect(cleaned.status, cleaned.stderr).toBe(0);
     expect(existsSync(worktree)).toBe(false);
     expect(readFileSync(join(target, "README.md"), "utf8")).toContain(
       `Status: merged by PR #10 at ${head}`,
     );
     expect(existsSync(handoff)).toBe(!closes);
+    expect(readFileSync(join(main, ".git/agent-handoffs/issue-11.md"), "utf8")).toBe(
+      "Unrelated task",
+    );
+    expect(git(main, ["rev-parse", "HEAD"])).toBe(merge);
+    expect(git(main, ["status", "--porcelain"])).toBe("");
+    expect(git(main, ["branch", "--list", "fix/9-fixture"])).toBe("");
     if (closes) {
       const before = readFileSync(join(target, "README.md"), "utf8");
       expect(run(["cleanup", "10"], extra).status).toBe(0);
@@ -283,3 +320,35 @@ it.each([true, false])(
     }
   },
 );
+
+it.each(["missing", "unreachable", "locked"])("retains task work when cleanup is %s", (reason) => {
+  expect(run(["start", "9"]).status).toBe(0);
+  const head = git(worktree, ["rev-parse", "HEAD"]);
+  if (reason === "locked") git(main, ["worktree", "lock", worktree]);
+  const pr = {
+    number: 10,
+    url: "https://example.test/pull/10",
+    title: "Complete task",
+    body: "Closes #9",
+    state: "MERGED",
+    isDraft: false,
+    author: { login: "owner" },
+    headRefOid: head,
+    headRefName: "fix/9-fixture",
+    baseRefName: "main",
+    isCrossRepository: false,
+    closingIssuesReferences: [{ number: 9 }],
+    commits: [],
+    mergeCommit:
+      reason === "missing" ? null : { oid: reason === "unreachable" ? "f".repeat(40) : head },
+  };
+  const result = run(["cleanup", "10"], { FIXTURE_PR: JSON.stringify(pr) });
+  expect(result.status).toBe(1);
+  if (reason !== "locked") expect(result.stderr).toContain("not reachable");
+  expect(existsSync(worktree)).toBe(true);
+  expect(existsSync(handoff)).toBe(true);
+  expect(git(main, ["rev-parse", "refs/heads/fix/9-fixture"])).toBe(head);
+  expect(readFileSync(join(main, ".local/gh-00009-issue-fixture/README.md"), "utf8")).not.toContain(
+    "merged by PR",
+  );
+});
