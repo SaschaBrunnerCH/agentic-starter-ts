@@ -114,6 +114,7 @@ try {
     );
     // These are owned, disposable fixtures. Replace their application completely so
     // acceptance exercises inherited tools without requiring the starter demo to survive.
+    const browserFixture = readFileSync(join(fixture, "e2e/fixtures.ts"), "utf8");
     for (const name of [
       "src",
       "e2e",
@@ -165,6 +166,7 @@ try {
       "src/greeting.test.ts":
         'import { expect, it } from "vitest";\nimport { greeting } from "./greeting.ts";\nit("greets a name or a blank input", () => { expect(greeting("fixture")).toBe("Hello, fixture."); expect(greeting(" ")).toBe("Hello."); });\n',
       "e2e/smoke.spec.ts": readFileSync(join(root, "scripts/checks/adoption-smoke.txt"), "utf8"),
+      "e2e/fixtures.ts": browserFixture,
     };
     for (const [name, content] of Object.entries(files))
       writeFileSync(join(fixture, name), content);

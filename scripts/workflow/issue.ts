@@ -356,6 +356,7 @@ function standup(): number {
   );
   const describe = (item: (typeof own)[number]): StandupIssue => {
     const number = item.content.number ?? 0;
+    const worktree = worktrees.get(number);
     const status = item.status ?? "";
     // Blockers are read only for open work, one query per issue.
     const blockers = ["In progress", "In review", "Ready", "Blocked"].includes(status)
@@ -367,7 +368,7 @@ function standup(): number {
       reference: itemReference(item),
       title: item.title,
       ...(item.priority === undefined ? {} : { priority: item.priority }),
-      ...(worktrees.has(number) ? { worktree: worktrees.get(number) } : {}),
+      ...(worktree === undefined ? {} : { worktree }),
       blockers,
     };
   };

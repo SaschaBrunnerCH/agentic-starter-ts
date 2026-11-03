@@ -90,7 +90,7 @@ const fs = require('node:fs');
 const cp = require('node:child_process');
 const args = process.argv.slice(2);
 if (process.env.VITEST_MAX_WORKERS !== '2' || process.env.VITEST_POOL_ID !== undefined) throw new Error('Adoption resource/isolation environment mismatch');
-if (args[0] === 'check:push') { const r = cp.spawnSync(process.execPath, ['scripts/checks/check-links.ts'], { stdio: 'inherit' }); process.exit(r.status ?? 1); }
+if (args[0] === 'check:push') { if (!fs.existsSync('e2e/fixtures.ts') || !fs.readFileSync('e2e/smoke.spec.ts', 'utf8').includes('./fixtures.ts')) throw new Error('Shared browser fixture must survive adoption'); const r = cp.spawnSync(process.execPath, ['scripts/checks/check-links.ts'], { stdio: 'inherit' }); process.exit(r.status ?? 1); }
 if (args[0] === 'remove') { const p = JSON.parse(fs.readFileSync('package.json', 'utf8')); for (const name of args.slice(1)) { delete p.dependencies?.[name]; delete p.devDependencies?.[name]; } fs.writeFileSync('package.json', JSON.stringify(p)); }
 else if (args[0] === 'build') { if (fs.readFileSync('index.html','utf8').includes('missing-entry.ts')) { console.error('missing-entry.ts'); process.exit(1); } }
 else if (!['install', 'format'].includes(args[0])) { throw new Error('Unexpected workload: ' + args.join(' ')); }

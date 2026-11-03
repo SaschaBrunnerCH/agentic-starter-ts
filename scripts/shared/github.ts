@@ -104,7 +104,7 @@ export function prBuild(
 /** A string as a GraphQL string literal. */
 export const quote = (text: string) => JSON.stringify(text);
 
-const isMain = (entry: { name: string; type?: string }) =>
+const isMain = (entry: { name: string; type?: string | undefined }) =>
   entry.name === "main" && entry.type !== "tag";
 
 /**

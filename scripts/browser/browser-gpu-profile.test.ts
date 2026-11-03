@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { describe, expect, it } from "vitest";
 import {
   browserCandidates,
@@ -186,18 +187,19 @@ describe("bounded platform candidates and worker launch profile", () => {
     expect(env.WAYLAND_DISPLAY).toBe("wayland-0");
   });
   it("uses the same isolated environment for headless candidates", () => {
-    const profiles = candidateProfiles("linux", { BROWSER_GPU_APIS: "webgpu" }, [
+    const [first, gl, vulkan] = candidateProfiles("linux", { BROWSER_GPU_APIS: "webgpu" }, [
       { channel: "chrome" },
     ]);
-    const launch = profileLaunchOptions(readProfile(writeProfile(profiles[0]!)), {
+    assert.ok(first && gl && vulkan);
+    const launch = profileLaunchOptions(readProfile(writeProfile(first)), {
       WAYLAND_DISPLAY: "session",
     });
     expect(launch.channel).toBe("chrome");
     expect(launch.headless).toBe(true);
     expect(launch.env).toEqual({ DISPLAY: "" });
     expect(launch.args).toContain("--enable-unsafe-webgpu");
-    expect(profileLaunchOptions(profiles[1]!, {}).args).toContain("--use-angle=gl");
-    expect(profileLaunchOptions(profiles[2]!, {}).args).toContain("--use-angle=vulkan");
+    expect(profileLaunchOptions(gl, {}).args).toContain("--use-angle=gl");
+    expect(profileLaunchOptions(vulkan, {}).args).toContain("--use-angle=vulkan");
   });
   it("refuses malformed profiles rather than launching different settings", () => {
     for (const data of [
