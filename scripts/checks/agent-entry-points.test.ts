@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { describe, expect, it } from "vitest";
 import { guardrailRows, mechanismReferences, rowProblems } from "./agent-entry-points.ts";
 
@@ -46,7 +47,9 @@ describe("mechanismReferences", () => {
 
 describe("rowProblems", () => {
   it("accepts a row whose mechanism exists", () => {
-    expect(rowProblems(guardrailRows(table)[0]!, known)).toEqual([]);
+    const row = guardrailRows(table)[0];
+    assert.ok(row);
+    expect(rowProblems(row, known)).toEqual([]);
   });
 
   it("rejects a missing script, a missing path and an unknown status", () => {

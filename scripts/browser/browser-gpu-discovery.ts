@@ -404,7 +404,7 @@ export async function discoverGpu(
           env,
           browserCandidates(process.platform, env, existsSync),
         )
-      : [{ ...preferred, display: undefined }];
+      : [preferred];
   // Resolve fallible task metadata before taking ownership of the GPU.
   const directory = resolve(localArtifactPaths().directory, "browser-gpu", randomUUID());
   const unlock = acquireLock();
@@ -501,10 +501,10 @@ export async function discoverGpu(
       for (const candidate of profiles) {
         signal.throwIfAborted();
         if (performance.now() - started > 155_000) break;
-        const profile = {
-          ...candidate,
-          ...(display === undefined ? {} : { display: display.display }),
-        };
+        const profile = { ...candidate };
+        // A saved display belongs to its old run; allocate our own when needed.
+        delete profile.display;
+        if (display !== undefined) profile.display = display.display;
         const attemptDirectory = join(directory, String(attempts.length + 1));
         mkdirSync(attemptDirectory);
         try {

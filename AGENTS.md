@@ -22,6 +22,7 @@ Pass `--authorized-by-owner` and `--head` only for the commit the owner said yes
 | Rule | Mechanism | Status |
 | --- | --- | --- |
 | Pass the full quality gate, including global and independent application/tooling coverage floors. | `pnpm check:push`; `scripts/checks/run-local-checks.ts`, push hook and PR build. [Checks](engineering/agents/local-verification.md). | Enforced |
+| Enforce explicit overrides and exact optional properties; reject explicit any, non-null assertions, TypeScript suppression directives, unsafe React HTML and console calls in src. | `pnpm typecheck`, `pnpm lint`; `tsconfig.base.json`, `.oxlintrc.json` and `scripts/checks/static-safeguards.test.ts`. [Scope and exceptions](engineering/agents/local-verification.md). | Enforced |
 | Develop on WSL2/macOS/Linux; retain Windows browser acceptance. | `scripts/shared/development-platform.ts`; [support boundaries](engineering/agents/working-style.md#development-environment). | Mixed |
 | Serialize local workloads; inspect other load. | `pnpm workload`; [participation and limits](engineering/agents/workload-coordination.md). | Mixed |
 | Test what is pushed: a clean tree at the checked-out commit, rechecked after the checks. | `scripts/git/pre-push.ts` validates the push, isolates child Git variables and rechecks source (bypassable hook); PR CI checks the pushed commit. | Mixed |

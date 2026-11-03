@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { describe, expect, it } from "vitest";
 import { workflowPermissionsDiffer, rulesetDrift, type Ruleset } from "./ruleset-drift.ts";
 
@@ -19,11 +20,17 @@ const file: Ruleset = {
   ],
 };
 
+const requiredChecks = (ruleset: Ruleset) => {
+  const rule = ruleset.rules?.find((entry) => entry.type === "required_status_checks");
+  assert.ok(rule?.parameters);
+  return rule.parameters;
+};
+
 const hosted = (change: (ruleset: Ruleset) => void): Ruleset => {
   const copy = structuredClone(file);
   // GitHub returns keys in its own order and adds defaulted parameters.
   copy.conditions = { ref_name: { exclude: [], include: ["~DEFAULT_BRANCH"] } };
-  copy.rules![1]!.parameters!.do_not_enforce_on_create = false;
+  requiredChecks(copy).do_not_enforce_on_create = false;
   change(copy);
   return copy;
 };
@@ -43,8 +50,9 @@ describe("rulesetDrift", () => {
       rulesetDrift(
         file,
         hosted((ruleset) => {
-          ruleset.rules![1]!.parameters!.strict_required_status_checks_policy = false;
-          ruleset.rules!.shift();
+          requiredChecks(ruleset).strict_required_status_checks_policy = false;
+          assert.ok(ruleset.rules);
+          ruleset.rules.shift();
           ruleset.bypass_actors = [
             { actor_id: 5, actor_type: "RepositoryRole", bypass_mode: "always" },
           ];
@@ -63,8 +71,9 @@ describe("rulesetDrift", () => {
         file,
         hosted((ruleset) => {
           ruleset.enforcement = "disabled";
-          ruleset.rules![1]!.parameters!.required_status_checks = [{ context: "Other" }];
-          ruleset.rules!.push({ type: "required_signatures" });
+          requiredChecks(ruleset).required_status_checks = [{ context: "Other" }];
+          assert.ok(ruleset.rules);
+          ruleset.rules.push({ type: "required_signatures" });
         }),
       ),
     ).toEqual([

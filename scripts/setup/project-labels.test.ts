@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -47,9 +48,11 @@ describe("project labels", () => {
     const hosted = defaults.map((label) => ({ ...label, color: label.color.toUpperCase() }));
     hosted.push({ name: "unconfigured", color: "ffffff", description: "Keep this" });
     expect(labelChanges(defaults, hosted)).toEqual([]);
+    const first = defaults[0];
+    assert.ok(first);
     const wanted = [
       ...defaults.slice(1),
-      { ...defaults[0]!, description: "Updated description" },
+      { ...first, description: "Updated description" },
       { name: "area:new", color: "aabbcc", description: "New" },
     ];
     const changes = labelChanges(wanted, hosted);

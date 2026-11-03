@@ -16,6 +16,24 @@ An explicit [release](../operations/releases.md) repeats the gate at the tagged 
 
 `lint` runs Oxlint with its type-aware rules, which need the `oxlint-tsgolint` package: an unawaited promise or a value of the wrong type in a template string fails it. The commit hook lints staged files without types, for speed. No rule is switched off except `react/react-in-jsx-scope`, which belongs to the JSX transform before React 17; React 19 and Vite use the automatic one. The React plugin adds the rules of hooks and missing effect dependencies; the `jsx-a11y` plugin adds accessibility rules for JSX. A type assertion is refused, so JSON that a script reads, from `gh` or from a file, is checked with a shape from `scripts/shared/json-shape.ts`; a missing or wrongly typed field then fails where it is read, with its path.
 
+`typecheck` applies `strict`, `noUncheckedIndexedAccess`, `noImplicitOverride` and
+`exactOptionalPropertyTypes` through `tsconfig.base.json` to the application, unit
+tests, tooling and browser tests. Mark overriding class members with `override`.
+Omit an absent optional property instead of assigning `undefined`, unless its
+declared value type explicitly includes `undefined` because the boundary accepts it.
+
+Oxlint rejects explicit `any`, postfix non-null assertions, `@ts-ignore`,
+`@ts-expect-error` (even with a description), `@ts-nocheck` and React's
+`dangerouslySetInnerHTML` throughout application, tooling and test code. Narrow a
+possibly missing value with a runtime check; test fixtures can use `assert.ok`.
+`@ts-check` remains allowed. Console calls are errors in `src/**`, including its
+unit tests; command-line tooling and deliberate browser controls in `scripts/**`
+and `e2e/**` may print diagnostics. The existing owner-approved, local suppression
+policy in [Rules](#rules) still applies. `scripts/checks/static-safeguards.test.ts`
+runs the real compiler and linter against isolated valid/invalid fixtures, including
+each inheriting TypeScript configuration; it never invokes the repository suite
+recursively.
+
 `test` measures coverage and fails below the global floor or either independent `src/**` and `scripts/**` floor: 95% of statements, functions and lines and 90% of branches. `vite.config.ts` uses the floors from `scripts/checks/coverage-thresholds.ts`. Vitest applies the global floor to all measured files, including the two groups; one group cannot compensate for the other. `scripts/checks/coverage-groups.test.ts` runs bounded real Vitest fixtures: an undercovered application and undercovered tooling each pass global-only enforcement and fail their own group, while fully covered controls pass. Fixtures run one dedicated test, never the repository suite, so they cannot recurse. The measured files are `src/` and `scripts/` without tests, the browser entry point and the commands that run `git`, `gh` or the network; the rules those commands apply live in separate modules, which are measured. A new command file is added to that exclusion list; a new rule module is not. Components that render only in a browser, such as a WebGL map, can be excluded the same way with the reason in `vite.config.ts`, when the browser tests cover them and their logic lives in plain modules that are measured. The floor is a lower bound, not a goal. Review thresholds deliberately when the product or testing strategy changes; incidental coverage gains do not require raising them. This avoids threshold edits after each gain, while allowing later changes to consume coverage above the floor. Keep the current floors unless the owner decides to change them; lowering one remains a guardrail change requiring the owner's explicit decision. HTML and machine-readable `coverage-summary.json` reports are written to `coverage/`. Keep future product logic measured in `src/`; growing tooling must not dilute its independent floor. Coverage measures execution, not correctness, and browser-only lifecycle acceptance remains separate.
 
 Application and tooling floors are independent so well-covered tooling cannot hide under-tested product code. Inspect the current JSON report for each group's counts and exclusions; component event wiring can be unit-tested, while real DOM typing remains a browser responsibility.
@@ -96,6 +114,12 @@ For adaptations with another language/native toolchain or measured expensive acc
 Run `pnpm check:adoption` on a clean, committed revision after changes to initialization/setup, personalization instructions, entry points, dependency/configuration discovery or the adoption check itself. It is an on-demand acceptance command outside `check:push` and the unit inventory: adding it to the ordinary gate would make each fixture launch another fixture. A runtime guard also rejects recursive invocations before any Git/install work.
 
 The command archives tracked files at HEAD and creates independent temporary repositories with fresh histories and separate local bare origins. Each installs from the committed lockfile and runs the source project's gate, then replaces its README and application with a minimal fixture to test the inherited tooling. React sources exercise both React and framework-free fixtures; sources that already removed React exercise the framework-free fixture. Missing optional demo files are allowed. Each fixture stages its new/deleted files, runs frozen installation and the full gate/build, and requires an intentionally missing HTML entry point to fail the build. This verifies tooling reuse after personalization; the fixture's small greeting is not acceptance of the source project's UI. Keep running the project's normal unit and browser tests for that evidence.
+
+The replacement application retains `e2e/fixtures.ts` and its contract tests in
+`e2e/browser-errors.spec.ts`, and imports the fixture from its new smoke test,
+preserving the browser/network-error guardrail when the demo is removed.
+React-specific lint controls run only while React is installed; framework-free
+adopters retain the compiler and framework-independent lint controls.
 
 Fixtures never call hosted setup. The setup unit fixtures use a controlled CLI to verify read-only plans, argument rejection and apply idempotency without real hosted resources. Help requires no configuration or authentication; dry-run still needs read permissions. See [setup modes](../operations/github-hosted-settings.md#inspect-before-applying). The opt-in `pnpm check:personalization` reads repository identity and checks local ownership/package/HTML metadata; `pnpm setup:github` applies the same preflight before hosted mutations. It stays outside the ordinary gate so the documented initial gate works on an unpersonalized copy. See [setup](../setup.md#start-a-new-repository). The preflight checks local syntax and placeholders, not whether GitHub grants a named user/team access.
 
