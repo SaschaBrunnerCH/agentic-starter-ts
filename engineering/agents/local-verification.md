@@ -115,8 +115,9 @@ Run `pnpm check:adoption` on a clean, committed revision after changes to initia
 
 The command archives tracked files at HEAD and creates independent temporary repositories with fresh histories and separate local bare origins. Each installs from the committed lockfile and runs the source project's gate, then replaces its README and application with a minimal fixture to test the inherited tooling. React sources exercise both React and framework-free fixtures; sources that already removed React exercise the framework-free fixture. Missing optional demo files are allowed. Each fixture stages its new/deleted files, runs frozen installation and the full gate/build, and requires an intentionally missing HTML entry point to fail the build. This verifies tooling reuse after personalization; the fixture's small greeting is not acceptance of the source project's UI. Keep running the project's normal unit and browser tests for that evidence.
 
-The replacement application retains `e2e/fixtures.ts` and imports it from its new
-smoke test, preserving the browser/network-error guardrail when the demo is removed.
+The replacement application retains `e2e/fixtures.ts` and its contract tests in
+`e2e/browser-errors.spec.ts`, and imports the fixture from its new smoke test,
+preserving the browser/network-error guardrail when the demo is removed.
 React-specific lint controls run only while React is installed; framework-free
 adopters retain the compiler and framework-independent lint controls.
 
