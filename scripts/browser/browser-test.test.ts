@@ -1,4 +1,5 @@
 import { EventEmitter } from "node:events";
+import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -14,6 +15,7 @@ const fixture = vi.hoisted(() => ({
   close: vi.fn(async () => {}),
   commands: [] as string[],
   buildStatus: 0,
+  childStatus: 0,
   gitFailure: false,
   sourceChanged: false,
   directory: "",
@@ -30,6 +32,17 @@ vi.mock("node:fs", async (original) => {
   const actual = await original<typeof import("node:fs")>();
   return {
     ...actual,
+    mkdirSync: (path: string, options?: { recursive?: boolean }) =>
+      path.startsWith("/fixture/") ? undefined : actual.mkdirSync(path, options),
+    existsSync: (path: string) =>
+      actual.existsSync(path.endsWith("/browser-evidence.json") ? fixture.record : path),
+    readFileSync: (path: string | number, encoding: "utf8") =>
+      actual.readFileSync(
+        typeof path === "string" && path.endsWith("/browser-evidence.json") ? fixture.record : path,
+        encoding,
+      ),
+    writeFileSync: (path: string, text: string) =>
+      actual.writeFileSync(path.endsWith("/browser-evidence.json") ? fixture.record : path, text),
     openSync: (path: string, flags: string) =>
       actual.openSync(path.endsWith("/browser-evidence.json") ? fixture.record : path, flags),
   };
@@ -78,7 +91,7 @@ vi.mock("node:child_process", async (original) => {
       fixture.commands.push("browser tests");
       fixture.onFork?.(options.env);
       const child = new EventEmitter();
-      setImmediate(() => child.emit("exit", 0));
+      setImmediate(() => child.emit("exit", fixture.childStatus));
       return child;
     },
   };
@@ -93,6 +106,7 @@ beforeEach(() => {
   fixture.commands = [];
   fixture.childArgs = [];
   fixture.buildStatus = 0;
+  fixture.childStatus = 0;
   fixture.gitFailure = false;
   fixture.args = [];
   vi.stubEnv("CI", "");
@@ -129,7 +143,8 @@ describe("browser command feature-level propagation", () => {
       expect(fixture.childEnv.BROWSER_GPU_PROFILE).toBe(writeProfile(expected));
       expect(fixture.childEnv.BROWSER_WEBGPU_FEATURE_LEVEL).toBe("compatibility");
       expect(fixture.childEnv.BROWSER_GPU_WS_ENDPOINT).toBe("ws://owned");
-      expect(fixture.childArgs).toEqual(["test", "--project", "chromium"]);
+      expect(fixture.childArgs).toEqual(["test", "--project", "chromium", "--forbid-only"]);
+      expect(fixture.childEnv.BROWSER_TEST_FULL_SUITE).toBe("true");
       expect(fixture.close).toHaveBeenCalledOnce();
       expect(process.exitCode).toBe(0);
     },
@@ -211,6 +226,53 @@ describe("browser build identity", () => {
     await import("./browser-test.ts");
     expect(process.exitCode).toBe(1);
     expect(fixture.commands).not.toContain("browser tests");
+    expect(readRuns(readFileSync(fixture.record, "utf8"))[0]).toMatchObject({
+      status: "failed",
+      complete: false,
+    });
+  });
+
+  it("does not let a passing reporter record hide a failing browser process", async () => {
+    vi.resetModules();
+    vi.stubEnv("BROWSER_GPU", "off");
+    fixture.childStatus = 1;
+    fixture.onFork = () => {
+      const pending = readRuns(readFileSync(fixture.record, "utf8"))[0];
+      assert.ok(pending);
+      writeFileSync(
+        fixture.record,
+        withRun([], { ...pending, sourceStable: true, status: "passed", complete: true }),
+      );
+    };
+    await import("./browser-test.ts");
+    expect(process.exitCode).toBe(1);
+    expect(readRuns(readFileSync(fixture.record, "utf8"))[0]).toMatchObject({
+      status: "failed",
+      dirty: false,
+      sourceStable: true,
+    });
+  });
+
+  it("invalidates evidence when owned GPU cleanup fails", async () => {
+    vi.resetModules();
+    vi.stubEnv("BROWSER_GPU", "required");
+    fixture.close.mockRejectedValueOnce(new Error("owned GPU cleanup failed"));
+    await import("./browser-test.ts");
+    expect(process.exitCode).toBe(1);
+    expect(readRuns(readFileSync(fixture.record, "utf8"))[0]?.status).toBe("failed");
+  });
+
+  it("marks focused commands incomplete and retains a pending attempt when a reporter is replaced", async () => {
+    vi.resetModules();
+    vi.stubEnv("BROWSER_GPU", "off");
+    vi.stubEnv("BROWSER_TEST_FULL_SUITE", "true");
+    fixture.args = ["--grep", "one test", "--reporter=list"];
+    await import("./browser-test.ts");
+    expect(fixture.childEnv.BROWSER_TEST_FULL_SUITE).toBe("false");
+    expect(readRuns(readFileSync(fixture.record, "utf8"))[0]).toMatchObject({
+      status: "incomplete",
+      complete: false,
+    });
   });
 
   it("starts no build or browser when Git identity is unavailable", async () => {

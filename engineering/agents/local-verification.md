@@ -10,6 +10,11 @@ Checks run at three points. Each later point repeats the code checks of the earl
 
 The gate runs these in order and reports every failure, not only the first: `format:check`, `lint`, `typecheck`, `check:unused`, `check:secrets`, `check:workflows`, `check:agents`, `check:links`, `check:dependencies`, `check:hooks`, `test`, `build` and `check:bundle`.
 
+Browser acceptance is a separate local eligibility check in `pnpm task ready` and
+`pnpm task merge`, following [applicability](browser-testing.md#applicability).
+Required changes need the latest complete current-head Chromium/GPU result;
+the code/build gate and PR CI do not run browser acceptance or waive that evidence.
+
 An explicit [release](../operations/releases.md) repeats the gate at the tagged candidate and runs the complete required Chromium smoke suite at the root and a nested URL base before publication. It packages that tested build. This release check is unconditional; PR browser acceptance runs locally on the GPU and is reported on the PR.
 
 `check:unused` runs knip twice: as on a developer's machine and with `CI=true`, as the `PR build` runs it. knip loads tool configurations such as `playwright.config.ts` to find what they use, and a configuration may differ in CI, for example a reporter registered only for local runs. A file used only one way is then reported before the push instead of in the `PR build`.

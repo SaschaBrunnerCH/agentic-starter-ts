@@ -53,6 +53,8 @@ const runShape = json.object({
   dirty: json.boolean,
   sourceStable: json.optional(json.boolean),
   buildCommit: json.optional(json.string),
+  /** Unfiltered default Chromium inventory, with every discovered test passing once. */
+  complete: json.optional(json.boolean),
   finishedAt: json.string,
   /** Playwright's overall status: passed, failed, timedout or interrupted. */
   status: json.string,
@@ -82,6 +84,15 @@ const evidenceShape = json.object({ runs: json.array(runShape) });
 export type Counts = json.ShapeOf<typeof countsShape>;
 export type BrowserRun = json.ShapeOf<typeof runShape>;
 
+/** Only the canonical unfiltered Chromium command establishes full-suite evidence. */
+export function fullSuiteArguments(args: readonly string[]): boolean {
+  const selection = args.filter((arg) => arg !== "--forbid-only");
+  return (
+    (selection.length === 2 && selection[0] === "--project" && selection[1] === "chromium") ||
+    (selection.length === 1 && selection[0] === "--project=chromium")
+  );
+}
+
 /** The runs in the file's text; none for a missing or empty file. */
 export function readRuns(text: string | undefined): BrowserRun[] {
   if (text === undefined || text.trim() === "") return [];
@@ -90,15 +101,22 @@ export function readRuns(text: string | undefined): BrowserRun[] {
 
 /** The file's text with this run added, keeping the newest runs. */
 export function withRun(runs: readonly BrowserRun[], run: BrowserRun): string {
-  return `${JSON.stringify({ runs: [...runs, run].slice(-KEPT_RUNS) }, null, 2)}\n`;
+  const previous = run.id === undefined ? runs : runs.filter((entry) => entry.id !== run.id);
+  return `${JSON.stringify({ runs: [...previous, run].slice(-KEPT_RUNS) }, null, 2)}\n`;
 }
 
 /** Parent validation can fail after Playwright has already written its counts. */
-export function invalidateRun(text: string, id: string): string {
+export function invalidateRun(text: string, id: string, sourceInvalidated = true): string {
   return `${JSON.stringify(
     {
       runs: readRuns(text).map((run) =>
-        run.id === id ? { ...run, dirty: true, sourceStable: false, status: "failed" } : run,
+        run.id === id
+          ? {
+              ...run,
+              ...(sourceInvalidated ? { dirty: true, sourceStable: false } : {}),
+              status: "failed",
+            }
+          : run,
       ),
     },
     null,
@@ -126,8 +144,8 @@ export type EvidenceVerdict =
   | { kind: "dirty"; run: BrowserRun };
 
 /**
- * What the record says about the head commit: the newest run on it with a clean tree, or why
- * there is none. A run on the head with uncommitted changes tested something else.
+ * The newest run on the head, including failed/dirty diagnostics. An older clean
+ * pass must never conceal a later attempt that cannot satisfy acceptance.
  */
 export function evidenceFor(runs: readonly BrowserRun[], head: string): EvidenceVerdict {
   const onHead = runs.filter((run) => run.commit === head);
@@ -135,10 +153,9 @@ export function evidenceFor(runs: readonly BrowserRun[], head: string): Evidence
   // must not hide its source-validation failure.
   const invalidated = onHead.at(-1);
   if (invalidated?.sourceStable === false) return { kind: "found", run: invalidated };
-  const clean = onHead.filter((run) => !run.dirty).at(-1);
-  if (clean !== undefined) return { kind: "found", run: clean };
-  const dirty = onHead.at(-1);
-  if (dirty !== undefined) return { kind: "dirty", run: dirty };
+  const latestOnHead = onHead.at(-1);
+  if (latestOnHead !== undefined)
+    return { kind: latestOnHead.dirty ? "dirty" : "found", run: latestOnHead };
   const latest = runs.at(-1);
   return latest === undefined ? { kind: "none" } : { kind: "other-commit", run: latest };
 }
@@ -191,6 +208,7 @@ export function evidenceMarkdown(run: BrowserRun): string {
     ...(run.remote ? ["Rendering OS/device: not established by this remote run record."] : []),
     "",
     `Application: ${application}.`,
+    `Complete default Chromium suite: ${run.complete === true ? "yes" : "not verified"}.`,
     ...(run.sourceStable === false
       ? ["Source validation failed; this run is not current-commit acceptance."]
       : []),
