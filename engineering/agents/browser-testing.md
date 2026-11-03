@@ -29,6 +29,36 @@ Keep browser tests maintainable as coverage grows:
 - Introduce narrow, typed application-owned diagnostic hooks only when a test needs them. Exclude those hooks from publishable builds and verify that boundary when introducing them. Keep vendor-specific fault injection scoped; avoid source-text patching and coupling shared behavior tests to library internals.
 - Reconcile coverage and selectors when splitting specs by behavior. Preserve assertions, tolerances and time limits; retries stay off, and report failures, skips and unrun checks separately from passes.
 
+### Browser and network errors
+
+Import `test` and `expect` from `e2e/fixtures.ts` in every browser spec. Its automatic
+fixture listens on the test's `page` before test hooks/navigation and checks at
+teardown, after the test and its hooks. Unexpected `console.error`, uncaught page
+errors, failed requests and HTTP responses with status 400 or above fail the test,
+even when its main assertions passed. Requests are observed, not initiated: links
+displayed on the page are not fetched by this check. Additional pages/popups need
+their own `withBrowserErrorChecks` scope; the fixture covers the default `page`.
+
+For a test that deliberately emits an error, scope an exception to that test's
+describe block using `test.use`:
+
+```ts
+test.use({
+  expectedBrowserErrors: [{ kind: "console", message: /^Deliberate failure control$/u }],
+});
+```
+
+Each entry permits exactly one matching occurrence and must occur. Use a specific,
+anchored expression and the right kind (`console`, `pageerror`, `requestfailed` or
+`response`); do not allow all errors. Console/page errors match their message text.
+Failed requests match `METHOD URL: failure text`; HTTP errors match
+`STATUS METHOD URL`. A failed request or HTTP error may also produce a console
+error, which requires its own specific exception. An extra or unrelated failure
+still fails the test. Keep errors that are handled correctly by the application
+distinct from uncaught browser errors; a deliberate graphics failure need not emit
+any browser error. The real-browser controls in `e2e/browser-errors.spec.ts` exercise
+the same listener and teardown lifecycle, including rejected guards.
+
 ## On your machine
 
 Install Chrome, Chromium or Edge for local GPU discovery. The command below downloads

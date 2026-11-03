@@ -1,4 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { expect, test } from "./fixtures.ts";
 import { classifyRenderer, gpuSetting } from "../scripts/browser/browser-gpu.ts";
 import { requiredApis } from "../scripts/browser/browser-gpu-profile.ts";
 import { assertPainted } from "./graphics-evidence.ts";
