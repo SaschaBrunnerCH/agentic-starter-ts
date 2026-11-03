@@ -1,13 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures.ts";
 
 test("the built application loads and shows its content", async ({ page }) => {
-  const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
-  page.on("console", (message) => {
-    if (message.type() === "error") errors.push(message.text());
-  });
-
   // Relative to the base URL, which may be a sub-path such as /<repository>/.
   await page.goto("./");
 
@@ -17,7 +11,6 @@ test("the built application loads and shows its content", async ({ page }) => {
   // React handles input: the heading follows the name field.
   await page.getByLabel("Name").fill("Ada");
   await expect(heading).toHaveText("Hello, Ada.");
-  expect(errors).toEqual([]);
 });
 
 test("the built application has no accessibility violations axe can find", async ({ page }) => {
