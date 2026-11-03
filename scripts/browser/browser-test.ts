@@ -2,10 +2,24 @@
 // any private display until the owned test process exits, including on interruption.
 import { fork, spawnSync, type ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { closeSync, ftruncateSync, openSync, readFileSync, writeSync } from "node:fs";
-import { resolve } from "node:path";
+import {
+  closeSync,
+  ftruncateSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  writeFileSync,
+  writeSync,
+} from "node:fs";
+import { dirname, resolve } from "node:path";
 import { guardBrowserSource } from "./browser-source.ts";
-import { browserEvidenceFile, invalidateRun } from "./browser-evidence.ts";
+import {
+  browserEvidenceFile,
+  invalidateRun,
+  readBrowserRuns,
+  withRun,
+  fullSuiteArguments,
+} from "./browser-evidence.ts";
 import { gpuSetting } from "./browser-gpu.ts";
 import {
   chromiumSelection,
@@ -51,6 +65,7 @@ const args = requested.some((arg) => arg === "--project" || arg.startsWith("--pr
   : ["--project", "chromium", ...requested];
 const env = { ...process.env };
 delete env.BROWSER_TEST_BUILD_COMMIT;
+env.BROWSER_TEST_FULL_SUITE = String(fullSuiteArguments(args));
 const runId = randomUUID();
 env.BROWSER_TEST_RUN_ID = runId;
 if (apis.length > 0) env.BROWSER_GPU_APIS = apis.join(",");
@@ -74,6 +89,25 @@ let child: ChildProcess | undefined;
 let gpu: DiscoveredGpu | undefined;
 let source: ReturnType<typeof guardBrowserSource> | undefined;
 const root = resolve(import.meta.dirname, "../..");
+function invalidateCurrentRun(sourceInvalidated: boolean) {
+  if (env.CI === "true" || env.CI === "1") return;
+  const evidence = browserEvidenceFile(root);
+  try {
+    // Open directly and retain the descriptor across read/write: a pathname
+    // replacement must not redirect invalidation to a different file.
+    const descriptor = openSync(evidence, "r+");
+    try {
+      const record = invalidateRun(readFileSync(descriptor, "utf8"), runId, sourceInvalidated);
+      writeSync(descriptor, record, 0, "utf8");
+      ftruncateSync(descriptor, Buffer.byteLength(record));
+    } finally {
+      closeSync(descriptor);
+    }
+  } catch (recordError) {
+    if (!(recordError instanceof Error && "code" in recordError && recordError.code === "ENOENT"))
+      console.error(`Could not invalidate browser evidence: ${String(recordError)}`);
+  }
+}
 const interrupt = () => {
   if (controller.signal.aborted) return;
   controller.abort(new Error("Browser tests interrupted"));
@@ -87,6 +121,32 @@ try {
   requiredApis(env); // Reject missing/unknown --api values before any browser starts.
   if (!help && !args.includes("--list")) {
     source = guardBrowserSource(root);
+    // Start a record before build/discovery. A failed attempt or a replaced reporter
+    // must not leave an older passing result as the newest evidence for this head.
+    if (env.CI !== "true" && env.CI !== "1") {
+      const file = browserEvidenceFile(root);
+      mkdirSync(dirname(file), { recursive: true });
+      writeFileSync(
+        file,
+        withRun(readBrowserRuns(root), {
+          id: runId,
+          commit: source.commit,
+          dirty: source.dirty,
+          sourceStable: false,
+          complete: false,
+          finishedAt: new Date().toISOString(),
+          status: "incomplete",
+          gpu: gpuSetting(env),
+          renderer: null,
+          rendererKind: null,
+          display: null,
+          remote: env.REMOTE_BROWSER_WS_ENDPOINT !== undefined,
+          ...(env.BROWSER_TEST_BASE_URL === undefined ? {} : { target: env.BROWSER_TEST_BASE_URL }),
+          platform: `${process.platform} ${process.arch}`,
+          projects: {},
+        }),
+      );
+    }
     // CI's release workflow tests and packages the same producer build. Local
     // application tests build fresh; deployed URLs keep their distinct identity.
     if (!env.BROWSER_TEST_BASE_URL && env.CI !== "true" && env.CI !== "1") {
@@ -128,35 +188,25 @@ try {
     if (adapter !== null && adapter !== undefined) env.BROWSER_WEBGPU_ADAPTER = adapter;
   }
   controller.signal.throwIfAborted();
-  child = fork(new URL("./browser-test-cli.ts", import.meta.url), ["test", ...args], {
-    env,
-    execArgv: [],
-    stdio: ["inherit", "inherit", "inherit", "ipc"],
-  });
+  child = fork(
+    new URL("./browser-test-cli.ts", import.meta.url),
+    ["test", ...args, "--forbid-only"],
+    {
+      env,
+      execArgv: [],
+      stdio: ["inherit", "inherit", "inherit", "ipc"],
+    },
+  );
   process.exitCode = await new Promise<number>((accept, reject) => {
     child?.once("error", reject);
     child?.once("exit", (code) => accept(controller.signal.aborted ? 1 : (code ?? 1)));
   });
   source?.assertStable();
+  if (process.exitCode !== 0) invalidateCurrentRun(false);
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
-  const evidence = browserEvidenceFile(root);
-  try {
-    // Open directly and retain the descriptor across read/write: a pathname
-    // replacement must not redirect invalidation to a different file.
-    const descriptor = openSync(evidence, "r+");
-    try {
-      const record = invalidateRun(readFileSync(descriptor, "utf8"), runId);
-      writeSync(descriptor, record, 0, "utf8");
-      ftruncateSync(descriptor, Buffer.byteLength(record));
-    } finally {
-      closeSync(descriptor);
-    }
-  } catch (recordError) {
-    if (!(recordError instanceof Error && "code" in recordError && recordError.code === "ENOENT"))
-      console.error(`Could not invalidate browser evidence: ${String(recordError)}`);
-  }
+  invalidateCurrentRun(true);
 } finally {
   source?.close();
   try {
@@ -164,6 +214,7 @@ try {
   } catch (error) {
     console.error(String(error));
     process.exitCode = 1;
+    invalidateCurrentRun(false);
   }
   process.off("SIGINT", interrupt);
   process.off("SIGTERM", interrupt);

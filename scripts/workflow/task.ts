@@ -12,6 +12,7 @@ import { randomUUID } from "node:crypto";
 import { basename, dirname, join, resolve } from "node:path";
 import { gh, ghJson, prBuild, root } from "../shared/github.ts";
 import { scriptArguments } from "../shared/script-arguments.ts";
+import { browserAcceptance } from "./task-browser-acceptance.ts";
 import {
   readSetup,
   setupHandoff,
@@ -477,16 +478,16 @@ function labelPullRequest(found: PullRequest, issues: readonly number[]): string
   }
 }
 
-// Publish the latest clean browser result for the head, deduplicating the same result rather
+// Publish the latest browser result for the head, deduplicating the same result rather
 // than the commit. A later failure or different engine coverage must reach the reviewer too.
 function postBrowserEvidence(number: number, head: string): string {
   const file = browserEvidenceFile(root);
   const verdict = evidenceFor(readBrowserRuns(root), head);
   if (verdict.kind === "none") {
-    return `No browser run is recorded in ${file}. If this change needs one, run pnpm test:browser and pnpm task ready again; otherwise say in the pull request why none is needed.`;
+    return `No browser run is recorded in ${file}.`;
   }
   if (verdict.kind === "other-commit") {
-    return `The latest recorded browser run is for ${verdict.run.commit.slice(0, 7)}, not the head ${head.slice(0, 7)}. Run the browser tests again, or say in the pull request why the earlier run still holds.`;
+    return `The latest recorded browser run is for ${verdict.run.commit.slice(0, 7)}, not the head ${head.slice(0, 7)}; it is not current-head acceptance.`;
   }
   if (verdict.kind === "dirty") {
     return `The browser run on ${head.slice(0, 7)} started with uncommitted changes, so it tested something else. Commit or set them aside, run again, then pnpm task ready.`;
@@ -554,6 +555,37 @@ function regressionProof(found: PullRequest): { ok: boolean; message: string } {
   return { ok: false, message: verdict.reason };
 }
 
+/** Both readiness and merge read current evidence against the entire merge-base diff. */
+function checkBrowserAcceptance(found: PullRequest) {
+  mustGit(["fetch", "--quiet", "origin", found.baseRefName]);
+  const diff = spawnSync(
+    "git",
+    [
+      "diff",
+      "--name-only",
+      "--no-renames",
+      "-z",
+      `origin/${found.baseRefName}...${found.headRefOid}`,
+    ],
+    { cwd: root, encoding: "utf8" },
+  );
+  if (diff.error !== undefined || diff.status !== 0)
+    throw new Error("Cannot read the full PR diff; check out its head and retry.");
+  const files = diff.stdout.split("\0").filter(Boolean);
+  const applicability = browserAcceptance(files, [], found.headRefOid);
+  if (!applicability.required) return applicability;
+  if (
+    mustGit(["rev-parse", "HEAD"]) !== found.headRefOid ||
+    mustGit(["status", "--porcelain", "--untracked-files=all"]) !== ""
+  )
+    return {
+      ok: false,
+      required: true,
+      message: "Browser acceptance required: use the clean checkout of the current PR head.",
+    };
+  return browserAcceptance(files, readBrowserRuns(root), found.headRefOid);
+}
+
 function ready(reference: string): number {
   const found = pullRequest(reference);
   const problems = readinessProblems(found);
@@ -566,13 +598,19 @@ function ready(reference: string): number {
     }
     return 1;
   }
+  const browser = checkBrowserAcceptance(found);
+  console.log(`\n${browser.message}`);
+  if (!browser.ok) {
+    console.log(postBrowserEvidence(found.number, found.headRefOid));
+    return 1;
+  }
   const proof = regressionProof(found);
   if (!proof.ok) {
     console.log(`\nNot ready: ${proof.message}.`);
     return 1;
   }
   if (proof.message !== "") console.log(`\n${proof.message}`);
-  console.log(`\n${postBrowserEvidence(found.number, found.headRefOid)}`);
+  if (browser.required) console.log(`\n${postBrowserEvidence(found.number, found.headRefOid)}`);
   const unset = setStatus(issuesOf(found).closes, "In review");
   const unlabelled = labelPullRequest(found, issuesOf(found).closes);
   console.log(
@@ -618,6 +656,9 @@ function merge(reference: string, flags: readonly string[]): number {
   // A merge whose record failed afterwards: record it now instead of merging again.
   if (found.state === "MERGED") return recordMerge(found);
   if (problems.length > 0) return 1;
+  const browser = checkBrowserAcceptance(found);
+  console.log(`\n${browser.message}`);
+  if (!browser.ok) return 1;
 
   // The commit on main carries the title only: branch commit messages are not copied into it.
   const mergeArguments = [

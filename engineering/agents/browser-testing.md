@@ -6,7 +6,49 @@ Unit tests check modules. Browser tests check that the built application works i
 
 Routine PR browser acceptance runs locally in Chrome on a verified GPU. Report the clean tested commit, command, browser version, actual application renderer and results on the PR using the existing evidence tooling. Broader engine, operating-system or device coverage runs only when the owner explicitly requests it. A software renderer cannot satisfy GPU acceptance.
 
-Decide the needed browser evidence from the change's affected behavior, including shared code, dependencies and the browser harness. If no run is needed, explain why in the PR; this is a review decision, not a blanket exemption for a file type. Graphics changes still need the applicable renderer and painted-frame verification. `pnpm task ready` warns rather than blocks when evidence is absent, stale or from a dirty tree; provide a relevant clean run or explain the gap.
+`pnpm task ready` and `pnpm task merge` require passing local browser acceptance
+for application/browser-affecting changes. Both independently read the complete
+merge-base diff, with deleted and renamed paths included, and the newest recorded
+attempt for the exact PR head. A previous ready result is not reused at merge.
+
+The applicability rules are deliberately small:
+
+- Root Markdown, `LICENSE`, `engineering/**` and GitHub Markdown templates are
+  documentation. Documentation-only PRs are exempt without a browser run.
+- `scripts/git/**` and the issue/issue-metadata/issue-touches/standup command and
+  test files are unrelated tooling; these and documentation may be exempt together.
+- Everything else requires acceptance. This includes `src/**` (also Markdown),
+  public assets, HTML, e2e tests, browser/shared/task tooling, dependency manifests
+  and lockfiles, TypeScript/Vite/Playwright configuration and unknown paths. Mixed
+  documentation/application PRs require acceptance. Readiness prints its reason.
+
+For a required run, use `pnpm test:browser` on the clean PR-head checkout; the
+application's `--api` and `--webgpu-feature-level` options remain supported.
+`--project chromium` (or `--project=chromium`) explicitly selects the same suite.
+Only this canonical invocation, with optional `--forbid-only`, establishes full-suite
+metadata. Custom flags/configurations, file filters, grep, shards, repetitions,
+other project selections and replaced reporters remain diagnostic; rerun the
+canonical command afterward. The runner always forbids `.only`. Every discovered
+test must pass once without expected failures, skips, retries or flaky results.
+The reporter checks both global/project filtering and the discovered/executed
+counts; a passing subset cannot establish completeness.
+
+Evidence must identify this commit's fresh local production build, stable clean
+source, complete Chromium inventory and verified local hardware. Legacy records
+without completeness/build/source identity, deployments, remote runs and software
+renderers cannot satisfy this gate. The newest unsuitable attempt blocks acceptance;
+an older pass cannot hide a failure, dirty run or focused diagnostic. A pending
+record is written before build/discovery so startup failures or a missing reporter
+also invalidate the earlier acceptance. Full completion replaces that record using
+the same run id. No arbitrary wall-clock expiry is imposed: freshness means matching
+head/build identity and the latest attempt.
+
+This is a local workflow safeguard, not independent attestation: the local evidence
+file and commands remain under the operator's control, and a direct GitHub merge
+does not run this gate. Graphics changes still need renderer and painted-frame
+verification. Routine PR acceptance remains the local root build; the separate
+release gate still checks root and nested URL bases against its producer build.
+No wider browser/device matrix or PR CI browser job is introduced.
 
 The PR build runs the code/build gate without browser installation or journeys, including manual workflow runs. Hosted runners do not establish the application's local GPU acceptance; running the journeys there also duplicates that required local work. There is no PR CI browser override. Setup no longer creates `BROWSER_TESTS_IN_CI`; a legacy variable is ignored. Workflow contract controls reject browser commands added to the PR build, even behind that former switch.
 
@@ -156,7 +198,7 @@ Use the image whose version matches `@playwright/test` in `package.json`; Docker
 
 ### Report the results on the pull request
 
-Every local run records itself in `browser-evidence.json` inside the primary checkout’s [task artifact folder](working-style.md#local-artifacts) (ignored by Git). Without a task reference, it uses the primary `.local/browser-evidence.json`; existing worktree/root records remain readable without moving them. The runner, reporter and task readiness resolve the same destination. The record contains the commit, whether the working tree had uncommitted changes when it started, the application tested (the local build, or the deployment `BROWSER_TEST_BASE_URL` names, which need not be the commit), the renderer the GPU check printed and how it reached the GPU (headless or a virtual display; the check probes Chromium, so other browsers' renderers stay unknown), the test driver's OS/architecture, and the passed, failed, skipped and flaky tests per project. The existing JSON field `platform` means the **driver platform**. The pull-request comment labels it that way and leaves the rendering OS/device unverified for remote runs. Establish a remote device's OS/version separately from its capabilities or device metadata; a provider's generic OS field can describe its coordinator host instead. The runner and reporter check Git identity at both boundaries and watch tracked/nonignored source for changes, including observed edits that are later restored. Missing Git identity or a failed build stops before testing; source validation failure invalidates the run and retains its counts as failed evidence. Watcher/ignore-query failures also invalidate evidence. This is a local stability check, not independent attestation or protection from undetectable filesystem events or externally altered ignored build output. Dirty-source diagnostics remain labelled dirty. Legacy records without a verified build identity remain readable but are labelled unverified. The newest 20 runs are kept. `pnpm task ready` posts the newest run on the pull request's head commit as a comment. Repeating the same recorded result adds nothing; a changed run on that commit gets a new comment that supersedes earlier evidence, including newer failures or changed engine coverage. Browser acceptance remains review-only; follow [applicability](#applicability) for evidence gaps. Reference the posted result rather than copying its renderer line and counts. Add the command, unrun engine/platform coverage and reasons, manual checks, and material limitations not captured by the record. If browser version or renderer data is absent, report that limitation; a driver platform does not establish a remote rendering device. Evidence can be recorded once and linked from the PR.
+Every local run records itself in `browser-evidence.json` inside the primary checkout’s [task artifact folder](working-style.md#local-artifacts) (ignored by Git). Without a task reference, it uses the primary `.local/browser-evidence.json`; existing worktree/root records remain readable without moving them. The runner, reporter and task readiness resolve the same destination. The record contains the commit, whether the working tree had uncommitted changes when it started, the application tested (the local build, or the deployment `BROWSER_TEST_BASE_URL` names, which need not be the commit), the renderer the GPU check printed and how it reached the GPU (headless or a virtual display; the check probes Chromium, so other browsers' renderers stay unknown), the test driver's OS/architecture, and the passed, failed, skipped and flaky tests per project. The existing JSON field `platform` means the **driver platform**. The pull-request comment labels it that way and leaves the rendering OS/device unverified for remote runs. Establish a remote device's OS/version separately from its capabilities or device metadata; a provider's generic OS field can describe its coordinator host instead. The runner and reporter check Git identity at both boundaries and watch tracked/nonignored source for changes, including observed edits that are later restored. Missing Git identity or a failed build stops before testing; source validation failure invalidates the run and retains its counts as failed evidence. Watcher/ignore-query failures also invalidate evidence. This is a local stability check, not independent attestation or protection from undetectable filesystem events or externally altered ignored build output. Dirty-source diagnostics remain labelled dirty. Legacy records without a verified build identity remain readable but are labelled unverified. The newest 20 runs are kept. `pnpm task ready` posts the newest run on the pull request's head commit as a comment. Repeating the same recorded result adds nothing; a changed run on that commit gets a new comment that supersedes earlier evidence, including newer failures or changed engine coverage. Readiness and merge enforce the current-head acceptance described under [applicability](#applicability); manual accessibility and platform judgments remain review responsibilities. Reference the posted result rather than copying its renderer line and counts. Add the command, unrun engine/platform coverage and reasons, manual checks, and material limitations not captured by the record. If browser version or renderer data is absent, report that limitation; a driver platform does not establish a remote rendering device. Evidence can be recorded once and linked from the PR.
 
 `pnpm test:devices` runs the tests on several projects and farm devices in turn and prints a summary; `--report <pr>` posts it on the pull request, replacing its previous report. This coverage costs no CI minutes. It builds the checked-out commit first, and it reports only when the pull request is open at that commit and the working tree is clean, both before the run and again before posting, so the report describes the pull request. A `BROWSER_TEST_BASE_URL` or `REMOTE_BROWSER_WS_ENDPOINT` set in your shell is used and named in the report.
 

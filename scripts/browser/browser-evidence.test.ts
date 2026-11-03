@@ -7,6 +7,7 @@ import {
   readRuns,
   withRun,
   invalidateRun,
+  fullSuiteArguments,
   type BrowserRun,
 } from "./browser-evidence.ts";
 
@@ -50,6 +51,12 @@ describe("the evidence file", () => {
     expect(runs.at(-1)?.finishedAt).toBe("24");
   });
 
+  it("replaces a pending attempt with its completed record, retaining one entry per run id", () => {
+    expect(
+      readRuns(withRun([run({ id: "current", status: "incomplete" })], run({ id: "current" }))),
+    ).toEqual([run({ id: "current" })]);
+  });
+
   it("refuses a file of another shape, naming the field", () => {
     expect(() => readRuns('{"runs":[{"commit":1}]}')).toThrow(/commit/u);
   });
@@ -79,6 +86,10 @@ describe("count", () => {
 });
 
 describe("evidenceFor", () => {
+  it("does not hide a newer dirty run behind an older clean pass", () => {
+    const dirty = run({ dirty: true });
+    expect(evidenceFor([run(), dirty], head)).toEqual({ kind: "dirty", run: dirty });
+  });
   it("does not hide an invalidated latest run behind an older clean pass", () => {
     const failed = run({ dirty: true, sourceStable: false, status: "failed" });
     expect(evidenceFor([run(), failed], head)).toEqual({ kind: "found", run: failed });
@@ -95,6 +106,27 @@ describe("evidenceFor", () => {
   it("says when the latest run is for another commit, or when there is none", () => {
     expect(evidenceFor([run({ commit: other })], head).kind).toBe("other-commit");
     expect(evidenceFor([], head)).toEqual({ kind: "none" });
+  });
+});
+
+describe("full-suite command selection", () => {
+  it.each([
+    ["--project", "chromium"],
+    ["--project=chromium"],
+    ["--project", "chromium", "--forbid-only"],
+  ])("recognizes the canonical Chromium invocation: %j", (...args) => {
+    expect(fullSuiteArguments(args)).toBe(true);
+  });
+  it.each([
+    [],
+    ["--project", "firefox"],
+    ["--project", "chromium", "smoke.spec.ts"],
+    ["--project", "chromium", "--grep=one"],
+    ["--project", "chromium", "--shard=1/2"],
+    ["--project", "chromium", "--config=custom.ts"],
+    ["--project", "chromium", "--reporter=list"],
+  ])("keeps custom/focused commands diagnostic: %j", (...args) => {
+    expect(fullSuiteArguments(args)).toBe(false);
   });
 });
 

@@ -59,7 +59,7 @@ The task is ready for edits when its ownership, starting revision and required o
 
 ## Validate and complete
 
-1. Use the checks described in [local verification](local-verification.md).
+1. Use the checks described in [local verification](local-verification.md). `pnpm task ready` and `pnpm task merge` also enforce [browser applicability](browser-testing.md#applicability) from the complete PR diff and freshly read local evidence. Required runs must cover the complete Chromium suite on the clean current-head local build with verified hardware; an earlier ready result or older passing record cannot waive a newer failure. Documentation and the documented unrelated-tooling paths are exempt with a printed reason.
 2. Match every acceptance criterion and affected existing workflow to evidence. A bug fix needs a regression test that fails behaviorally without the fix; a load failure or an import of newly added code does not count. `pnpm task ready` checks changed unit tests against the merge base for PRs closing a `bug` issue. Browser-only fixes name their failing control run on a line starting "Regression control" in the PR. Follow [regression proof](local-verification.md#regression-proof) for the procedure and its review limits.
 
    For a feature, write the test first where you can: it shows the test can fail, and the first failing run is the specification. This is recommended, not checked; no check can tell in which order a test and its code were written.

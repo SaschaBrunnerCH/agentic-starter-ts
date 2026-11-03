@@ -7,7 +7,7 @@ Dependabot opens grouped pull requests on Mondays for packages (Dependabot's `np
 The next working session handles open Dependabot pull requests, within one week of their creation:
 
 1. Bring the pull request up to date with `main` and wait for `PR build`.
-2. Green: ask the owner for merge authorization as for any pull request, then merge with `pnpm task merge <pr> --authorized-by-owner --head <sha> --admin`. The flag `--admin` is needed because the owner's account did not author the pull request. Merge them one after another; each merge makes the others stale.
+2. Green: run the [applicable local browser acceptance](browser-testing.md#applicability) on the clean dependency-update head and pass `pnpm task ready`; manifests and lockfiles require this evidence. Then ask the owner for merge authorization as for any pull request, and merge with `pnpm task merge <pr> --authorized-by-owner --head <sha> --admin`. The flag `--admin` is needed because the owner's account did not author the pull request. Merge them one after another; each merge makes the others stale.
 3. Red: fix it on the branch when the cause is small, otherwise close the pull request with the reason and file an issue for the update.
 
 An update must not sit unhandled for more than a week. A Dependabot pull request needs no issue; its title is its specification.

@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import type { FullResult, Reporter, TestCase } from "@playwright/test/reporter";
+import type { FullConfig, FullProject } from "@playwright/test";
+import type { FullResult, Reporter, TestCase, TestResult } from "@playwright/test/reporter";
 import {
   count,
   browserEvidenceFile,
@@ -11,6 +12,17 @@ import {
 import { guardBrowserSource } from "./browser-source.ts";
 
 const root = resolve(import.meta.dirname, "../..");
+type CompletionConfig = Pick<
+  FullConfig,
+  "configFile" | "forbidOnly" | "grep" | "grepInvert" | "shard"
+> & {
+  filteredProjects: readonly Pick<
+    FullProject,
+    "name" | "repeatEach" | "retries" | "grep" | "grepInvert"
+  >[];
+};
+const unfiltered = (grep: RegExp | RegExp[]) =>
+  grep instanceof RegExp && grep.source === ".*" && grep.flags === "";
 
 /**
  * Records each local browser run in the primary checkout’s task artifact folder: the commit, the renderer
@@ -23,10 +35,42 @@ export default class BrowserEvidenceReporter implements Reporter {
       ? undefined
       : guardBrowserSource(root);
   private counts: Record<string, Counts> = {};
+  private expected = 0;
+  private fullSuite = false;
 
-  onTestEnd(test: TestCase): void {
+  onBegin(config: CompletionConfig, suite: { allTests(): readonly unknown[] }): void {
+    this.expected = suite.allTests().length;
+    const project = config.filteredProjects[0];
+    this.fullSuite =
+      process.env.BROWSER_TEST_FULL_SUITE === "true" &&
+      config.configFile === resolve(root, "playwright.config.ts") &&
+      config.forbidOnly &&
+      config.shard === null &&
+      unfiltered(config.grep) &&
+      config.grepInvert === null &&
+      config.filteredProjects.length === 1 &&
+      project?.name === "chromium" &&
+      project.repeatEach === 1 &&
+      project.retries === 0 &&
+      unfiltered(project.grep) &&
+      project.grepInvert === null;
+  }
+
+  onTestEnd(
+    test: Pick<TestCase, "outcome" | "expectedStatus"> & {
+      parent: { project(): { name: string } | undefined };
+    },
+    result: Pick<TestResult, "status">,
+  ): void {
     const project = test.parent.project()?.name ?? "default";
-    this.counts = count(this.counts, project, test.outcome());
+    const outcome = test.outcome();
+    this.counts = count(
+      this.counts,
+      project,
+      outcome === "expected" && (result.status !== "passed" || test.expectedStatus !== "passed")
+        ? "unexpected"
+        : outcome,
+    );
   }
 
   async onEnd(result: FullResult): Promise<void | { status: FullResult["status"] }> {
@@ -42,6 +86,14 @@ export default class BrowserEvidenceReporter implements Reporter {
     }
     const file = browserEvidenceFile(root);
     const environment = process.env;
+    const complete =
+      this.fullSuite &&
+      this.expected > 0 &&
+      Object.values(this.counts).reduce((total, counts) => total + counts.passed, 0) ===
+        this.expected &&
+      Object.values(this.counts).every(
+        (counts) => counts.failed === 0 && counts.skipped === 0 && counts.flaky === 0,
+      );
     mkdirSync(dirname(file), { recursive: true });
     writeFileSync(
       file,
@@ -55,6 +107,7 @@ export default class BrowserEvidenceReporter implements Reporter {
         ...(environment.BROWSER_TEST_BUILD_COMMIT === undefined
           ? {}
           : { buildCommit: environment.BROWSER_TEST_BUILD_COMMIT }),
+        complete,
         finishedAt: new Date().toISOString(),
         status: stable ? result.status : "failed",
         gpu: environment.BROWSER_GPU_SETTING ?? "off",
@@ -81,6 +134,6 @@ export default class BrowserEvidenceReporter implements Reporter {
         projects: this.counts,
       }),
     );
-    if (!stable) return { status: "failed" };
+    if (!stable || (this.fullSuite && !complete)) return { status: "failed" };
   }
 }
